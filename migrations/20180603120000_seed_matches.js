@@ -555,7 +555,7 @@ exports.up = async (knex) => {
         {
             MatchNumber: 51,
             RoundNumber: 8,
-            DateUtc: '2024-07-14 19:00:00Z',
+            DateUtc: '2026-07-14 19:00:00Z',
             Location: 'Olympiastadion',
             HomeTeam: 'To be announced',
             AwayTeam: 'To be announced',
