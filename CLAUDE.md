@@ -4,13 +4,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Commands
 
-- `npm run dev` — local Next.js dev server (http://localhost:3000).
-- `npm run dev-vm` — dev server with `VM=true` so API handlers `SET search_path TO vm_2022` (for the older World Cup dataset).
-- `npm run build` / `npm start` — production build / serve.
-- `npm run lint` / `npm run lint:fix` — `next lint`.
-- `npm run prettier:check` / `npm run prettier:write` — formatting. `npm run format` runs both prettier write and lint fix.
-- `npm test` — Jest in watch mode. `npm run test:ci` for CI single-run. Run a single test with `npx jest path/to/file.test.ts` or `npx jest -t "test name"`.
-- `npm run migrate` — `knex migrate:latest` against `PG_URI` (CockroachDB).
+- `pnpm dev` — local Next.js dev server (http://localhost:3000).
+- `pnpm dev-vm` — dev server with `VM=true` so API handlers `SET search_path TO vm_2022` (for the older World Cup dataset).
+- `pnpm build` / `pnpm start` — production build / serve.
+- `pnpm lint` / `pnpm lint:fix` — `next lint`.
+- `pnpm prettier:check` / `pnpm prettier:write` — formatting. `pnpm format` runs both prettier write and lint fix.
+- `pnpm test` — Jest in watch mode. `pnpm test:ci` for CI single-run. Run a single test with `pnpm exec jest path/to/file.test.ts` or `pnpm exec jest -t "test name"`.
+- `pnpm migrate` — `knex migrate:latest` against `PG_URI` (CockroachDB).
 - CI (`.github/workflows/workflow.yaml`) runs lint, `test:ci`, and `prettier:check`; pushes to `master` deploy to Vercel.
 
 ## Language and naming

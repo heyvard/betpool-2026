@@ -11,17 +11,20 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: latest
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: 'npm'
-      - run: npm ci
+          cache: 'pnpm'
+      - run: pnpm install --frozen-lockfile
       - name: Eslint
-        run: npm run lint
+        run: pnpm lint
       - name: Enhetstester
-        run: npm run test:ci
+        run: pnpm test:ci
       - name: Prettier
-        run: npm run prettier:check
+        run: pnpm prettier:check
 
   deploy-prod:
     needs: lint-test
@@ -30,8 +33,11 @@ jobs:
     concurrency: deploy-prod
     steps:
       - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: latest
       - name: Install Vercel CLI
-        run: npm install --global vercel@latest
+        run: pnpm install --global vercel@latest
       - name: Pull Vercel Environment Information
         run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
       - name: Build Project Artifacts

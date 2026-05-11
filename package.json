@@ -11,7 +11,7 @@
         "prettier:check": "prettier --check .",
         "lint": "next lint",
         "lint:fix": "next lint --fix",
-        "format": "npm run prettier:write && npm run lint:fix",
+        "format": "pnpm prettier:write && pnpm lint:fix",
         "migrate": "knex migrate:latest",
         "test": "jest --watch",
         "test:ci": "jest --ci"
