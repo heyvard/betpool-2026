@@ -17,6 +17,7 @@
         "test:ci": "jest --ci"
     },
     "dependencies": {
+        "@navikt/aksel-icons": "6.8.0",
         "@navikt/ds-css": "^6.8.0",
         "@navikt/ds-react": "^6.8.0",
         "@navikt/ds-tailwind": "^6.8.0",
@@ -37,6 +38,7 @@
         "react-firebase-hooks": "^5.1.1"
     },
     "devDependencies": {
+        "@jest/globals": "29.7.0",
         "@types/jest": "^29.5.12",
         "@types/node": "20.12.12",
         "@types/pg": "^8.11.6",
