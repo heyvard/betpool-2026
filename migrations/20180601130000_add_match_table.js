@@ -2,7 +2,7 @@
 
 exports.up = async (knex) => {
     await knex.schema.createTable('matches', (t) => {
-        t.uuid('id').default(knex.raw('uuid_generate_v4()')).primary()
+        t.uuid('id').default(knex.raw('gen_random_uuid()')).primary()
         t.integer('match_number').notNullable()
         t.integer('round').notNullable()
         t.string('home_team').notNullable()

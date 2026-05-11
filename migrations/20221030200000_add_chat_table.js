@@ -2,7 +2,7 @@
 
 exports.up = async (knex) => {
     await knex.schema.createTable('chat', (t) => {
-        t.uuid('id').default(knex.raw('uuid_generate_v4()')).primary()
+        t.uuid('id').default(knex.raw('gen_random_uuid()')).primary()
         t.uuid('user_id').notNullable().references('users.id')
         t.text('message')
         t.timestamps(false, true)
