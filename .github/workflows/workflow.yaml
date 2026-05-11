@@ -26,21 +26,10 @@ jobs:
       - name: Prettier
         run: pnpm prettier:check
 
-  deploy-prod:
+  deploy-prod-database:
     needs: lint-test
     if: github.ref_name == 'main'
     runs-on: ubuntu-latest
     concurrency: deploy-prod
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v6
-        with:
-          node-version: 24
-      - name: Install Vercel CLI
-        run: npm install --global vercel@latest
-      - name: Pull Vercel Environment Information
-        run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
-      - name: Build Project Artifacts
-        run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
-      - name: Deploy Project Artifacts to Vercel
-        run: vercel deploy --prebuilt --prod --archive=tgz --token=${{ secrets.VERCEL_TOKEN }}
