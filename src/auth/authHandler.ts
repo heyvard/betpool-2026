@@ -11,7 +11,7 @@ let pool: null | Pool
 
 export function getPool() {
     if (!pool) {
-        const connectionString = process.env.PG_URI
+        const connectionString = process.env.POSTGRES_URL_NON_POOLING
         pool = new Pool({
             connectionString,
             max: 1,

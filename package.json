@@ -6,6 +6,7 @@
         "dev": "next dev",
         "dev-vm": "VM=true next dev",
         "build": "next build",
+        "vercel-build": "knex migrate:latest && next build",
         "start": "next start",
         "prettier:write": "prettier --write .",
         "prettier:check": "prettier --check .",
