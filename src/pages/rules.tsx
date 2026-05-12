@@ -84,7 +84,8 @@ const Regler: NextPage = () => {
                 I sluttspillet tipper man på stillingen etter ordinær spilletid (90 min + overtid)
             </BodyShort>
 
-            <List className={'mb-4'} as="ul" size="small" title={'Kampverdier'}>
+            <Heading size="small" level={'3'}>Kampverdier</Heading>
+            <List className={'mb-4'} as="ul" size="small">
                 <List.Item>Åttendedelsfinaler: 2</List.Item>
                 <List.Item>Kvartfinaler: 2</List.Item>
                 <List.Item>Semifinaler: 3</List.Item>

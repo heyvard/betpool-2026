@@ -1,5 +1,4 @@
-import { createRemoteJWKSet, FlattenedJWSInput, JWSHeaderParameters, jwtVerify } from 'jose'
-import { GetKeyFunction, JWTVerifyResult, ResolvedKey } from 'jose/dist/types/types'
+import { createRemoteJWKSet, FlattenedJWSInput, GetKeyFunction, JWSHeaderParameters, JWTVerifyResult, jwtVerify, ResolvedKey } from 'jose'
 
 let _remoteJWKSet: GetKeyFunction<JWSHeaderParameters, FlattenedJWSInput>
 

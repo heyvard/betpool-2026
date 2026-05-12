@@ -28,6 +28,7 @@ const Home: NextPage = () => {
     const { data: matches, isLoading: isLoading2 } = UseMatches()
     useEffect(() => {
         if (megselv) {
+            // eslint-disable-next-line react-hooks/set-state-in-effect
             setTopscorer(megselv.topscorer)
         }
     }, [megselv, setTopscorer])
