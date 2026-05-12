@@ -25,3 +25,12 @@ jobs:
         run: pnpm test:ci
       - name: Prettier
         run: pnpm prettier:check
+
+  deploy:
+    name: Trigg Vercel-deploy
+    needs: lint-test
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Kall Vercel Deploy Hook
+        run: curl -fsS -X POST "${{ secrets.VERCEL_DEPLOY_HOOK_URL }}"
