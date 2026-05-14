@@ -1,6 +1,7 @@
 import { ApiHandlerOpts } from '../../../types/apiHandlerOpts'
 import { erIFørsteRunde } from '../../../utils/isInFirstRound'
 import { auth } from '../../../auth/authHandler'
+import { getMatches } from '../../../data/matches'
 
 const handler = async function handler(opts: ApiHandlerOpts): Promise<void> {
     const { res, req, user, jwtPayload, client } = opts
@@ -51,19 +52,13 @@ const handler = async function handler(opts: ApiHandlerOpts): Promise<void> {
             false,
             false,
             false,
-            'Ukraine',
+            '',
         ],
     )
 
-    const matchIds = (await client.query(' select id from matches')).rows
-
-    for (let i = 0; i < matchIds.length; i++) {
-        await client.query(
-            `
-          INSERT INTO bets (user_id, match_id)
-          VALUES ($1, $2) RETURNING *`,
-            [nyBruker.rows[0].id, matchIds[i].id],
-        )
+    const matchNums = getMatches().map((m) => m.match_num)
+    for (const matchNum of matchNums) {
+        await client.query(`INSERT INTO bets (user_id, match_num) VALUES ($1, $2)`, [nyBruker.rows[0].id, matchNum])
     }
 
     res.status(200).json(nyBruker.rows[0])

@@ -1,20 +1,15 @@
-export function rundeTilTekst(runde: string) {
+export function rundeTilTekst(runde: number) {
     switch (runde) {
-        case '4': {
+        case 4:
+            return 'Runde av 32'
+        case 5:
             return 'Åttendedelsfinale'
-        }
-        case '5': {
+        case 6:
             return 'Kvartfinale'
-        }
-        case '6': {
+        case 7:
             return 'Semifinale'
-        }
-        case '7': {
-            return 'Bronsefinale'
-        }
-        case '8': {
+        case 8:
             return 'Finale'
-        }
     }
     return 'Gruppespill runde ' + runde
 }

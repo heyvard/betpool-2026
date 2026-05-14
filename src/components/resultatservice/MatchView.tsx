@@ -42,7 +42,7 @@ export const MatchView = ({ match }: { match: Match }) => {
     }
 
     const { mutate, isPending } = UseMutateMatch(
-        match.id,
+        match.match_num,
         stringTilNumber(hjemmescore),
         stringTilNumber(bortescore),
         lagreCb,
@@ -110,7 +110,7 @@ export const MatchView = ({ match }: { match: Match }) => {
                 </Button>
             )}
             <div className="mt-4">
-                <NextLink href={'/match/' + match.id}>
+                <NextLink href={'/match/' + match.match_num}>
                     <Link>Se alles bets på denne kampen</Link>
                 </NextLink>
                 <BodyShort className="italic text-sm">{kampstart.locale(nb).format('dddd D MMM  HH:mm')}</BodyShort>

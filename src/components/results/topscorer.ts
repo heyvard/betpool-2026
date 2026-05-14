@@ -1,1 +1,1 @@
-export const topscorer = ['Kane']
+export const topscorer: string[] = []

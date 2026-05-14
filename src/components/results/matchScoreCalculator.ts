@@ -31,8 +31,8 @@ export function finnUtfall(home: String, away: String): Utfall {
 export function regnUtScoreForKamp(bets: MatchBet[]): Map<string, MatchPoeng> {
     const matchMap = new Map<string, MatchBet[]>()
 
-    bets.forEach((bet) => matchMap.set(bet.match_id, []))
-    bets.forEach((bet) => matchMap.get(bet.match_id)?.push(bet))
+    bets.forEach((bet) => matchMap.set(String(bet.match_num), []))
+    bets.forEach((bet) => matchMap.get(String(bet.match_num))?.push(bet))
 
     const res = [] as MatchPoeng[]
     matchMap.forEach((bets, match) => {
@@ -76,7 +76,7 @@ export function regnUtScoreForKamp(bets: MatchBet[]): Map<string, MatchPoeng> {
             let riktigeUtfall = 0
             let utfall = finnUtfall(homeResult, awayResult)
 
-            const round = Number(bets[0].round)
+            const round = bets[0].round
 
             const finnVekting = () => {
                 switch (round) {

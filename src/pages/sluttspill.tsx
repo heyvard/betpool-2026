@@ -21,9 +21,9 @@ const Home: NextPage = () => {
             </Heading>
             {matches
                 .filter((b) => dayjs(b.game_start).isAfter(dayjs()))
-                .filter((b) => Number(b.round) > 3)
+                .filter((b) => b.round > 3)
                 .map((a) => (
-                    <SluttspillView key={a.id} match={a} />
+                    <SluttspillView key={a.match_num} match={a} />
                 ))}
         </>
     )

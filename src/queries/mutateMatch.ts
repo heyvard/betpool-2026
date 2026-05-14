@@ -3,7 +3,7 @@ import { getFirebaseAuth } from '../auth/clientApp'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 
 export function UseMutateMatch(
-    id: string,
+    id: number,
     homeScore: number | null,
     awayScore: number | null,
     successCallback: () => void,

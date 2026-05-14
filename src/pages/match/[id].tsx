@@ -21,7 +21,7 @@ const Home: NextPage = () => {
         return <Spinner />
     }
 
-    const match = data.bets.find((a) => a.match_id == id)!
+    const match = data.bets.find((a) => a.match_num == Number(id))!
     const homeBets = match.matchpoeng.hjemme
     const drawBets = match.matchpoeng.uavgjort
     const awayBets = match.matchpoeng.borte
@@ -55,10 +55,10 @@ const Home: NextPage = () => {
         awayPercentage *= scale
     }
     const matchensBets = data.bets
-        .filter((a) => a.match_id == id)
+        .filter((a) => a.match_num == Number(id))
         .map((a) => ({
             ...a,
-            bet_id: a.match_id + a.user_id,
+            bet_id: String(a.match_num) + a.user_id,
             user: data.users.find((u) => u.id == a.user_id)!,
         }))
     return (

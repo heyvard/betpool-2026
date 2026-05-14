@@ -118,7 +118,7 @@ export const BetView = ({ bet, matchside }: { bet: Bet; matchside: boolean }) =>
                 </Button>
             )}
             {disabled && !matchside && (
-                <NextLink href={'/match/' + bet.match_id}>
+                <NextLink href={'/match/' + bet.match_num}>
                     <Link>Se alles bets på denne kampen</Link>
                 </NextLink>
             )}

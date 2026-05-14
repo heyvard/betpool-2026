@@ -17,7 +17,7 @@ export interface OtherUser {
 
 export interface MatchBet {
     user_id: string
-    match_id: string
+    match_num: number
     game_start: string
     away_score: string | null
     away_team: string
@@ -25,12 +25,12 @@ export interface MatchBet {
     away_result: string | null
     home_result: string | null
     home_team: string
-    round: string
+    round: number
 }
 
 export interface MatchBetMedScore {
     user_id: string
-    match_id: string
+    match_num: number
     game_start: string
     away_score: number | null
     home_score: number | null
@@ -38,7 +38,7 @@ export interface MatchBetMedScore {
     away_result: string
     home_result: string
     home_team: string
-    round: string
+    round: number
     poeng: number
     riktigUtfall: boolean
     riktigResultat: boolean

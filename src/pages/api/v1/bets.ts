@@ -1,6 +1,7 @@
 import { ApiHandlerOpts } from '../../../types/apiHandlerOpts'
 import { erIFørsteRunde } from '../../../utils/isInFirstRound'
 import { auth } from '../../../auth/authHandler'
+import { getMatches } from '../../../data/matches'
 
 const handler = async function handler(opts: ApiHandlerOpts): Promise<void> {
     const { res, user, client } = opts
@@ -9,33 +10,19 @@ const handler = async function handler(opts: ApiHandlerOpts): Promise<void> {
         return
     }
 
-    interface Bet {
+    interface BetRow {
         user_id: string
-        match_id: string
-        game_start: string
+        match_num: number
+        home_score: string | null
+        away_score: string | null
     }
 
-    async function getBets(): Promise<Bet[]> {
-        return (
-            await client.query(`
-          SELECT b.user_id,
-                 b.match_id,
-                 m.game_start,
-                 m.away_team,
-                 m.home_team,
-                 b.home_score,
-                 b.away_score,
-                 m.round,
-                 m.home_score home_result,
-                 m.away_score away_result
-          FROM bets b,
-               matches m,
-               users u
-          WHERE b.match_id = m.id
-            AND game_start < now()
-            AND u.id = b.user_id
-            AND u.active is true;`)
-        ).rows
+    interface ScoreRow {
+        match_num: number
+        home_score: number | null
+        away_score: number | null
+        home_team_override: string | null
+        away_team_override: string | null
     }
 
     interface User {
@@ -47,25 +34,55 @@ const handler = async function handler(opts: ApiHandlerOpts): Promise<void> {
         topscorer?: string
     }
 
-    async function getUsers(): Promise<User[]> {
-        return (
-            await client.query(`
-          SELECT u.id, u.name, u.paid, u.picture, u.winner, u.topscorer
-          FROM users u
-          WHERE u.active is true`)
-        ).rows
-    }
+    const [betRows, scoreRows, userRows] = await Promise.all([
+        client.query<BetRow>(`
+            SELECT b.user_id, b.match_num, b.home_score, b.away_score
+            FROM bets b
+            JOIN users u ON u.id = b.user_id
+            WHERE u.active = true`),
+        client.query<ScoreRow>(`
+            SELECT match_num, home_score, away_score, home_team_override, away_team_override
+            FROM match_scores`),
+        client.query<User>(`
+            SELECT u.id, u.name, u.paid, u.picture, u.winner, u.topscorer
+            FROM users u
+            WHERE u.active = true`),
+    ])
 
-    const alt = await Promise.all([getBets(), getUsers()])
+    const matchList = getMatches()
+    const scoreMap = new Map<number, ScoreRow>(scoreRows.rows.map((s) => [s.match_num, s]))
+    const now = new Date()
 
+    const bets = betRows.rows
+        .map((b) => {
+            const jsonMatch = matchList.find((m) => m.match_num === b.match_num)
+            if (!jsonMatch) return null
+            if (new Date(jsonMatch.game_start) >= now) return null
+            const score = scoreMap.get(b.match_num)
+            return {
+                user_id: b.user_id,
+                match_num: b.match_num,
+                game_start: jsonMatch.game_start,
+                home_team: score?.home_team_override ?? jsonMatch.home_team,
+                away_team: score?.away_team_override ?? jsonMatch.away_team,
+                round: jsonMatch.round,
+                home_score: b.home_score,
+                away_score: b.away_score,
+                home_result: score?.home_score ?? null,
+                away_result: score?.away_score ?? null,
+            }
+        })
+        .filter(Boolean)
+
+    const userList = userRows.rows
     if (erIFørsteRunde()) {
-        alt[1].forEach((a) => {
-            delete a.winner
-            delete a.topscorer
+        userList.forEach((u) => {
+            delete u.winner
+            delete u.topscorer
         })
     }
 
-    res.json({ bets: alt[0], users: alt[1] })
+    res.json({ bets, users: userList })
 }
 
 export default auth(handler)

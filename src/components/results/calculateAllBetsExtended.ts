@@ -28,18 +28,18 @@ export function calculateAllBetsExtended(allBets: AllBets): AllBetsExtended {
                     poeng: 0,
                     riktigResultat: false,
                     riktigUtfall: false,
-                    matchpoeng: scoreForKamp.get(b.match_id)!,
+                    matchpoeng: scoreForKamp.get(String(b.match_num))!,
                 }
             } else {
                 const utfall = finnUtfall(b.home_score, b.away_score)
                 const riktigResultat = b.home_result == b.home_score && b.away_result == b.away_score
                 let poeng = 0
-                let riktigUtfall = utfall == scoreForKamp.get(b.match_id)!.utfall
+                let riktigUtfall = utfall == scoreForKamp.get(String(b.match_num))!.utfall
                 if (riktigUtfall) {
-                    poeng = poeng + scoreForKamp.get(b.match_id)!.riktigUtfall
+                    poeng = poeng + scoreForKamp.get(String(b.match_num))!.riktigUtfall
                 }
                 if (riktigResultat) {
-                    poeng = poeng + scoreForKamp.get(b.match_id)!.riktigResultat
+                    poeng = poeng + scoreForKamp.get(String(b.match_num))!.riktigResultat
                 }
                 return {
                     ...b,
@@ -48,7 +48,7 @@ export function calculateAllBetsExtended(allBets: AllBets): AllBetsExtended {
                     poeng: poeng,
                     riktigResultat: riktigResultat,
                     riktigUtfall: riktigUtfall,
-                    matchpoeng: scoreForKamp.get(b.match_id)!,
+                    matchpoeng: scoreForKamp.get(String(b.match_num))!,
                 }
             }
         })

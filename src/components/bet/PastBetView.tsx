@@ -33,7 +33,7 @@ export const PastBetView = ({ bet, matchside, navn }: { bet: MatchBetMedScore; m
             </div>
             <BodyShort className="my-4">{bet.poeng} poeng</BodyShort>
             {!matchside && (
-                <NextLink href={'/match/' + bet.match_id}>
+                <NextLink href={'/match/' + bet.match_num}>
                     <Link>Se alles bets på denne kampen</Link>
                 </NextLink>
             )}

@@ -1,1 +1,1 @@
-export const winner = 'Spain'
+export const winner = ''

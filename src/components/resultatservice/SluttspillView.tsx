@@ -30,7 +30,7 @@ export const SluttspillView = ({ match }: { match: Match }) => {
         return (
             <SelectField
                 disabled={lagrer}
-                id={match.id + lag}
+                id={String(match.match_num) + lag}
                 label={lag === 'home_team' ? 'Hjemmelag' : 'Bortelag'}
                 value={value()}
                 onChange={async (e) => {
@@ -40,7 +40,7 @@ export const SluttspillView = ({ match }: { match: Match }) => {
                         const idtoken = await user?.getIdToken()
                         const val = {} as Record<string, string>
                         val[lag] = team
-                        const response = await fetch(`/api/v1/matches/${match.id}`, {
+                        const response = await fetch(`/api/v1/matches/${match.match_num}`, {
                             method: 'PUT',
                             body: JSON.stringify(val),
                             headers: { Authorization: `Bearer ${idtoken}` },

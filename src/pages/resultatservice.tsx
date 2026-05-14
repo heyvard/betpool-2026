@@ -22,7 +22,7 @@ const Home: NextPage = () => {
                 .filter((b) => dayjs(b.game_start).isBefore(dayjs()))
                 .sort((a, b) => dayjs(b.game_start).diff(dayjs(a.game_start)))
                 .map((a) => (
-                    <MatchView key={a.id} match={a} />
+                    <MatchView key={a.match_num} match={a} />
                 ))}
         </>
     )

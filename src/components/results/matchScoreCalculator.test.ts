@@ -11,17 +11,17 @@ describe('Tester match score calculator', () => {
     it('Gruppespill kamp 10 spillere 1 helt rett', () => {
         const res = regnUtScoreForKamp(
             skapMatchBetArray({
-                runde: '1',
+                runde: 1,
                 antallHeltRiktig: 1,
                 antallRiktigUtfall: 0,
                 antallFeil: 8,
             }),
         )
         expect(res.size).toEqual(1)
-        expect(res.get('match_id_1')).toEqual({
+        expect(res.get('1')).toEqual({
             antallRiktigeSvar: 1,
             antallRiktigeUtfall: 1,
-            matchid: 'match_id_1',
+            matchid: '1',
             riktigResultat: 3,
             riktigUtfall: 2,
             utfall: 'B',
@@ -33,20 +33,20 @@ describe('Tester match score calculator', () => {
         })
     })
 
-    it('Finale kamp 10 spillere 1 helt rett', () => {
+    it('Semifinale kamp 10 spillere 1 helt rett', () => {
         const res = regnUtScoreForKamp(
             skapMatchBetArray({
-                runde: '7',
+                runde: 7,
                 antallHeltRiktig: 1,
                 antallRiktigUtfall: 0,
                 antallFeil: 8,
             }),
         )
         expect(res.size).toEqual(1)
-        expect(res.get('match_id_1')).toEqual({
+        expect(res.get('1')).toEqual({
             antallRiktigeSvar: 1,
             antallRiktigeUtfall: 1,
-            matchid: 'match_id_1',
+            matchid: '1',
             riktigResultat: 9,
             riktigUtfall: 6,
             utfall: 'B',

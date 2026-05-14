@@ -1,7 +1,7 @@
 import { MatchBet } from '../../queries/useAllBets'
 
 export function skapMatchBetArray(opts: {
-    runde: string
+    runde: number
     antallHeltRiktig: number
     antallRiktigUtfall: number
     antallFeil: number
@@ -9,7 +9,7 @@ export function skapMatchBetArray(opts: {
     const bets: MatchBet[] = []
     let user_id = 0
     const match = {
-        match_id: 'match_id_1',
+        match_num: 1,
         home_result: '1',
         away_result: '2',
         round: opts.runde,

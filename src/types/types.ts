@@ -11,9 +11,9 @@ export interface Bet {
     home_team: string
     home_score: number | null
     away_score: number | null
-    match_id: string
+    match_num: number
     bet_id: string
-    round: string
+    round: number
 }
 
 export interface Chat {
@@ -31,8 +31,9 @@ export interface Match {
     home_team: string
     home_score: number | null
     away_score: number | null
-    id: string
-    round: string
+    match_num: number
+    round: number
+    group?: string
 }
 
 export interface UserForAdmin {
