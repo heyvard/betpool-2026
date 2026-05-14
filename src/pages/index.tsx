@@ -13,6 +13,7 @@ import { Save } from 'lucide-react'
 import { useQueryClient } from '@tanstack/react-query'
 import nb from 'dayjs/locale/nb'
 import { erEtterFørsteRunde, førsteRunde } from '../utils/isInFirstRound'
+import { nå } from '../utils/testClock'
 import { LoadingScreen } from '../components/loading/LoadingScreen'
 import { Alert } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
@@ -43,10 +44,10 @@ const Home: NextPage = () => {
     }
 
     const kamper = matches.filter((a) => {
-        return dayjs(a.game_start).isAfter(dayjs().subtract(2, 'hours')) && dayjs(a.game_start).isBefore(dayjs())
+        return dayjs(a.game_start).isAfter(nå().subtract(2, 'hours')) && dayjs(a.game_start).isBefore(nå())
     })
     const snartKamper = matches.filter((a) => {
-        return dayjs(a.game_start).isAfter(dayjs()) && dayjs(a.game_start).isBefore(dayjs().add(2, 'hours'))
+        return dayjs(a.game_start).isAfter(nå()) && dayjs(a.game_start).isBefore(nå().add(2, 'hours'))
     })
     return (
         <div className="space-y-4">

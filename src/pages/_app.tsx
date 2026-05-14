@@ -10,6 +10,7 @@ import { useSession } from '../auth/useSession'
 import { clearTestUser } from '../auth/testUserCookie'
 import { erTestAuth } from '../utils/erTestAuth'
 import { TestUserSwitcher } from '../components/dev/TestUserSwitcher'
+import { TestClock } from '../components/dev/TestClock'
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu'
 import { Banknote, House, ListOrdered, Menu, Pilcrow } from 'lucide-react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
@@ -34,6 +35,7 @@ function Layout({ children }: { children: React.ReactNode }) {
     return (
         <>
             {erTestAuth() && <TestUserSwitcher />}
+            {erTestAuth() && <TestClock />}
             <div className="px-2 pt-4 pb-16 mx-auto max-w-full sm:max-w-lg md:max-w-2xl">
                 {error && <p className="text-red-500 text-sm">Error useAuthState: {JSON.stringify(error)}</p>}
                 {loading && <LoadingScreen />}

@@ -5,6 +5,7 @@ import dayjs from 'dayjs'
 import { UseMatches } from '../queries/useMatches'
 import { MatchView } from '../components/resultatservice/MatchView'
 import React from 'react'
+import { nå } from '../utils/testClock'
 import { Heading } from '@/components/ui/typography'
 
 const Home: NextPage = () => {
@@ -19,7 +20,7 @@ const Home: NextPage = () => {
                 Rediger resultater
             </Heading>
             {matches
-                .filter((b) => dayjs(b.game_start).isBefore(dayjs()))
+                .filter((b) => dayjs(b.game_start).isBefore(nå()))
                 .sort((a, b) => dayjs(b.game_start).diff(dayjs(a.game_start)))
                 .map((a) => (
                     <MatchView key={a.match_num} match={a} />

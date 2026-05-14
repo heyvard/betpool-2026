@@ -5,6 +5,7 @@ import { UseMutateBet } from '../../queries/mutateBet'
 import { hentFlag, hentNorsk } from '../../utils/lag'
 import NextLink from 'next/link'
 import { rundeTilTekst } from '../../utils/rundeTilTekst'
+import { nå } from '../../utils/testClock'
 import { Save } from 'lucide-react'
 import nb from 'dayjs/locale/nb'
 import { BpCard } from '../Card'
@@ -48,7 +49,7 @@ export const BetView = ({ bet, matchside }: { bet: Bet; matchside: boolean }) =>
         lagreCb,
     )
 
-    const disabled = kampstart.isBefore(dayjs())
+    const disabled = kampstart.isBefore(nå())
     const lagreknappSynlig = (hjemmescore !== hjemmescoreProp || bortescore !== bortescoreProp) && !nyligLagret
     const selectAllFocus = (e: React.FocusEvent<HTMLInputElement>) => {
         e.target.select()

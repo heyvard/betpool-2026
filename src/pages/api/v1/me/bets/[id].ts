@@ -1,4 +1,5 @@
 import { ApiHandlerOpts } from '../../../../../types/apiHandlerOpts'
+import { serverNå } from '../../../../../utils/testClock'
 import { auth } from '../../../../../auth/authHandler'
 import { getMatchByNum } from '../../../../../data/matches'
 
@@ -23,7 +24,7 @@ const handler = async function handler(opts: ApiHandlerOpts): Promise<void> {
         res.status(404).json({ error: 'match not found' })
         return
     }
-    if (new Date(match.game_start) <= new Date()) {
+    if (new Date(match.game_start) <= serverNå(req)) {
         res.status(403).json({ error: 'game has started' })
         return
     }

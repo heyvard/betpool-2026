@@ -8,7 +8,7 @@ const handler = async function handler(opts: ApiHandlerOpts): Promise<void> {
         if (req.method == 'PUT') {
             const reqBody = JSON.parse(req.body)
 
-            const kanBette = erIFørsteRunde()
+            const kanBette = erIFørsteRunde(req)
             if (reqBody.winner && kanBette) {
                 await client.query(
                     `

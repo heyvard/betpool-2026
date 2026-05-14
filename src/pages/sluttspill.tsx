@@ -5,6 +5,7 @@ import dayjs from 'dayjs'
 import { UseMatches } from '../queries/useMatches'
 import React from 'react'
 import { SluttspillView } from '../components/resultatservice/SluttspillView'
+import { nå } from '../utils/testClock'
 import { Heading } from '@/components/ui/typography'
 
 const Home: NextPage = () => {
@@ -20,7 +21,7 @@ const Home: NextPage = () => {
                 Rediger sluttspill
             </Heading>
             {matches
-                .filter((b) => dayjs(b.game_start).isAfter(dayjs()))
+                .filter((b) => dayjs(b.game_start).isAfter(nå()))
                 .filter((b) => b.round > 3)
                 .map((a) => (
                     <SluttspillView key={a.match_num} match={a} />

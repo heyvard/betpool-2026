@@ -7,6 +7,7 @@ import dayjs from 'dayjs'
 import NextLink from 'next/link'
 import React from 'react'
 import { UseUser } from '../queries/useUser'
+import { nå } from '../utils/testClock'
 import { LinkPanel } from '@/components/ui/link-panel'
 
 const Home: NextPage = () => {
@@ -26,7 +27,7 @@ const Home: NextPage = () => {
             </div>
 
             {myBets
-                .filter((b) => dayjs(b.game_start).isAfter(dayjs()))
+                .filter((b) => dayjs(b.game_start).isAfter(nå()))
                 .map((a) => (
                     <BetView key={a.match_num} bet={a} matchside={false} />
                 ))}
