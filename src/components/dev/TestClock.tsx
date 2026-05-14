@@ -1,12 +1,15 @@
 import React, { useEffect, useState } from 'react'
 import dayjs from 'dayjs'
+import { useQueryClient } from '@tanstack/react-query'
 
 import { setKlokke, nullstillKlokke } from '../../utils/testClock'
 import { getMatches } from '../../data/matches'
 
 // Dev-only klokkekontroll. Rendres kun når NEXT_PUBLIC_TEST_AUTH=true.
-// Overstyrer «nå» i hele testappen via «betpool_test_clock»-cookien og
-// laster siden på nytt, slik at React Query henter på nytt.
+// Overstyrer «nå» i hele testappen via «betpool_test_clock»-cookien.
+// Etter endring invalideres ALLE React Query-queries, så hver hook henter
+// på nytt — de nye requestene bærer den oppdaterte cookien, og komponentene
+// re-rendres slik at klient-side `nå()` også leses på nytt.
 
 function lesKlokkeCookie(): string | undefined {
     if (typeof document === 'undefined') return undefined
@@ -28,6 +31,7 @@ function førTurneringen(): string {
 }
 
 export function TestClock() {
+    const queryClient = useQueryClient()
     const [open, setOpen] = useState(false)
     const [current, setCurrent] = useState<string | undefined>(undefined)
 
@@ -38,12 +42,14 @@ export function TestClock() {
 
     function sett(iso: string) {
         setKlokke(iso)
-        window.location.reload()
+        setCurrent(iso)
+        queryClient.invalidateQueries()
     }
 
     function nullstill() {
         nullstillKlokke()
-        window.location.reload()
+        setCurrent(undefined)
+        queryClient.invalidateQueries()
     }
 
     const label = current ? dayjs(current).format('DD.MM HH:mm') : 'ekte tid'
@@ -80,7 +86,8 @@ export function TestClock() {
                             type="datetime-local"
                             defaultValue={current ? dayjs(current).format('YYYY-MM-DDTHH:mm') : ''}
                             onChange={(e) => {
-                                if (e.target.value) sett(dayjs(e.target.value).toISOString())
+                                const valgt = dayjs(e.target.value)
+                                if (e.target.value && valgt.isValid()) sett(valgt.toISOString())
                             }}
                             className="mt-1 w-full rounded border border-zinc-300 px-2 py-1"
                         />
