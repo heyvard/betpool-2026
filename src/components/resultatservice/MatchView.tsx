@@ -57,9 +57,9 @@ export const MatchView = ({ match }: { match: Match }) => {
             <BodyShort spacing>{rundeTilTekst(match.round)}</BodyShort>
 
             <div className="flex items-end mb-1">
-                <BodyShort className="w-36 font-bold text-xl">{fixLand(match.home_team)}</BodyShort>
+                <BodyShort className="flex-1 font-bold text-xl">{fixLand(match.home_team)}</BodyShort>
                 <TextField
-                    className="w-12"
+                    className="w-12 ml-2 shrink-0"
                     type="text"
                     error={lagreknappSynlig}
                     size="small"
@@ -81,9 +81,9 @@ export const MatchView = ({ match }: { match: Match }) => {
                 />
             </div>
             <div className="flex items-end">
-                <BodyShort className="w-36 font-bold text-xl">{fixLand(match.away_team)}</BodyShort>
+                <BodyShort className="flex-1 font-bold text-xl">{fixLand(match.away_team)}</BodyShort>
                 <TextField
-                    className="w-12"
+                    className="w-12 ml-2 shrink-0"
                     type="text"
                     size="small"
                     inputMode="numeric"
