@@ -58,7 +58,6 @@ const Home: NextPage = () => {
         .filter((a) => a.match_num == Number(id))
         .map((a) => ({
             ...a,
-            bet_id: String(a.match_num) + a.user_id,
             user: data.users.find((u) => u.id == a.user_id)!,
         }))
     return (
@@ -103,14 +102,14 @@ const Home: NextPage = () => {
             {matchensBets
                 .filter((a) => a.user.id == me.id)
                 .map((a) => (
-                    <PastBetView key={a.bet_id} bet={a} matchside={true} navn={a.user.name} />
+                    <PastBetView key={a.match_num + a.user_id} bet={a} matchside={true} navn={a.user.name} />
                 ))}
             {matchensBets
                 .filter((a) => a.user.id != me.id)
                 .sort((b, a) => b.user.name.localeCompare(a.user.name))
                 .sort((b, a) => a.poeng - b.poeng)
                 .map((a) => (
-                    <PastBetView key={a.bet_id} bet={a} matchside={true} navn={a.user.name} />
+                    <PastBetView key={a.match_num + a.user_id} bet={a} matchside={true} navn={a.user.name} />
                 ))}
         </>
     )

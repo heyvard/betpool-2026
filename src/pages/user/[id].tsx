@@ -49,11 +49,10 @@ const Home: NextPage = () => {
                 .sort((b, a) => dayjs(a.game_start).unix() - dayjs(b.game_start).unix())
                 .map((a) => ({
                     ...a,
-                    bet_id: String(a.match_num) + a.user_id,
                     user: data.users.find((u) => u.id == a.user_id)!,
                 }))
                 .map((a) => (
-                    <PastBetView key={a.bet_id} bet={a} matchside={false} navn={user.name} />
+                    <PastBetView key={a.match_num + a.user_id} bet={a} matchside={false} navn={user.name} />
                 ))}
         </>
     )

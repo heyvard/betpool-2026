@@ -10,33 +10,31 @@ const handler = async function handler(opts: ApiHandlerOpts): Promise<void> {
         return
     }
 
-    const { id } = req.query
-    const reqBody = JSON.parse(req.body)
-
-    const betRow = (
-        await client.query<{ match_num: number }>(`SELECT match_num FROM bets WHERE id = $1 AND user_id = $2`, [
-            id,
-            user.id,
-        ])
-    ).rows[0]
-
-    if (!betRow) {
-        res.status(404).json({ error: 'bet not found' })
+    const matchNum = Number(req.query.id)
+    if (!Number.isInteger(matchNum) || matchNum < 1) {
+        res.status(400).json({ error: 'invalid match_num' })
         return
     }
 
-    const match = getMatchByNum(betRow.match_num)
-    if (!match || new Date(match.game_start) <= new Date()) {
+    const reqBody = JSON.parse(req.body)
+
+    const match = getMatchByNum(matchNum)
+    if (!match) {
+        res.status(404).json({ error: 'match not found' })
+        return
+    }
+    if (new Date(match.game_start) <= new Date()) {
         res.status(403).json({ error: 'game has started' })
         return
     }
 
-    await client.query(`UPDATE bets SET home_score = $1, away_score = $2 WHERE user_id = $3 AND id = $4`, [
-        reqBody.home_score,
-        reqBody.away_score,
-        user.id,
-        id,
-    ])
+    await client.query(
+        `INSERT INTO bets (user_id, match_num, home_score, away_score)
+         VALUES ($1, $2, $3, $4)
+         ON CONFLICT (user_id, match_num)
+         DO UPDATE SET home_score = $3, away_score = $4`,
+        [user.id, matchNum, reqBody.home_score, reqBody.away_score],
+    )
     res.status(200).json({ ok: 123 })
 }
 

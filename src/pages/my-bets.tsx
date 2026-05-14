@@ -28,7 +28,7 @@ const Home: NextPage = () => {
             {myBets
                 .filter((b) => dayjs(b.game_start).isAfter(dayjs()))
                 .map((a) => (
-                    <BetView key={a.bet_id} bet={a} matchside={false} />
+                    <BetView key={a.match_num} bet={a} matchside={false} />
                 ))}
         </>
     )

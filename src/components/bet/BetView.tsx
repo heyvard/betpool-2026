@@ -42,7 +42,7 @@ export const BetView = ({ bet, matchside }: { bet: Bet; matchside: boolean }) =>
     }
 
     const { mutate, isPending } = UseMutateBet(
-        bet.bet_id,
+        bet.match_num,
         stringTilNumber(hjemmescore),
         stringTilNumber(bortescore),
         lagreCb,

@@ -52,8 +52,8 @@ const Home: NextPage = () => {
     return (
         <div className="space-y-4">
             {kamper.map((k) => (
-                <div key={k.id}>
-                    <NextLink passHref legacyBehavior href={'/match/' + k.id}>
+                <div key={k.match_num}>
+                    <NextLink passHref legacyBehavior href={'/match/' + k.match_num}>
                         <LinkPanel>
                             Nå pågår {fixLand(k.home_team)} vs {fixLand(k.away_team)}
                         </LinkPanel>
@@ -61,7 +61,7 @@ const Home: NextPage = () => {
                 </div>
             ))}
             {snartKamper.map((k) => (
-                <div key={k.id}>
+                <div key={k.match_num}>
                     <NextLink passHref legacyBehavior href={'/my-bets/'}>
                         <LinkPanel>
                             {fixLand(k.home_team)} vs {fixLand(k.away_team)} starter kl{' '}

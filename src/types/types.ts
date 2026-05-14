@@ -12,7 +12,6 @@ export interface Bet {
     home_score: number | null
     away_score: number | null
     match_num: number
-    bet_id: string
     round: number
 }
 
