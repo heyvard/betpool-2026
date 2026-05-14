@@ -22,8 +22,7 @@ const handler = async function handler(opts: ApiHandlerOpts): Promise<void> {
              FROM bets b
              JOIN users u ON u.id = b.user_id
              WHERE b.user_id = $1
-               AND u.active = true
-               AND b.match_num IS NOT NULL`,
+               AND u.active = true`,
             [user.id],
         )
     ).rows
