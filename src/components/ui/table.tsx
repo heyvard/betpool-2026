@@ -1,6 +1,14 @@
 import { cn } from '@/lib/utils'
 
-export function Table({ className, children, size }: { className?: string; children: React.ReactNode; size?: 'small' | 'default' }) {
+export function Table({
+    className,
+    children,
+    size,
+}: {
+    className?: string
+    children: React.ReactNode
+    size?: 'small' | 'default'
+}) {
     return (
         <div className="w-full overflow-auto">
             <table className={cn('w-full caption-bottom', size === 'small' ? 'text-xs' : 'text-sm', className)}>

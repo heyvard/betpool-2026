@@ -33,11 +33,7 @@ export interface ButtonProps
 
 export function Button({ className, variant, size, loading, icon, children, disabled, ...props }: ButtonProps) {
     return (
-        <button
-            className={cn(buttonVariants({ variant, size }), className)}
-            disabled={disabled || loading}
-            {...props}
-        >
+        <button className={cn(buttonVariants({ variant, size }), className)} disabled={disabled || loading} {...props}>
             {loading ? (
                 <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
             ) : (

@@ -68,7 +68,9 @@ const Regler: NextPage = () => {
             <Heading size="small" level="1">
                 Tidsfrister
             </Heading>
-            <BodyShort spacing>Du kan bette helt frem til kampstart. Bets sendt inn etter kampstart blir ikke lagret.</BodyShort>
+            <BodyShort spacing>
+                Du kan bette helt frem til kampstart. Bets sendt inn etter kampstart blir ikke lagret.
+            </BodyShort>
 
             <Heading size="small" level="2">
                 Poeng i gruppespillet
