@@ -7,9 +7,9 @@ import { UseAllBets } from '../../queries/useAllBets'
 import React from 'react'
 import { PastBetView } from '../../components/bet/PastBetView'
 import { rundeTilTekst } from '../../utils/rundeTilTekst'
-import { BodyShort, Heading } from '@navikt/ds-react'
 import { hentFlag } from '../../utils/lag'
 import { UseUser } from '../../queries/useUser'
+import { BodyShort, Heading } from '@/components/ui/typography'
 
 const Home: NextPage = () => {
     const { data, isLoading } = UseAllBets()
@@ -63,14 +63,14 @@ const Home: NextPage = () => {
         }))
     return (
         <>
-            <Heading level={'1'} size={'large'} align={'center'}>
+            <Heading level="1" size="large" align="center">
                 {fixLand(match.home_team)} vs {fixLand(match.away_team)}
             </Heading>
-            <BodyShort align={'center'}>{rundeTilTekst(match.round)}</BodyShort>{' '}
-            <BodyShort align={'center'}>
+            <BodyShort align="center">{rundeTilTekst(match.round)}</BodyShort>
+            <BodyShort align="center">
                 {match.home_result} - {match.away_result}
             </BodyShort>
-            <div className={'mb-4'}>
+            <div className="mb-4">
                 <div className="relative w-full h-5 rounded-lg mb-4">
                     <div
                         className="absolute h-5 rounded-l-lg bg-orange-200 flex items-center justify-center"
@@ -95,11 +95,10 @@ const Home: NextPage = () => {
                     {`${match.matchpoeng.antallRiktigeSvar} stk (${Math.floor(match.matchpoeng.andelRiktigeResultat * 100)} %) har riktig resultat`}
                 </BodyShort>
                 <BodyShort spacing>
-                    {`${match.matchpoeng.antallRiktigeUtfall} stk (${Math.floor(match.matchpoeng.andelRiktigeUtfall * 100)} %) har riktig utfall`}{' '}
+                    {`${match.matchpoeng.antallRiktigeUtfall} stk (${Math.floor(match.matchpoeng.andelRiktigeUtfall * 100)} %) har riktig utfall`}
                 </BodyShort>
-                <BodyShort>{`${match.matchpoeng.riktigResultat} poeng for riktig resultat`} </BodyShort>
-
-                <BodyShort>{`${match.matchpoeng.riktigUtfall} poeng for riktig utfall`} </BodyShort>
+                <BodyShort>{`${match.matchpoeng.riktigResultat} poeng for riktig resultat`}</BodyShort>
+                <BodyShort>{`${match.matchpoeng.riktigUtfall} poeng for riktig utfall`}</BodyShort>
             </div>
             {matchensBets
                 .filter((a) => a.user.id == me.id)

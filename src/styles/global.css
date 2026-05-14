@@ -1,11 +1,9 @@
-@import 'tailwindcss/components';
-@import 'tailwindcss/base';
-@import '@navikt/ds-css';
-@import 'tailwindcss/utilities';
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 @layer base {
     ul {
-        @apply list-disc;
-        @apply list-inside;
+        @apply list-disc list-inside;
     }
 }

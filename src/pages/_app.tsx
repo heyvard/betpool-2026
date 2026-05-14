@@ -7,94 +7,92 @@ import Head from 'next/head'
 
 import '../styles/global.css'
 import { getFirebaseAuth } from '../auth/clientApp'
-import { Dropdown, ErrorMessage, InternalHeader } from '@navikt/ds-react'
-import { BankNoteIcon, HouseIcon, MenuHamburgerIcon, NumberListIcon, ParagraphIcon } from '@navikt/aksel-icons'
+import * as DropdownMenu from '@radix-ui/react-dropdown-menu'
+import { Banknote, House, ListOrdered, Menu, Pilcrow } from 'lucide-react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { SignInScreen } from '../components/SignIn'
 import { LoadingScreen } from '../components/loading/LoadingScreen'
+import { cn } from '@/lib/utils'
 
 function Layout({ children }: { children: React.ReactNode }) {
     const [user, loading, error] = useAuthState(getFirebaseAuth())
-    const router = useRouter()
     const { data: me } = UseUser()
+    const router = useRouter()
 
     return (
         <>
             <div className="px-2 pt-4 pb-16 mx-auto max-w-full sm:max-w-lg md:max-w-2xl">
-                {error && <ErrorMessage>Error useAuthState: {JSON.stringify(error)}</ErrorMessage>}
+                {error && <p className="text-red-500 text-sm">Error useAuthState: {JSON.stringify(error)}</p>}
                 {loading && <LoadingScreen />}
                 {!loading && !user && <SignInScreen />}
                 {user && <>{children}</>}
             </div>
-            <InternalHeader className="fixed bottom-0 left-0 z-50 w-full h-16 flex ">
-                <FooterKnapp url={'/'} text={''} icon={HouseIcon} />
-                <FooterKnapp text={'Kamper'} url={'/my-bets'} icon={BankNoteIcon} />
-                <FooterKnapp text={'Resultater'} url={'/leaderboard'} icon={NumberListIcon} />
-                <FooterKnapp text={'Regler'} url={'/rules'} icon={ParagraphIcon} />
-                <Dropdown>
-                    <InternalHeader.Button
-                        as={me ? Dropdown.Toggle : 'button'}
-                        name="Velg en underside"
-                        className="flex-col items-center w-full justify-center"
-                    >
-                        <MenuHamburgerIcon className="w-8 h-8" />
-                    </InternalHeader.Button>
 
-                    <Dropdown.Menu>
-                        <Dropdown.Menu.List>
-                            <Dropdown.Menu.List.Item
-                                onClick={() => {
-                                    router.push('/')
-                                }}
+            <nav className="fixed bottom-0 left-0 z-50 w-full h-16 flex bg-zinc-800 text-white shadow-lg">
+                <NavKnapp url="/" icon={<House className="w-6 h-6" />} />
+                <NavKnapp url="/my-bets" text="Kamper" icon={<Banknote className="w-6 h-6" />} />
+                <NavKnapp url="/leaderboard" text="Resultater" icon={<ListOrdered className="w-6 h-6" />} />
+                <NavKnapp url="/rules" text="Regler" icon={<Pilcrow className="w-6 h-6" />} />
+
+                <DropdownMenu.Root>
+                    <DropdownMenu.Trigger asChild>
+                        <button className="flex flex-col items-center justify-center w-full hover:bg-zinc-700 transition-colors">
+                            <Menu className="w-6 h-6" />
+                        </button>
+                    </DropdownMenu.Trigger>
+                    <DropdownMenu.Portal>
+                        <DropdownMenu.Content
+                            side="top"
+                            align="end"
+                            className="z-50 mb-2 mr-2 min-w-44 rounded-xl bg-white shadow-xl border border-zinc-200 py-1 text-sm"
+                        >
+                            <DropdownMenu.Item
+                                className="px-4 py-2 cursor-pointer hover:bg-zinc-50 outline-none font-medium"
+                                onSelect={() => router.push('/')}
                             >
                                 {user?.displayName}
-                            </Dropdown.Menu.List.Item>
-                            <Dropdown.Menu.List.Item
-                                onClick={() => {
-                                    router.push('/rules')
-                                }}
+                            </DropdownMenu.Item>
+                            <DropdownMenu.Item
+                                className="px-4 py-2 cursor-pointer hover:bg-zinc-50 outline-none"
+                                onSelect={() => router.push('/rules')}
                             >
                                 Regler
-                            </Dropdown.Menu.List.Item>
+                            </DropdownMenu.Item>
                             {me?.scoreadmin && (
                                 <>
-                                    <Dropdown.Menu.List.Item
-                                        onClick={() => {
-                                            router.push('/sluttspill')
-                                        }}
+                                    <DropdownMenu.Item
+                                        className="px-4 py-2 cursor-pointer hover:bg-zinc-50 outline-none"
+                                        onSelect={() => router.push('/sluttspill')}
                                     >
                                         Rediger sluttspill
-                                    </Dropdown.Menu.List.Item>
-                                    <Dropdown.Menu.List.Item
-                                        onClick={() => {
-                                            router.push('/resultatservice')
-                                        }}
+                                    </DropdownMenu.Item>
+                                    <DropdownMenu.Item
+                                        className="px-4 py-2 cursor-pointer hover:bg-zinc-50 outline-none"
+                                        onSelect={() => router.push('/resultatservice')}
                                     >
                                         Rediger resultater
-                                    </Dropdown.Menu.List.Item>
+                                    </DropdownMenu.Item>
                                 </>
                             )}
                             {(me?.superadmin || me?.paymentadmin) && (
-                                <Dropdown.Menu.List.Item
-                                    onClick={() => {
-                                        router.push('/brukere')
-                                    }}
+                                <DropdownMenu.Item
+                                    className="px-4 py-2 cursor-pointer hover:bg-zinc-50 outline-none"
+                                    onSelect={() => router.push('/brukere')}
                                 >
                                     Brukere
-                                </Dropdown.Menu.List.Item>
+                                </DropdownMenu.Item>
                             )}
-
-                            <Dropdown.Menu.List.Item
-                                onClick={async () => {
-                                    await getFirebaseAuth().signOut()
-                                }}
+                            <DropdownMenu.Separator className="my-1 h-px bg-zinc-200" />
+                            <DropdownMenu.Item
+                                className="px-4 py-2 cursor-pointer hover:bg-zinc-50 outline-none text-red-600"
+                                onSelect={() => getFirebaseAuth().signOut()}
                             >
                                 Logout
-                            </Dropdown.Menu.List.Item>
-                        </Dropdown.Menu.List>
-                    </Dropdown.Menu>
-                </Dropdown>
-            </InternalHeader>
+                            </DropdownMenu.Item>
+                        </DropdownMenu.Content>
+                    </DropdownMenu.Portal>
+                </DropdownMenu.Root>
+            </nav>
         </>
     )
 }
@@ -105,8 +103,6 @@ function MyApp({ Component, pageProps }: AppProps) {
             new QueryClient({
                 defaultOptions: {
                     queries: {
-                        /* Setting this to true causes the request to be immediately executed after initial
-                           mount Even if the query had data hydrated from the server side render */
                         refetchOnMount: false,
                         refetchOnWindowFocus: false,
                     },
@@ -132,28 +128,22 @@ function MyApp({ Component, pageProps }: AppProps) {
     )
 }
 
-const FooterKnapp: FC<{
-    icon: React.ForwardRefExoticComponent<React.SVGProps<SVGSVGElement> & React.RefAttributes<SVGSVGElement>>
-    text?: string
-    url: string
-    borderRight?: boolean
-}> = ({ icon: Icon, text, url, borderRight }) => {
+const NavKnapp: FC<{ icon: React.ReactNode; text?: string; url: string }> = ({ icon, text, url }) => {
     const router = useRouter()
     const isActive = router.pathname === url
-    const { data: me } = UseUser()
     return (
-        <InternalHeader.Button
-            className={`flex flex-col items-center w-full ${!text ? 'justify-center' : 'p-2'} ${
-                borderRight ? 'border-r' : ''
-            } ${isActive && me ? 'bg-gray-600 text-white' : ''}`}
+        <button
             type="button"
-            onClick={() => {
-                router.push(url)
-            }}
+            onClick={() => router.push(url)}
+            className={cn(
+                'flex flex-col items-center justify-center w-full gap-0.5 transition-colors',
+                isActive ? 'bg-zinc-600 text-white' : 'hover:bg-zinc-700',
+            )}
         >
-            <Icon className="w-8 h-8" />
-            <span className="text-sm">{text}</span>
-        </InternalHeader.Button>
+            {icon}
+            {text && <span className="text-xs">{text}</span>}
+        </button>
     )
 }
+
 export default MyApp

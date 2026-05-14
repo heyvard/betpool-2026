@@ -5,10 +5,12 @@ import { hentFlag, hentNorsk } from '../../utils/lag'
 import NextLink from 'next/link'
 import { UseMutateMatch } from '../../queries/mutateMatch'
 import { rundeTilTekst } from '../../utils/rundeTilTekst'
-import { BodyShort, Button, Link, TextField } from '@navikt/ds-react'
-import { FloppydiskIcon } from '@navikt/aksel-icons'
+import { Save } from 'lucide-react'
 import { BpCard } from '../Card'
 import nb from 'dayjs/locale/nb'
+import { Button } from '@/components/ui/button'
+import { TextField } from '@/components/ui/text-field'
+import { BodyShort, Link } from '@/components/ui/typography'
 
 export const MatchView = ({ match }: { match: Match }) => {
     const numberPropTilString = (prop: number | null) => {
@@ -47,24 +49,23 @@ export const MatchView = ({ match }: { match: Match }) => {
     )
 
     const lagreknappSynlig = (hjemmescore !== hjemmescoreProp || bortescore !== bortescoreProp) && !nyligLagret
-    const selectAllFocus = (e: any) => {
+    const selectAllFocus = (e: React.FocusEvent<HTMLInputElement>) => {
         e.target.select()
     }
     return (
         <BpCard>
             <BodyShort spacing>{rundeTilTekst(match.round)}</BodyShort>
 
-            <div className={'flex items-end mb-1'}>
-                <BodyShort className={'w-36 font-bold text-xl'}> {fixLand(match.home_team)}</BodyShort>
-
+            <div className="flex items-end mb-1">
+                <BodyShort className="w-36 font-bold text-xl">{fixLand(match.home_team)}</BodyShort>
                 <TextField
-                    className={'w-12'}
+                    className="w-12"
                     type="text"
                     error={lagreknappSynlig}
-                    size={'small'}
-                    hideLabel={true}
+                    size="small"
+                    hideLabel
                     label={match.home_team}
-                    inputMode={'numeric'}
+                    inputMode="numeric"
                     value={hjemmescore}
                     onFocus={selectAllFocus}
                     onChange={(e) => {
@@ -79,17 +80,16 @@ export const MatchView = ({ match }: { match: Match }) => {
                     }}
                 />
             </div>
-            <div className={'flex items-end'}>
-                <BodyShort className={'w-36 font-bold text-xl'}> {fixLand(match.away_team)}</BodyShort>
-
+            <div className="flex items-end">
+                <BodyShort className="w-36 font-bold text-xl">{fixLand(match.away_team)}</BodyShort>
                 <TextField
-                    className={'w-12'}
-                    type={'text'}
-                    size={'small'}
-                    inputMode={'numeric'}
+                    className="w-12"
+                    type="text"
+                    size="small"
+                    inputMode="numeric"
                     error={lagreknappSynlig}
                     value={bortescore}
-                    hideLabel={true}
+                    hideLabel
                     label={match.away_team}
                     onFocus={selectAllFocus}
                     onChange={(e) => {
@@ -105,21 +105,15 @@ export const MatchView = ({ match }: { match: Match }) => {
                 />
             </div>
             {lagreknappSynlig && (
-                <Button
-                    onClick={() => {
-                        mutate()
-                    }}
-                    loading={isPending}
-                    icon={<FloppydiskIcon />}
-                >
+                <Button onClick={() => mutate()} loading={isPending} icon={<Save className="w-4 h-4" />}>
                     Lagre
                 </Button>
             )}
-            <div className={'mt-4'}>
+            <div className="mt-4">
                 <NextLink href={'/match/' + match.id}>
                     <Link>Se alles bets på denne kampen</Link>
                 </NextLink>
-                <BodyShort className={'italic text-sm'}>{kampstart.locale(nb).format('dddd D MMM  HH:mm')}</BodyShort>
+                <BodyShort className="italic text-sm">{kampstart.locale(nb).format('dddd D MMM  HH:mm')}</BodyShort>
             </div>
         </BpCard>
     )

@@ -7,7 +7,7 @@ import dayjs from 'dayjs'
 import NextLink from 'next/link'
 import React from 'react'
 import { UseUser } from '../queries/useUser'
-import { LinkPanel } from '@navikt/ds-react'
+import { LinkPanel } from '@/components/ui/link-panel'
 
 const Home: NextPage = () => {
     const { data: myBets } = UseMyBets()
@@ -21,9 +21,7 @@ const Home: NextPage = () => {
         <>
             <div>
                 <NextLink passHref legacyBehavior href={'/user/' + megselv.id}>
-                    <LinkPanel className={'rounded-xl shadow border-0 text-xl'} href={'/my-bets'}>
-                        Tidligere kamper
-                    </LinkPanel>
+                    <LinkPanel className="text-xl">Tidligere kamper</LinkPanel>
                 </NextLink>
             </div>
 

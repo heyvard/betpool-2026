@@ -7,8 +7,9 @@ import { rundeTilTekst } from '../../utils/rundeTilTekst'
 import { getFirebaseAuth } from '../../auth/clientApp'
 import { useQueryClient } from '@tanstack/react-query'
 import { BpCard } from '../Card'
-import { BodyShort, Select } from '@navikt/ds-react'
 import nb from 'dayjs/locale/nb'
+import { SelectField } from '@/components/ui/select-field'
+import { BodyShort } from '@/components/ui/typography'
 
 export const SluttspillView = ({ match }: { match: Match }) => {
     const kampstart = dayjs(match.game_start)
@@ -19,13 +20,7 @@ export const SluttspillView = ({ match }: { match: Match }) => {
 
     function endreHjemmelag(lag: 'home_team' | 'away_team') {
         function value() {
-            if (
-                alleLagSortert
-                    .map((l) => {
-                        return l.engelsk
-                    })
-                    .includes(match[lag])
-            ) {
+            if (alleLagSortert.map((l) => l.engelsk).includes(match[lag])) {
                 return match[lag]
             } else {
                 return 'To be announced'
@@ -33,25 +28,24 @@ export const SluttspillView = ({ match }: { match: Match }) => {
         }
 
         return (
-            <Select
+            <SelectField
                 disabled={lagrer}
                 id={match.id + lag}
                 label={lag === 'home_team' ? 'Hjemmelag' : 'Bortelag'}
                 value={value()}
                 onChange={async (e) => {
                     let team = e.target.value
-
                     try {
                         setLagrer(true)
                         const idtoken = await user?.getIdToken()
-                        const value = {} as Record<string, string>
-                        value[lag] = team
-                        const responsePromise = await fetch(`/api/v1/matches/${match.id}`, {
+                        const val = {} as Record<string, string>
+                        val[lag] = team
+                        const response = await fetch(`/api/v1/matches/${match.id}`, {
                             method: 'PUT',
-                            body: JSON.stringify(value),
+                            body: JSON.stringify(val),
                             headers: { Authorization: `Bearer ${idtoken}` },
                         })
-                        if (!responsePromise.ok) {
+                        if (!response.ok) {
                             window.alert('oops, feil ved lagring')
                         }
                         queryClient.invalidateQueries({ queryKey: ['matches'] }).then()
@@ -60,25 +54,22 @@ export const SluttspillView = ({ match }: { match: Match }) => {
                     }
                 }}
             >
-                {alleLagSortert.map((l) => {
-                    return (
-                        <option key={l.engelsk} value={l.engelsk}>
-                            {l.flagg + ' ' + l.norsk}
-                        </option>
-                    )
-                })}
+                {alleLagSortert.map((l) => (
+                    <option key={l.engelsk} value={l.engelsk}>
+                        {l.flagg + ' ' + l.norsk}
+                    </option>
+                ))}
                 <option value="To be announced">TBA</option>
-            </Select>
+            </SelectField>
         )
     }
 
     return (
         <BpCard>
             <BodyShort spacing>{rundeTilTekst(match.round)}</BodyShort>
-            <BodyShort spacing className={'italic text-sm '}>
+            <BodyShort className="italic text-sm" spacing>
                 {kampstart.locale(nb).format('dddd D MMM  HH:mm')}
             </BodyShort>
-
             {endreHjemmelag('home_team')}
             {endreHjemmelag('away_team')}
         </BpCard>

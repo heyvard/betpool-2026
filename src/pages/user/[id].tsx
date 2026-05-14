@@ -8,8 +8,9 @@ import React from 'react'
 import { PastBetView } from '../../components/bet/PastBetView'
 import { fixLand } from '../../components/bet/BetView'
 import NextLink from 'next/link'
-import { Alert, Heading, Link } from '@navikt/ds-react'
 import { BpCard } from '../../components/Card'
+import { Alert } from '@/components/ui/alert'
+import { Heading, Link } from '@/components/ui/typography'
 
 const Home: NextPage = () => {
     const { data, isLoading } = UseAllBets()
@@ -23,18 +24,18 @@ const Home: NextPage = () => {
 
     return (
         <>
-            <Heading level={'1'} size={'small'} align={'center'} spacing>
+            <Heading level="1" size="small" align="center" spacing>
                 {user.name} sine resultater
             </Heading>
             {user.winner && (
                 <BpCard>
-                    <NextLink href={'/winnerbets'}>
+                    <NextLink href="/winnerbets">
                         <Link>
                             Vinner: {fixLand(user.winner || '')} ({user.winnerPoints} poeng)
                         </Link>
                     </NextLink>
                     <br />
-                    <NextLink href={'/toppscorer'}>
+                    <NextLink href="/toppscorer">
                         <Link>
                             Toppscorer: {user.topscorer} ({user.topscorerPoints} poeng)
                         </Link>
@@ -42,7 +43,7 @@ const Home: NextPage = () => {
                 </BpCard>
             )}
 
-            {data.bets.length == 0 && <Alert variant={'info'}>Ingen resultater</Alert>}
+            {data.bets.length == 0 && <Alert variant="info">Ingen resultater</Alert>}
             {data.bets
                 .filter((a) => a.user_id == id)
                 .sort((b, a) => dayjs(a.game_start).unix() - dayjs(b.game_start).unix())

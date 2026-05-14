@@ -5,7 +5,7 @@ import dayjs from 'dayjs'
 import { UseMatches } from '../queries/useMatches'
 import { MatchView } from '../components/resultatservice/MatchView'
 import React from 'react'
-import { Heading } from '@navikt/ds-react'
+import { Heading } from '@/components/ui/typography'
 
 const Home: NextPage = () => {
     const { data: matches } = UseMatches()
@@ -15,7 +15,7 @@ const Home: NextPage = () => {
 
     return (
         <>
-            <Heading level={'1'} size={'medium'} align={'center'}>
+            <Heading level="1" size="medium" align="center">
                 Rediger resultater
             </Heading>
             {matches
