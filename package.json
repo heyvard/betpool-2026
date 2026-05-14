@@ -5,6 +5,7 @@
     "scripts": {
         "dev": "next dev",
         "dev-vm": "VM=true next dev",
+        "dev:test": "./scripts/dev-test.sh",
         "build": "next build",
         "vercel-build": "knex migrate:latest && next build",
         "start": "next start",
