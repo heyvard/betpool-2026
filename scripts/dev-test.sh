@@ -1,14 +1,8 @@
 #!/usr/bin/env bash
 # Kjør appen lokalt i test-auth-modus mot en lokal Postgres i Docker.
 #
-# Bruker `next build` + `next start` — IKKE `next dev`. Det er samme oppsett
-# som test-stacken (test/support/testStack.ts) og er den eneste måten som er
-# kjent stabil i dette repoet: `next dev` (Turbopack) spawner en kompilator-
-# worker-farm som spiser minne. `next start` er én produksjonsprosess.
-# I tillegg bakes `NEXT_PUBLIC_TEST_AUTH` inn ved BUILD-tid, så den MÅ settes
-# før `next build`.
-#
-# Lar `pnpm dev` være helt urørt — denne setter bare env for sin egen økt.
+# Bruker `next dev` — du får hot reload. Lar `pnpm dev` være helt urørt;
+# denne setter bare env for sin egen økt.
 #
 #   ./scripts/dev-test.sh
 #
@@ -24,6 +18,16 @@ APP_PORT=3000
 export POSTGRES_URL_NON_POOLING="postgres://postgres:postgres@localhost:${DB_PORT}/postgres"
 export NEXT_PUBLIC_TEST_AUTH=true
 export NEXT_PUBLIC_MOCK=false
+
+# Port-vakt: hvis 3000 allerede er i bruk (f.eks. en vanlig `pnpm dev`), ville
+# `next dev` stille startet på 3001 — og localhost:3000 ville fortsatt truffet
+# den andre serveren uten test-auth. Stopp heller med en tydelig feilmelding.
+if lsof -ti ":${APP_PORT}" >/dev/null 2>&1; then
+    echo "[dev-test] FEIL: port ${APP_PORT} er allerede i bruk."
+    echo "           Stopp den andre serveren (f.eks. en vanlig 'pnpm dev') og prøv igjen:"
+    echo "             lsof -ti :${APP_PORT} | xargs kill"
+    exit 1
+fi
 
 if ! docker ps -a --format '{{.Names}}' | grep -qx "$CONTAINER"; then
     echo "[dev-test] starter Postgres-container ($CONTAINER) …"
@@ -48,8 +52,6 @@ VALUES ('test-admin', 'Test Admin', 'admin@test.local', true, true, true, true, 
 ON CONFLICT (firebase_user_id) DO NOTHING;
 SQL
 
-echo "[dev-test] bygger appen (next build — NEXT_PUBLIC_TEST_AUTH bakes inn her) …"
-pnpm exec next build
-
-echo "[dev-test] starter «next start» i test-auth-modus på http://localhost:${APP_PORT}"
-pnpm exec next start -p "$APP_PORT"
+echo "[dev-test] starter «next dev» i test-auth-modus på http://localhost:${APP_PORT}"
+echo "[dev-test] NB: første sidelast kompilerer on-demand (Turbopack) — gi den noen sekunder."
+exec pnpm exec next dev -p "$APP_PORT"
