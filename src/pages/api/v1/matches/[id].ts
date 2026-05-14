@@ -5,12 +5,12 @@ const handler = async function handler(opts: ApiHandlerOpts): Promise<void> {
     const { user, res, req, client } = opts
 
     if (!user) {
-        res.status(401)
+        res.status(401).end()
         return
     }
 
     if (!user.scoreadmin) {
-        res.status(403)
+        res.status(403).end()
         return
     }
 
@@ -33,14 +33,15 @@ const handler = async function handler(opts: ApiHandlerOpts): Promise<void> {
         return
     }
 
-    const setClauses = Object.keys(updates)
-        .map((col, i) => `${col} = $${i + 2}`)
-        .join(', ')
+    const cols = Object.keys(updates)
+    const insertCols = cols.join(', ')
+    const insertPlaceholders = cols.map((_, i) => `$${i + 2}`).join(', ')
+    const setClauses = cols.map((col, i) => `${col} = $${i + 2}`).join(', ')
     const values = [matchNum, ...Object.values(updates)]
 
     await client.query(
-        `INSERT INTO match_scores (match_num, updated_at)
-         VALUES ($1, now())
+        `INSERT INTO match_scores (match_num, ${insertCols}, updated_at)
+         VALUES ($1, ${insertPlaceholders}, now())
          ON CONFLICT (match_num) DO UPDATE SET ${setClauses}, updated_at = now()`,
         values,
     )

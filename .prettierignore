@@ -7,3 +7,5 @@ package-lock.json
 *.yaml
 *.md
 public
+test-results
+playwright-report

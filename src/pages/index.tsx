@@ -3,13 +3,12 @@ import type { NextPage } from 'next'
 import { UseUser } from '../queries/useUser'
 
 import React, { useEffect, useState } from 'react'
-import { useAuthState } from 'react-firebase-hooks/auth'
 import { alleLagSortert } from '../utils/lag'
 import { UseMatches } from '../queries/useMatches'
 import dayjs from 'dayjs'
 import NextLink from 'next/link'
 import { fixLand } from '../components/bet/BetView'
-import { getFirebaseAuth } from '../auth/clientApp'
+import { useAuthedFetch } from '../auth/authedFetch'
 import { Save } from 'lucide-react'
 import { useQueryClient } from '@tanstack/react-query'
 import nb from 'dayjs/locale/nb'
@@ -25,7 +24,7 @@ dayjs.locale(nb)
 
 const Home: NextPage = () => {
     const { data: megselv } = UseUser()
-    const [user] = useAuthState(getFirebaseAuth())
+    const authedFetch = useAuthedFetch()
     const [lagrer, setLagrer] = useState(false)
     const queryClient = useQueryClient()
     const [topscorer, setTopscorer] = useState(megselv?.topscorer)
@@ -88,11 +87,9 @@ const Home: NextPage = () => {
                         try {
                             let winner = e.target.value.toString()
                             setLagrer(true)
-                            const idtoken = await user?.getIdToken()
-                            const response = await fetch(`/api/v1/me/`, {
+                            const response = await authedFetch(`/api/v1/me/`, {
                                 method: 'PUT',
                                 body: JSON.stringify({ winner }),
-                                headers: { Authorization: `Bearer ${idtoken}` },
                             })
                             if (!response.ok) {
                                 window.alert('oops, feil ved lagring')
@@ -118,11 +115,9 @@ const Home: NextPage = () => {
                         e.preventDefault()
                         try {
                             setLagrer(true)
-                            const idtoken = await user?.getIdToken()
-                            const response = await fetch(`/api/v1/me/`, {
+                            const response = await authedFetch(`/api/v1/me/`, {
                                 method: 'PUT',
                                 body: JSON.stringify({ topscorer }),
-                                headers: { Authorization: `Bearer ${idtoken}` },
                             })
                             if (!response.ok) {
                                 window.alert('oops, feil ved lagring')

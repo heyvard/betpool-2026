@@ -4,6 +4,7 @@ import { Pool, PoolClient } from 'pg'
 import { User } from '../types/db'
 import { ApiHandlerOpts } from '../types/apiHandlerOpts'
 import { erMock } from '../utils/erMock'
+import { erTestAuth } from '../utils/erTestAuth'
 
 import { verifiserIdToken } from './verifiserIdToken'
 
@@ -46,6 +47,34 @@ export function auth(fn: { (_opts: ApiHandlerOpts): Promise<void> }) {
             })
         }
     }
+    if (erTestAuth()) {
+        // Test-auth-modus: hopper over Firebase-JWT, men beholder ekte DB-klient.
+        // Brukeren velges via «x-test-user»-header eller «betpool_test_user»-cookie.
+        // Gated på NEXT_PUBLIC_TEST_AUTH — settes aldri i prod.
+        return async (req: NextApiRequest, res: NextApiResponse) => {
+            const testUserId = (req.headers['x-test-user'] as string | undefined) ?? req.cookies['betpool_test_user']
+            if (!testUserId) {
+                res.status(401).end()
+                return
+            }
+            let client: PoolClient | null = null
+            try {
+                client = await getPool().connect()
+                // Brukeren kan mangle i DB — handlere som me.ts oppretter den da selv.
+                const userList = await client.query('SELECT * from users where firebase_user_id = $1', [testUserId])
+                await fn({
+                    req,
+                    res,
+                    jwtPayload: { sub: testUserId, email: `${testUserId}@test.local`, name: testUserId },
+                    client,
+                    user: userList.rows[0],
+                })
+            } finally {
+                client?.release()
+            }
+        }
+    }
+
     return async (req: NextApiRequest, res: NextApiResponse) => {
         try {
             const authheader = req.headers.authorization

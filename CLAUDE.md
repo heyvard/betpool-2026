@@ -10,8 +10,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `pnpm lint` / `pnpm lint:fix` — `next lint`.
 - `pnpm prettier:check` / `pnpm prettier:write` — formatting. `pnpm format` runs both prettier write and lint fix.
 - `pnpm test` — Jest in watch mode. `pnpm test:ci` for CI single-run. Run a single test with `pnpm exec jest path/to/file.test.ts` or `pnpm exec jest -t "test name"`.
+- `pnpm test:integration` — API-integrasjonstester (`test/integration/`) mot en lokalt bygd Next-server (`next build` + `next start`) + Postgres i testcontainers. Krever Docker. Egen jest-konfig (`jest.integration.config.js`).
+- `pnpm test:e2e` — Playwright e2e (`test/e2e/`) mot samme test-stack. Krever `pnpm exec playwright install chromium` først.
 - `pnpm migrate` — `knex migrate:latest` against `PG_URI` (CockroachDB).
-- CI (`.github/workflows/workflow.yaml`) runs lint, `test:ci`, and `prettier:check`; pushes to `master` deploy to Vercel.
+- CI (`.github/workflows/workflow.yaml`) runs lint, `test:ci`, and `prettier:check`; a separate `integration-test` job runs `test:integration` + `test:e2e`; pushes to `master` deploy to Vercel.
 
 ## Language and naming
 
@@ -31,6 +33,7 @@ Next.js 14 pages router + React 18 + TypeScript, Tailwind + `@navikt/ds-react` (
 2. Every `/api/v1/*` handler in `src/pages/api/v1/` wraps its function with `auth(...)` from `src/auth/authHandler.ts`. `auth` verifies the JWT against Google's JWKS (`verifiserIdToken.ts`, audience/issuer pinned to `betpool-2022`), opens a pooled Postgres client, looks up the user row by `firebase_user_id`, and passes `{ req, res, jwtPayload, client, user }` (`ApiHandlerOpts`) to the handler.
 3. Pool is process-wide singleton with `max: 1` (Vercel serverless). When `VM=true`, the handler issues `SET search_path TO vm_2022` so the old World Cup dataset is queried instead of the default schema.
 4. `NEXT_PUBLIC_MOCK=true` (`erMock()`) makes `auth` bypass JWT/DB entirely and inject a fake `Testy` user — used for local UI work without Firebase/DB.
+5. `NEXT_PUBLIC_TEST_AUTH=true` (`erTestAuth()`) enables test-auth mode: `auth` skips JWT verification but keeps the real DB client, resolving the user from an `x-test-user` header or a `betpool_test_user` cookie. The client (`useSession`/`useAuthedFetch`) skips Firebase, and a dev-only `<TestUserSwitcher />` lets you pick which user you are. Powers `test:integration` and `test:e2e`. Never set in production.
 
 ### Domain model
 
@@ -56,4 +59,8 @@ The interesting business logic. Per match, `regnUtScoreForKamp` looks at all use
 
 ### Environment
 
-`PG_URI`, `VM` (optional), `NEXT_PUBLIC_MOCK` (optional), and `NEXT_PUBLIC_FIREBASE_*` (apiKey, authDomain, projectId, storageBucket, messagingSenderId, appId).
+`PG_URI`, `VM` (optional), `NEXT_PUBLIC_MOCK` (optional), `NEXT_PUBLIC_TEST_AUTH` (optional, test/e2e only — see request flow point 5), and `NEXT_PUBLIC_FIREBASE_*` (apiKey, authDomain, storageBucket, messagingSenderId, appId).
+
+### Integration & e2e tests
+
+`test/support/testStack.ts` spins up Postgres in testcontainers, runs the knex migrations against it, then `next build`s the app and starts a local `next start` server — both with `NEXT_PUBLIC_TEST_AUTH=true` (a `NEXT_PUBLIC_*` var, so it must be set at build time, not just at runtime). `next dev` is deliberately avoided: its Turbopack compiler-worker farm spawns hundreds of node processes under the test load and OOMs the machine. `test/integration/` holds jest API tests (HTTP against that server, identity via the `x-test-user` header); `test/e2e/` holds Playwright tests (identity via the `betpool_test_user` cookie). Both share `test/support/db.ts` for seeding. Requires Docker.

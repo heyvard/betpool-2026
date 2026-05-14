@@ -4,7 +4,7 @@ import { auth } from '../../../auth/authHandler'
 const handler = async function handler(opts: ApiHandlerOpts): Promise<void> {
     const { res, req, user, client } = opts
     if (!user) {
-        res.status(401)
+        res.status(401).end()
         return
     }
     if (req.method == 'POST') {

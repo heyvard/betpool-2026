@@ -1,6 +1,6 @@
-import { useAuthState } from 'react-firebase-hooks/auth'
-import { getFirebaseAuth } from '../auth/clientApp'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
+
+import { useAuthedFetch } from '../auth/authedFetch'
 
 interface MuteteUserReq {
     request: {
@@ -13,17 +13,15 @@ interface MuteteUserReq {
 
 export function UseMutateUser(id: string) {
     const queryClient = useQueryClient()
-    const [user] = useAuthState(getFirebaseAuth())
+    const authedFetch = useAuthedFetch()
 
     return useMutation<any, unknown, MuteteUserReq>({
         mutationFn: async (req) => {
-            const idtoken = await user?.getIdToken()
-            const responsePromise = await fetch(`/api/v1/users/${id}`, {
+            const response = await authedFetch(`/api/v1/users/${id}`, {
                 method: 'PUT',
                 body: JSON.stringify(req.request),
-                headers: { Authorization: `Bearer ${idtoken}` },
             })
-            return responsePromise.json()
+            return response.json()
         },
 
         onSuccess: () => {

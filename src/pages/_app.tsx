@@ -1,5 +1,4 @@
 import type { AppProps } from 'next/app'
-import { useAuthState } from 'react-firebase-hooks/auth'
 import React, { FC, useState } from 'react'
 import { UseUser } from '../queries/useUser'
 import { useRouter } from 'next/router'
@@ -7,6 +6,10 @@ import Head from 'next/head'
 
 import '../styles/global.css'
 import { getFirebaseAuth } from '../auth/clientApp'
+import { useSession } from '../auth/useSession'
+import { clearTestUser } from '../auth/testUserCookie'
+import { erTestAuth } from '../utils/erTestAuth'
+import { TestUserSwitcher } from '../components/dev/TestUserSwitcher'
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu'
 import { Banknote, House, ListOrdered, Menu, Pilcrow } from 'lucide-react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
@@ -14,17 +17,30 @@ import { SignInScreen } from '../components/SignIn'
 import { LoadingScreen } from '../components/loading/LoadingScreen'
 import { cn } from '@/lib/utils'
 
+function logUt() {
+    if (erTestAuth()) {
+        clearTestUser()
+        window.location.reload()
+    } else {
+        getFirebaseAuth().signOut()
+    }
+}
+
 function Layout({ children }: { children: React.ReactNode }) {
-    const [user, loading, error] = useAuthState(getFirebaseAuth())
+    const { user, loading, error } = useSession()
     const { data: me } = UseUser()
     const router = useRouter()
 
     return (
         <>
+            {erTestAuth() && <TestUserSwitcher />}
             <div className="px-2 pt-4 pb-16 mx-auto max-w-full sm:max-w-lg md:max-w-2xl">
                 {error && <p className="text-red-500 text-sm">Error useAuthState: {JSON.stringify(error)}</p>}
                 {loading && <LoadingScreen />}
-                {!loading && !user && <SignInScreen />}
+                {!loading && !user && !erTestAuth() && <SignInScreen />}
+                {!loading && !user && erTestAuth() && (
+                    <p className="mt-8 text-center text-zinc-600">Velg en test-bruker nederst til høyre.</p>
+                )}
                 {user && <>{children}</>}
             </div>
 
@@ -85,7 +101,7 @@ function Layout({ children }: { children: React.ReactNode }) {
                             <DropdownMenu.Separator className="my-1 h-px bg-zinc-200" />
                             <DropdownMenu.Item
                                 className="px-4 py-2 cursor-pointer hover:bg-zinc-50 outline-none text-red-600"
-                                onSelect={() => getFirebaseAuth().signOut()}
+                                onSelect={logUt}
                             >
                                 Logout
                             </DropdownMenu.Item>

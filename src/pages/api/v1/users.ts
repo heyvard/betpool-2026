@@ -5,12 +5,12 @@ const handler = async function handler(opts: ApiHandlerOpts): Promise<void> {
     const { user, res, client } = opts
 
     if (!user) {
-        res.status(401)
+        res.status(401).end()
         return
     }
 
     if (!(user.superadmin || user.scoreadmin)) {
-        res.status(403)
+        res.status(403).end()
         return
     }
 

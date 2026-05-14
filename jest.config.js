@@ -12,7 +12,8 @@ module.exports = {
     https://jestjs.io/docs/webpack#handling-static-assets */
         '^.+\\.(jpg|jpeg|png|gif|webp|svg)$': '<rootDir>/__mocks__/fileMock.js',
     },
-    testPathIgnorePatterns: ['<rootDir>/node_modules/', '<rootDir>/.next/'],
+    // test/ inneholder integrasjons- og e2e-tester med egne kjørere
+    testPathIgnorePatterns: ['<rootDir>/node_modules/', '<rootDir>/.next/', '<rootDir>/test/'],
     testEnvironment: 'jsdom',
     transform: {
         /* Use babel-jest to transpile tests with the next/babel preset

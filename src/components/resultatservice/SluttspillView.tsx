@@ -2,9 +2,8 @@ import { Match } from '../../types/types'
 import dayjs from 'dayjs'
 import React, { useState } from 'react'
 import { alleLagSortert } from '../../utils/lag'
-import { useAuthState } from 'react-firebase-hooks/auth'
 import { rundeTilTekst } from '../../utils/rundeTilTekst'
-import { getFirebaseAuth } from '../../auth/clientApp'
+import { useAuthedFetch } from '../../auth/authedFetch'
 import { useQueryClient } from '@tanstack/react-query'
 import { BpCard } from '../Card'
 import nb from 'dayjs/locale/nb'
@@ -15,7 +14,7 @@ export const SluttspillView = ({ match }: { match: Match }) => {
     const kampstart = dayjs(match.game_start)
 
     const [lagrer, setLagrer] = useState(false)
-    const [user] = useAuthState(getFirebaseAuth())
+    const authedFetch = useAuthedFetch()
     const queryClient = useQueryClient()
 
     function endreHjemmelag(lag: 'home_team' | 'away_team') {
@@ -37,13 +36,11 @@ export const SluttspillView = ({ match }: { match: Match }) => {
                     let team = e.target.value
                     try {
                         setLagrer(true)
-                        const idtoken = await user?.getIdToken()
                         const val = {} as Record<string, string>
                         val[lag] = team
-                        const response = await fetch(`/api/v1/matches/${match.match_num}`, {
+                        const response = await authedFetch(`/api/v1/matches/${match.match_num}`, {
                             method: 'PUT',
                             body: JSON.stringify(val),
-                            headers: { Authorization: `Bearer ${idtoken}` },
                         })
                         if (!response.ok) {
                             window.alert('oops, feil ved lagring')

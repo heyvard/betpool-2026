@@ -13,7 +13,7 @@ interface ScoreRow {
 const handler = async function handler(opts: ApiHandlerOpts): Promise<void> {
     const { res, user, client } = opts
     if (!user) {
-        res.status(401)
+        res.status(401).end()
         return
     }
 

@@ -6,7 +6,7 @@ const handler = async function handler(opts: ApiHandlerOpts): Promise<void> {
     const { user, res, req, client } = opts
 
     if (!user) {
-        res.status(401)
+        res.status(401).end()
         return
     }
 

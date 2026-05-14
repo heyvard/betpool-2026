@@ -1,7 +1,7 @@
-import { useAuthState } from 'react-firebase-hooks/auth'
-import { getFirebaseAuth } from '../auth/clientApp'
-import { MatchPoeng } from '../components/results/matchScoreCalculator'
 import { useQuery } from '@tanstack/react-query'
+
+import { useAuthedFetch } from '../auth/authedFetch'
+import { MatchPoeng } from '../components/results/matchScoreCalculator'
 import { calculateAllBetsExtended } from '../components/results/calculateAllBetsExtended'
 
 export interface OtherUser {
@@ -51,18 +51,14 @@ export interface AllBets {
 }
 
 export function UseAllBets() {
-    const [user] = useAuthState(getFirebaseAuth())
+    const authedFetch = useAuthedFetch()
 
     return useQuery({
         queryKey: ['all-bets'],
 
         queryFn: async () => {
-            const idtoken = await user?.getIdToken()
-            const responsePromise = await fetch('/api/v1/bets', {
-                method: 'GET',
-                headers: { Authorization: `Bearer ${idtoken}` },
-            })
-            const allBets = (await responsePromise.json()) as AllBets
+            const response = await authedFetch('/api/v1/bets', { method: 'GET' })
+            const allBets = (await response.json()) as AllBets
             allBets.bets.forEach((bet) => {
                 if (bet.home_result === null) {
                     bet.home_result = '0'

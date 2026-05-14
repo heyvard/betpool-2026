@@ -26,9 +26,29 @@ jobs:
       - name: Prettier
         run: pnpm prettier:check
 
+  integration-test:
+    name: API-integrasjon og e2e
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: latest
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: 'pnpm'
+      - run: pnpm install --frozen-lockfile
+      - name: Installer Playwright-nettleser
+        run: pnpm exec playwright install --with-deps chromium
+      - name: API-integrasjonstester
+        run: pnpm test:integration
+      - name: E2E-tester
+        run: pnpm test:e2e
+
   deploy:
     name: Trigg Vercel-deploy produksjon
-    needs: lint-test
+    needs: [lint-test, integration-test]
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:

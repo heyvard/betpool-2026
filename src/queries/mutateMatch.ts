@@ -1,6 +1,6 @@
-import { useAuthState } from 'react-firebase-hooks/auth'
-import { getFirebaseAuth } from '../auth/clientApp'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
+
+import { useAuthedFetch } from '../auth/authedFetch'
 
 export function UseMutateMatch(
     id: number,
@@ -9,17 +9,15 @@ export function UseMutateMatch(
     successCallback: () => void,
 ) {
     const queryClient = useQueryClient()
-    const [user] = useAuthState(getFirebaseAuth())
+    const authedFetch = useAuthedFetch()
 
     return useMutation({
         mutationFn: async () => {
-            const idtoken = await user?.getIdToken()
-            const responsePromise = await fetch(`/api/v1/matches/${id}`, {
+            const response = await authedFetch(`/api/v1/matches/${id}`, {
                 method: 'PUT',
                 body: JSON.stringify({ home_score: homeScore, away_score: awayScore }),
-                headers: { Authorization: `Bearer ${idtoken}` },
             })
-            return responsePromise.json()
+            return response.json()
         },
 
         onSuccess: () => {
