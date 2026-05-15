@@ -134,6 +134,8 @@ function MyApp({ Component, pageProps }: AppProps) {
                 <title>Betpool 2026</title>
                 <meta name="apple-mobile-web-app-capable" content="yes" />
                 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+                <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+                <link rel="icon" type="image/x-icon" href="/favicon.ico" />
                 <link rel="apple-touch-icon" href="/favicon-180x180.png" />
                 <link rel="manifest" href="/manifest.json" />
             </Head>

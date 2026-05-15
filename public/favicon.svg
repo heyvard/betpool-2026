@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+    <defs>
+        <radialGradient id="bg" cx="50%" cy="38%" r="70%">
+            <stop offset="0%" stop-color="#1e40af" />
+            <stop offset="100%" stop-color="#0b1740" />
+        </radialGradient>
+        <linearGradient id="gold" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stop-color="#fff3b0" />
+            <stop offset="35%" stop-color="#fcd34d" />
+            <stop offset="70%" stop-color="#d97706" />
+            <stop offset="100%" stop-color="#92400e" />
+        </linearGradient>
+        <linearGradient id="goldBase" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stop-color="#fcd34d" />
+            <stop offset="100%" stop-color="#92400e" />
+        </linearGradient>
+    </defs>
+
+    <rect width="512" height="512" rx="96" fill="url(#bg)" />
+
+    <g transform="translate(256 256)">
+        <path
+            d="M -88 -70
+               C -96 0, -52 50, -34 78
+               C -22 96, -28 108, -42 118
+               L 42 118
+               C 28 108, 22 96, 34 78
+               C 52 50, 96 0, 88 -70
+               C 60 -92, 36 -86, 0 -86
+               C -36 -86, -60 -92, -88 -70 Z"
+            fill="url(#gold)"
+            stroke="#78350f"
+            stroke-width="4"
+        />
+
+        <circle cx="0" cy="-130" r="48" fill="url(#gold)" stroke="#78350f" stroke-width="4" />
+        <ellipse cx="0" cy="-130" rx="48" ry="16" fill="none" stroke="#78350f" stroke-width="3" opacity="0.55" />
+        <path d="M 0 -178 L 0 -82" stroke="#78350f" stroke-width="3" opacity="0.55" fill="none" />
+
+        <rect x="-68" y="120" width="136" height="32" rx="6" fill="url(#goldBase)" stroke="#78350f" stroke-width="4" />
+        <rect x="-92" y="152" width="184" height="26" rx="6" fill="url(#goldBase)" stroke="#78350f" stroke-width="4" />
+    </g>
+
+    <text
+        x="256"
+        y="468"
+        font-family="'Helvetica Neue', Helvetica, Arial, sans-serif"
+        font-size="60"
+        font-weight="900"
+        fill="#fde047"
+        text-anchor="middle"
+        letter-spacing="4"
+    >2026</text>
+</svg>
