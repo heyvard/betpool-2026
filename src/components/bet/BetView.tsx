@@ -6,7 +6,7 @@ import { hentFlag, hentNorsk } from '../../utils/lag'
 import NextLink from 'next/link'
 import { rundeTilTekst } from '../../utils/rundeTilTekst'
 import { nå } from '../../utils/testClock'
-import { Calendar, Check, ChevronRight, Lock, Save } from 'lucide-react'
+import { Calendar, Check, ChevronRight, Lock, Minus, Plus, Save } from 'lucide-react'
 import nb from 'dayjs/locale/nb'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
@@ -49,9 +49,6 @@ export const BetView = ({ bet, matchside }: { bet: Bet; matchside: boolean }) =>
 
     const disabled = kampstart.isBefore(nå())
     const lagreknappSynlig = (hjemmescore !== hjemmescoreProp || bortescore !== bortescoreProp) && !nyligLagret
-    const selectAllFocus = (e: React.FocusEvent<HTMLInputElement>) => {
-        e.target.select()
-    }
 
     return (
         <div className="my-4 bg-white rounded-xl shadow-sm ring-1 ring-stone-200/70 overflow-hidden">
@@ -73,7 +70,6 @@ export const BetView = ({ bet, matchside }: { bet: Bet; matchside: boolean }) =>
                     onValueChange={setHjemmescore}
                     disabled={disabled}
                     pending={lagreknappSynlig}
-                    onFocus={selectAllFocus}
                 />
                 <TeamScoreRow
                     team={bet.away_team}
@@ -81,7 +77,6 @@ export const BetView = ({ bet, matchside }: { bet: Bet; matchside: boolean }) =>
                     onValueChange={setBortescore}
                     disabled={disabled}
                     pending={lagreknappSynlig}
-                    onFocus={selectAllFocus}
                 />
             </div>
 
@@ -130,38 +125,58 @@ interface TeamScoreRowProps {
     onValueChange: (v: string) => void
     disabled: boolean
     pending: boolean
-    onFocus: (e: React.FocusEvent<HTMLInputElement>) => void
 }
 
-function TeamScoreRow({ team, value, onValueChange, disabled, pending, onFocus }: TeamScoreRowProps) {
+function TeamScoreRow({ team, value, onValueChange, disabled, pending }: TeamScoreRowProps) {
+    const numeric = value === '' ? null : Number(value)
+    const canDec = !disabled && numeric !== null && numeric > 0
+    const canInc = !disabled && (numeric === null || numeric < 99)
+
+    const handleDec = () => {
+        if (numeric !== null && numeric > 0) {
+            onValueChange(String(numeric - 1))
+        }
+    }
+    const handleInc = () => {
+        if (numeric === null) {
+            onValueChange('1')
+        } else if (numeric < 99) {
+            onValueChange(String(numeric + 1))
+        }
+    }
+
     return (
         <div className="flex items-center justify-between gap-3 px-4 py-3">
             <span className="text-lg font-semibold text-stone-900 truncate">{fixLand(team)}</span>
-            <input
-                type="text"
-                inputMode="numeric"
-                pattern="[0-9]*"
-                aria-label={team}
-                disabled={disabled}
-                value={value}
-                onFocus={onFocus}
-                onChange={(e) => {
-                    if (!e.currentTarget.value) {
-                        onValueChange('')
-                        return
-                    }
-                    const number = Number(e.currentTarget.value)
-                    if (number >= 0 && number <= 99) {
-                        onValueChange(String(number))
-                    }
-                }}
+            <div
                 className={cn(
-                    'h-12 w-14 rounded-lg border bg-white text-center text-2xl font-semibold text-stone-900 tabular-nums outline-none transition-shadow',
-                    'focus:ring-2 focus:ring-amber-400 focus:border-amber-500',
-                    'disabled:bg-stone-100 disabled:text-stone-400 disabled:cursor-not-allowed',
+                    'inline-flex items-center rounded-lg border bg-white transition-shadow',
                     pending ? 'border-amber-400 ring-1 ring-amber-200' : 'border-stone-300',
+                    disabled && 'opacity-70',
                 )}
-            />
+            >
+                <button
+                    type="button"
+                    aria-label={`Reduser ${team}`}
+                    disabled={!canDec}
+                    onClick={handleDec}
+                    className="h-11 w-11 flex items-center justify-center rounded-l-lg text-stone-700 hover:bg-stone-50 active:bg-stone-100 disabled:text-stone-300 disabled:hover:bg-transparent disabled:cursor-not-allowed transition-colors"
+                >
+                    <Minus className="w-4 h-4" />
+                </button>
+                <span className="h-11 min-w-[2.25rem] flex items-center justify-center text-2xl font-semibold text-stone-900 tabular-nums px-1 select-none">
+                    {numeric ?? '–'}
+                </span>
+                <button
+                    type="button"
+                    aria-label={`Øk ${team}`}
+                    disabled={!canInc}
+                    onClick={handleInc}
+                    className="h-11 w-11 flex items-center justify-center rounded-r-lg text-stone-700 hover:bg-stone-50 active:bg-stone-100 disabled:text-stone-300 disabled:hover:bg-transparent disabled:cursor-not-allowed transition-colors"
+                >
+                    <Plus className="w-4 h-4" />
+                </button>
+            </div>
         </div>
     )
 }

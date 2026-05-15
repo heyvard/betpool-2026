@@ -54,12 +54,7 @@ export const PastBetView = ({ bet, matchside, navn }: { bet: MatchBetMedScore; m
     const harPoeng = bet.poeng > 0
 
     return (
-        <div
-            className={cn(
-                'relative my-4 rounded-xl shadow-sm ring-1 ring-stone-200/70 overflow-hidden',
-                s.bg,
-            )}
-        >
+        <div className={cn('relative my-4 rounded-xl shadow-sm ring-1 ring-stone-200/70 overflow-hidden', s.bg)}>
             <span aria-hidden className={cn('absolute left-0 top-0 bottom-0 w-1', s.stripe)} />
 
             <div className="flex items-center justify-between gap-2 pl-5 pr-4 pt-3 pb-2">
@@ -119,9 +114,7 @@ function ResultRow({ team, score }: { team: string; score: number | null }) {
     return (
         <div className="flex items-center justify-between gap-3 py-3">
             <span className="text-lg font-semibold text-stone-900 truncate">{fixLand(team)}</span>
-            <span className="text-2xl font-semibold text-stone-900 tabular-nums w-14 text-center">
-                {score ?? '–'}
-            </span>
+            <span className="text-2xl font-semibold text-stone-900 tabular-nums w-14 text-center">{score ?? '–'}</span>
         </div>
     )
 }
