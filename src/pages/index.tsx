@@ -78,7 +78,7 @@ const Home: NextPage = () => {
                 </Alert>
             )}
 
-            <div className="my-4 p-4 shadow bg-white rounded-xl">
+            <div className="my-4 p-4 shadow-sm ring-1 ring-stone-200/70 bg-white rounded-xl">
                 <SelectField
                     label="Hvem vinner VM?"
                     description={'Kan endres frem til ' + førsteRunde.locale(nb).format('dddd D MMM  kl HH:mm')}
@@ -110,7 +110,7 @@ const Home: NextPage = () => {
                 </SelectField>
             </div>
 
-            <div className="my-4 p-4 shadow bg-white rounded-xl">
+            <div className="my-4 p-4 shadow-sm ring-1 ring-stone-200/70 bg-white rounded-xl">
                 <form
                     onSubmit={async (e) => {
                         e.preventDefault()

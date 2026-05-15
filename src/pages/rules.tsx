@@ -21,7 +21,7 @@ const Regler: NextPage = () => {
         premier: [Math.round(pot * 0.5), Math.round(pot * 0.3), Math.round(pot * 0.2)],
     }
     return (
-        <div className="bg-white p-4 rounded-xl mb-8">
+        <div className="bg-white p-4 rounded-xl shadow-sm ring-1 ring-stone-200/70 mb-8">
             <Heading size="small" level="1">
                 Innskudd
             </Heading>

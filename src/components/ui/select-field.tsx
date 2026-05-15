@@ -10,16 +10,16 @@ export function SelectField({ label, description, className, id, children, ...pr
     const selectId = id ?? label.toLowerCase().replace(/\s+/g, '-')
     return (
         <div className="flex flex-col gap-1">
-            <label htmlFor={selectId} className="text-sm font-medium text-zinc-700">
+            <label htmlFor={selectId} className="text-sm font-medium text-stone-700">
                 {label}
             </label>
-            {description && <p className="text-xs text-zinc-500">{description}</p>}
+            {description && <p className="text-xs text-stone-500">{description}</p>}
             <select
                 id={selectId}
                 className={cn(
-                    'h-9 rounded-md border border-zinc-300 bg-white px-3 text-sm',
-                    'focus:outline-none focus:ring-2 focus:ring-zinc-900',
-                    'disabled:bg-zinc-100 disabled:cursor-not-allowed',
+                    'h-9 rounded-lg border border-stone-300 bg-white px-3 text-sm transition-shadow',
+                    'focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-amber-500',
+                    'disabled:bg-stone-100 disabled:text-stone-500 disabled:cursor-not-allowed',
                     className,
                 )}
                 {...props}

@@ -14,19 +14,19 @@ export function TextField({ label, hideLabel, error, description, size, classNam
     return (
         <div className={cn('flex flex-col gap-1', className)}>
             {!hideLabel && (
-                <label htmlFor={inputId} className="text-sm font-medium text-zinc-700">
+                <label htmlFor={inputId} className="text-sm font-medium text-stone-700">
                     {label}
                 </label>
             )}
-            {description && <p className="text-xs text-zinc-500">{description}</p>}
+            {description && <p className="text-xs text-stone-500">{description}</p>}
             <input
                 id={inputId}
                 className={cn(
-                    'rounded-md border bg-white px-3 py-1.5 text-sm outline-none',
-                    'focus:ring-2 focus:ring-zinc-900 focus:border-zinc-900',
-                    'disabled:bg-zinc-100 disabled:cursor-not-allowed',
+                    'rounded-lg border bg-white px-3 py-1.5 text-sm outline-none transition-shadow',
+                    'focus:ring-2 focus:ring-amber-400 focus:border-amber-500',
+                    'disabled:bg-stone-100 disabled:text-stone-500 disabled:cursor-not-allowed',
                     error && 'border-red-500 ring-1 ring-red-400',
-                    !error && 'border-zinc-300',
+                    !error && 'border-stone-300',
                     size === 'small' ? 'h-7 text-xs' : 'h-9',
                 )}
                 {...props}

@@ -93,7 +93,7 @@ const Avatar: React.FC<AvatarProps> = ({ src, name, size = 'medium' }) => {
     }
 
     return (
-        <div className={classNames('flex items-center justify-center bg-gray-200 rounded-full', sizeClasses[size])}>
+        <div className={classNames('flex items-center justify-center bg-stone-200 rounded-full', sizeClasses[size])}>
             {src ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={src} alt={name} className="rounded-full w-full h-full object-cover" />

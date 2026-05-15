@@ -19,15 +19,15 @@ export function Table({
 }
 
 Table.Header = function TableHeader({ children }: { children: React.ReactNode }) {
-    return <thead className="border-b">{children}</thead>
+    return <thead className="border-b border-stone-200 bg-stone-50/60">{children}</thead>
 }
 
 Table.Body = function TableBody({ children }: { children: React.ReactNode }) {
-    return <tbody className="divide-y divide-zinc-100">{children}</tbody>
+    return <tbody className="divide-y divide-stone-100">{children}</tbody>
 }
 
 Table.Row = function TableRow({ children, className }: { children: React.ReactNode; className?: string }) {
-    return <tr className={cn('hover:bg-zinc-50', className)}>{children}</tr>
+    return <tr className={cn('hover:bg-stone-50/70 transition-colors', className)}>{children}</tr>
 }
 
 Table.HeaderCell = function TableHeaderCell({
@@ -42,7 +42,7 @@ Table.HeaderCell = function TableHeaderCell({
     return (
         <th
             className={cn(
-                'h-10 px-3 font-semibold text-zinc-600',
+                'h-10 px-3 font-semibold text-stone-600 uppercase tracking-wide text-xs',
                 align === 'center' && 'text-center',
                 align === 'right' && 'text-right',
                 className,

@@ -41,37 +41,40 @@ function Layout({ children }: { children: React.ReactNode }) {
                 {loading && <LoadingScreen />}
                 {!loading && !user && !erTestAuth() && <SignInScreen />}
                 {!loading && !user && erTestAuth() && (
-                    <p className="mt-8 text-center text-zinc-600">Velg en test-bruker nederst til høyre.</p>
+                    <p className="mt-8 text-center text-stone-600">Velg en test-bruker nederst til høyre.</p>
                 )}
                 {user && <>{children}</>}
             </div>
 
-            <nav className="fixed bottom-0 left-0 z-50 w-full h-16 flex bg-zinc-800 text-white shadow-lg">
-                <NavKnapp url="/" icon={<House className="w-6 h-6" />} />
-                <NavKnapp url="/my-bets" text="Kamper" icon={<Banknote className="w-6 h-6" />} />
-                <NavKnapp url="/leaderboard" text="Resultater" icon={<ListOrdered className="w-6 h-6" />} />
-                <NavKnapp url="/rules" text="Regler" icon={<Pilcrow className="w-6 h-6" />} />
+            <nav className="fixed bottom-0 left-0 z-50 w-full h-16 flex bg-stone-900 text-stone-300 border-t border-stone-800 shadow-[0_-2px_12px_rgba(0,0,0,0.08)]">
+                <NavKnapp url="/" icon={<House className="w-5 h-5" />} />
+                <NavKnapp url="/my-bets" text="Kamper" icon={<Banknote className="w-5 h-5" />} />
+                <NavKnapp url="/leaderboard" text="Resultater" icon={<ListOrdered className="w-5 h-5" />} />
+                <NavKnapp url="/rules" text="Regler" icon={<Pilcrow className="w-5 h-5" />} />
 
                 <DropdownMenu.Root>
                     <DropdownMenu.Trigger asChild>
-                        <button className="flex flex-col items-center justify-center w-full hover:bg-zinc-700 transition-colors">
-                            <Menu className="w-6 h-6" />
+                        <button className="flex flex-col items-center justify-center w-full gap-0.5 text-stone-300 hover:text-white hover:bg-stone-800/60 active:bg-stone-800 transition-colors">
+                            <Menu className="w-5 h-5" />
+                            <span className="text-[10px] font-medium tracking-wide uppercase">Meny</span>
                         </button>
                     </DropdownMenu.Trigger>
                     <DropdownMenu.Portal>
                         <DropdownMenu.Content
                             side="top"
                             align="end"
-                            className="z-50 mb-2 mr-2 min-w-44 rounded-xl bg-white shadow-xl border border-zinc-200 py-1 text-sm"
+                            sideOffset={8}
+                            className="z-50 mr-2 min-w-48 rounded-xl bg-white shadow-xl ring-1 ring-stone-200 py-1.5 text-sm"
                         >
                             <DropdownMenu.Item
-                                className="px-4 py-2 cursor-pointer hover:bg-zinc-50 outline-none font-medium"
+                                className="px-4 py-2 cursor-pointer hover:bg-amber-50 hover:text-amber-900 outline-none font-medium text-stone-900"
                                 onSelect={() => router.push('/')}
                             >
                                 {user?.displayName}
                             </DropdownMenu.Item>
+                            <DropdownMenu.Separator className="my-1 h-px bg-stone-200" />
                             <DropdownMenu.Item
-                                className="px-4 py-2 cursor-pointer hover:bg-zinc-50 outline-none"
+                                className="px-4 py-2 cursor-pointer hover:bg-stone-50 outline-none text-stone-700"
                                 onSelect={() => router.push('/rules')}
                             >
                                 Regler
@@ -79,13 +82,13 @@ function Layout({ children }: { children: React.ReactNode }) {
                             {me?.scoreadmin && (
                                 <>
                                     <DropdownMenu.Item
-                                        className="px-4 py-2 cursor-pointer hover:bg-zinc-50 outline-none"
+                                        className="px-4 py-2 cursor-pointer hover:bg-stone-50 outline-none text-stone-700"
                                         onSelect={() => router.push('/sluttspill')}
                                     >
                                         Rediger sluttspill
                                     </DropdownMenu.Item>
                                     <DropdownMenu.Item
-                                        className="px-4 py-2 cursor-pointer hover:bg-zinc-50 outline-none"
+                                        className="px-4 py-2 cursor-pointer hover:bg-stone-50 outline-none text-stone-700"
                                         onSelect={() => router.push('/resultatservice')}
                                     >
                                         Rediger resultater
@@ -94,15 +97,15 @@ function Layout({ children }: { children: React.ReactNode }) {
                             )}
                             {(me?.superadmin || me?.paymentadmin) && (
                                 <DropdownMenu.Item
-                                    className="px-4 py-2 cursor-pointer hover:bg-zinc-50 outline-none"
+                                    className="px-4 py-2 cursor-pointer hover:bg-stone-50 outline-none text-stone-700"
                                     onSelect={() => router.push('/brukere')}
                                 >
                                     Brukere
                                 </DropdownMenu.Item>
                             )}
-                            <DropdownMenu.Separator className="my-1 h-px bg-zinc-200" />
+                            <DropdownMenu.Separator className="my-1 h-px bg-stone-200" />
                             <DropdownMenu.Item
-                                className="px-4 py-2 cursor-pointer hover:bg-zinc-50 outline-none text-red-600"
+                                className="px-4 py-2 cursor-pointer hover:bg-red-50 outline-none text-red-600 font-medium"
                                 onSelect={logUt}
                             >
                                 Logout
@@ -156,12 +159,20 @@ const NavKnapp: FC<{ icon: React.ReactNode; text?: string; url: string }> = ({ i
             type="button"
             onClick={() => router.push(url)}
             className={cn(
-                'flex flex-col items-center justify-center w-full gap-0.5 transition-colors',
-                isActive ? 'bg-zinc-600 text-white' : 'hover:bg-zinc-700',
+                'relative flex flex-col items-center justify-center w-full gap-0.5 transition-colors',
+                isActive
+                    ? 'text-amber-400'
+                    : 'text-stone-300 hover:text-white hover:bg-stone-800/60 active:bg-stone-800',
             )}
         >
+            {isActive && (
+                <span
+                    aria-hidden
+                    className="absolute top-0 left-1/2 -translate-x-1/2 h-0.5 w-10 rounded-full bg-amber-400"
+                />
+            )}
             {icon}
-            {text && <span className="text-xs">{text}</span>}
+            {text && <span className="text-[10px] font-medium tracking-wide uppercase">{text}</span>}
         </button>
     )
 }

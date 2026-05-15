@@ -14,9 +14,9 @@ export function Switch({ children, loading, size, className, ...props }: SwitchP
             <SwitchPrimitive.Root
                 className={cn(
                     'relative inline-flex shrink-0 cursor-pointer rounded-full border-2 border-transparent',
-                    'transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-900',
+                    'transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2',
                     'disabled:cursor-not-allowed disabled:opacity-50',
-                    'data-[state=checked]:bg-zinc-900 data-[state=unchecked]:bg-zinc-300',
+                    'data-[state=checked]:bg-stone-900 data-[state=unchecked]:bg-stone-300',
                     size === 'small' ? 'h-4 w-7' : 'h-5 w-9',
                     loading && 'opacity-60 pointer-events-none',
                     className,
