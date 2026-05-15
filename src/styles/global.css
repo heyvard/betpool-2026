@@ -6,4 +6,12 @@
     ul {
         @apply list-disc list-inside;
     }
+
+    @media screen and (max-width: 767px) {
+        input,
+        textarea,
+        select {
+            font-size: 16px;
+        }
+    }
 }
