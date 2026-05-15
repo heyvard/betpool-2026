@@ -88,8 +88,9 @@ const Regler: NextPage = () => {
                 Kampverdier
             </Heading>
             <ul className="mb-4 list-disc list-inside text-sm space-y-1">
+                <li>Sekstendelsfinaler: 2</li>
                 <li>Åttendedelsfinaler: 2</li>
-                <li>Kvartfinaler: 2</li>
+                <li>Kvartfinaler: 3</li>
                 <li>Semifinaler: 3</li>
                 <li>Finale: 4</li>
             </ul>

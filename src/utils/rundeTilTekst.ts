@@ -1,7 +1,7 @@
 export function rundeTilTekst(runde: number) {
     switch (runde) {
         case 4:
-            return 'Runde av 32'
+            return 'Sekstendelsfinale'
         case 5:
             return 'Åttendedelsfinale'
         case 6:
