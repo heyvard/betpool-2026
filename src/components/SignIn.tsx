@@ -17,7 +17,7 @@ export function SignInScreen() {
         <>
             <BpCard>
                 <Heading size="large" align="center">
-                    EM Betpool
+                    VM Betpool
                 </Heading>
             </BpCard>
 

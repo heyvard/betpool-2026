@@ -5,7 +5,6 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Commands
 
 - `pnpm dev` — local Next.js dev server (http://localhost:3000).
-- `pnpm dev-vm` — dev server with `VM=true` so API handlers `SET search_path TO vm_2022` (for the older World Cup dataset).
 - `pnpm build` / `pnpm start` — production build / serve.
 - `pnpm lint` / `pnpm lint:fix` — `next lint`.
 - `pnpm prettier:check` / `pnpm prettier:write` — formatting. `pnpm format` runs both prettier write and lint fix.
@@ -21,7 +20,7 @@ UI strings and many identifiers are Norwegian (e.g., `erIFørsteRunde`, `rundeTi
 
 ## Architecture
 
-This is a private betting pool for a football tournament (currently Euro 2024; the active tournament-winner team is in `src/components/results/winner.ts` and top scorer in `topscorer.ts`).
+This is a private betting pool for a football tournament (currently VM 2026; the active tournament-winner team is in `src/components/results/winner.ts` and top scorer in `topscorer.ts`).
 
 ### Stack
 
@@ -30,8 +29,8 @@ Next.js 14 pages router + React 18 + TypeScript, Tailwind + `@navikt/ds-react` (
 ### Request flow
 
 1. Client signs in via Firebase (`src/auth/clientApp.ts`), then sends an ID token in `Authorization: Bearer …` headers from React Query hooks in `src/queries/`.
-2. Every `/api/v1/*` handler in `src/pages/api/v1/` wraps its function with `auth(...)` from `src/auth/authHandler.ts`. `auth` verifies the JWT against Google's JWKS (`verifiserIdToken.ts`, audience/issuer pinned to `betpool-2022`), opens a pooled Postgres client, looks up the user row by `firebase_user_id`, and passes `{ req, res, jwtPayload, client, user }` (`ApiHandlerOpts`) to the handler.
-3. Pool is process-wide singleton with `max: 1` (Vercel serverless). When `VM=true`, the handler issues `SET search_path TO vm_2022` so the old World Cup dataset is queried instead of the default schema.
+2. Every `/api/v1/*` handler in `src/pages/api/v1/` wraps its function with `auth(...)` from `src/auth/authHandler.ts`. `auth` verifies the JWT against Google's JWKS (`verifiserIdToken.ts`, audience/issuer pinned to `betpool-2026`), opens a pooled Postgres client, looks up the user row by `firebase_user_id`, and passes `{ req, res, jwtPayload, client, user }` (`ApiHandlerOpts`) to the handler.
+3. Pool is process-wide singleton with `max: 1` (Vercel serverless).
 4. `NEXT_PUBLIC_MOCK=true` (`erMock()`) makes `auth` bypass JWT/DB entirely and inject a fake `Testy` user — used for local UI work without Firebase/DB.
 5. `NEXT_PUBLIC_TEST_AUTH=true` (`erTestAuth()`) enables test-auth mode: `auth` skips JWT verification but keeps the real DB client, resolving the user from an `x-test-user` header or a `betpool_test_user` cookie. The client (`useSession`/`useAuthedFetch`) skips Firebase, and a dev-only `<TestUserSwitcher />` lets you pick which user you are. Powers `test:integration` and `test:e2e`. Never set in production.
 

@@ -92,9 +92,6 @@ export function auth(fn: { (_opts: ApiHandlerOpts): Promise<void> }) {
             let client: PoolClient | null = null
             try {
                 client = await getPool().connect()
-                if (process.env.VM === 'true') {
-                    await client.query('SET search_path TO vm_2022')
-                }
                 const userList = await client.query('SELECT * from users where firebase_user_id = $1', [
                     verifisert.payload.sub!,
                 ])

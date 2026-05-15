@@ -1,10 +1,9 @@
 {
-    "name": "betpool-2022",
+    "name": "betpool-2026",
     "version": "0.1.0",
     "private": true,
     "scripts": {
         "dev": "next dev",
-        "dev-vm": "VM=true next dev",
         "dev:test": "./scripts/dev-test.sh",
         "build": "next build",
         "vercel-build": "knex migrate:latest && next build",
