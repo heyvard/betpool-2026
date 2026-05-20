@@ -43,7 +43,7 @@ export function regnUtScoreForKamp(bets: MatchBet[]): Map<string, MatchPoeng> {
         let uavgjort = 0
         let borte = 0
         bets.forEach((b) => {
-            if (b.home_score && b.away_score) {
+            if (b.home_score != null && b.away_score != null) {
                 const utfall = finnUtfall(b.home_score, b.away_score)
                 if (utfall == 'H') {
                     hjemme++
@@ -100,7 +100,7 @@ export function regnUtScoreForKamp(bets: MatchBet[]): Map<string, MatchPoeng> {
                 if (riktig) {
                     riktigeSvar++
                 }
-                if (b.home_score && b.away_score) {
+                if (b.home_score != null && b.away_score != null) {
                     faktiskeBets++
                     const betUtfall = finnUtfall(b.home_score, b.away_score)
                     if (betUtfall == utfall) {

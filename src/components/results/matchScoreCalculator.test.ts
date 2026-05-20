@@ -1,6 +1,7 @@
 import { regnUtScoreForKamp } from './matchScoreCalculator'
 import { expect } from '@jest/globals'
 import { skapMatchBetArray } from './testdatahelper'
+import { MatchBet } from '../../queries/useAllBets'
 
 describe('Tester match score calculator', () => {
     it('Tom input', () => {
@@ -30,6 +31,41 @@ describe('Tester match score calculator', () => {
             borte: 1,
             hjemme: 0,
             uavgjort: 8,
+        })
+    })
+
+    it('teller med tips der scoren er tallet 0', () => {
+        // Postgres returnerer scorene som tall, ikke strenger slik testdataene
+        // over bruker. Tallet 0 er falsy i JS, så en tidligere
+        // `if (home_score && away_score)`-sjekk droppet 0-0-tips fra tellingen.
+        const lagBet = (home: number, away: number, user: string) =>
+            ({
+                match_num: 1,
+                round: 1,
+                game_start: 'x',
+                home_team: 'A',
+                away_team: 'B',
+                home_result: 0,
+                away_result: 0,
+                home_score: home,
+                away_score: away,
+                user_id: user,
+                // MatchBet er typet `string | null`, men runtime-verdien er et tall.
+            }) as unknown as MatchBet
+
+        const res = regnUtScoreForKamp([lagBet(0, 0, '1'), lagBet(0, 0, '2'), lagBet(2, 1, '3')])
+        expect(res.get('1')).toEqual({
+            matchid: '1',
+            riktigUtfall: 1,
+            riktigResultat: 1,
+            antallRiktigeSvar: 2,
+            antallRiktigeUtfall: 2,
+            andelRiktigeUtfall: 2 / 3,
+            andelRiktigeResultat: 2 / 3,
+            utfall: 'U',
+            hjemme: 1,
+            uavgjort: 2,
+            borte: 0,
         })
     })
 
