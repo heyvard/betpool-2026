@@ -40,6 +40,7 @@ export interface UserForAdmin {
     name: string
     email: string
     paid: boolean
+    superadmin: boolean
     scoreadmin: boolean
     paymentadmin: boolean
     active: boolean
