@@ -3,6 +3,12 @@
 @tailwind utilities;
 
 @layer base {
+    html,
+    body {
+        /* Skru av nettleserens egen «dra ned for å oppdatere» så vår egen styrer */
+        overscroll-behavior-y: contain;
+    }
+
     ul {
         @apply list-disc list-inside;
     }
