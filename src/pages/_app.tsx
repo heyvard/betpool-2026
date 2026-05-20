@@ -12,7 +12,7 @@ import { erTestAuth } from '../utils/erTestAuth'
 import { TestUserSwitcher } from '../components/dev/TestUserSwitcher'
 import { TestClock } from '../components/dev/TestClock'
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu'
-import { Banknote, House, ListOrdered, Menu, Pilcrow } from 'lucide-react'
+import { Banknote, BookOpen, House, ListOrdered, Menu } from 'lucide-react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { SignInScreen } from '../components/SignIn'
 import { LoadingScreen } from '../components/loading/LoadingScreen'
@@ -51,7 +51,7 @@ function Layout({ children }: { children: React.ReactNode }) {
                 <NavKnapp url="/" icon={<House className="w-5 h-5" />} />
                 <NavKnapp url="/my-bets" text="Kamper" icon={<Banknote className="w-5 h-5" />} />
                 <NavKnapp url="/leaderboard" text="Resultater" icon={<ListOrdered className="w-5 h-5" />} />
-                <NavKnapp url="/rules" text="Regler" icon={<Pilcrow className="w-5 h-5" />} />
+                <NavKnapp url="/rules" text="Regler" icon={<BookOpen className="w-5 h-5" />} />
 
                 <DropdownMenu.Root>
                     <DropdownMenu.Trigger asChild>
