@@ -69,7 +69,7 @@ export function SignInScreen() {
             ) : (
                 <div className="rounded-xl bg-white p-4 shadow-sm ring-1 ring-stone-200/70">
                     <p className="mb-3 text-center text-sm font-medium text-stone-700">Logg inn for å bli med</p>
-                    <StyledFirebaseAuth uiConfig={uiConfig} />
+                    <StyledFirebaseAuth uiConfig={uiConfig} className="fb-auth" />
                     <p className="mt-3 text-center text-xs text-stone-400">Bruk din vanlige nettleser på mobil.</p>
                 </div>
             )}

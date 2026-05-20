@@ -21,3 +21,112 @@
         }
     }
 }
+
+/* --- FirebaseUI-innlogging: tilpasset appens stone/gull-design ---
+   firebaseui.css lastes etter denne fila, så vi scoper under .fb-auth
+   (to klasser slår FirebaseUIs enkeltklasse-regler) og bruker !important
+   der FirebaseUI setter farger via inline-style. */
+
+.fb-auth .firebaseui-container {
+    background-color: transparent;
+    box-shadow: none;
+    color: #1c1917;
+    font-family: inherit;
+    max-width: none;
+}
+
+.fb-auth .firebaseui-card-content,
+.fb-auth .firebaseui-card-header,
+.fb-auth .firebaseui-card-footer,
+.fb-auth .firebaseui-card-actions {
+    padding: 0;
+}
+
+.fb-auth .firebaseui-idp-list {
+    margin: 0;
+}
+
+.fb-auth .firebaseui-idp-list > .firebaseui-list-item {
+    margin-bottom: 8px;
+}
+
+.fb-auth .firebaseui-idp-list > .firebaseui-list-item:last-child {
+    margin-bottom: 0;
+}
+
+/* Innloggingsknappene */
+.fb-auth .firebaseui-idp-button {
+    max-width: none;
+    width: 100%;
+    min-height: 44px;
+    border-radius: 0.5rem;
+    box-shadow: none !important;
+}
+
+/* Google: hvit knapp med stone-ramme */
+.fb-auth .firebaseui-idp-google {
+    background-color: #fff !important;
+    border: 1px solid #d6d3d1;
+}
+.fb-auth .firebaseui-idp-google:hover {
+    background-color: #fafaf9 !important;
+}
+.fb-auth .firebaseui-idp-google > .firebaseui-idp-text {
+    color: #44403c;
+}
+
+/* E-post: appens mørke primærknapp (mail-ikonet er hvitt) */
+.fb-auth .firebaseui-idp-password {
+    background-color: #1c1917 !important;
+}
+.fb-auth .firebaseui-idp-password:hover {
+    background-color: #292524 !important;
+}
+
+.fb-auth .firebaseui-idp-text {
+    font-family: inherit;
+    font-weight: 500;
+}
+
+/* E-post-skjemaet */
+.fb-auth .firebaseui-title,
+.fb-auth .firebaseui-subtitle {
+    font-family: inherit;
+    color: #1c1917;
+    font-size: 16px;
+    font-weight: 600;
+}
+.fb-auth .firebaseui-text {
+    font-family: inherit;
+    color: #57534e;
+}
+.fb-auth .firebaseui-link {
+    color: #b45309;
+}
+
+/* Tekstfelt: bytt MDLs indigo understrek mot gull */
+.fb-auth .mdl-textfield__label:after {
+    background-color: #f59e0b;
+}
+
+/* Primærknapp i skjemaet (Neste/Lagre) */
+.fb-auth .firebaseui-id-submit {
+    background-color: #f59e0b !important;
+    color: #1c1917 !important;
+    border-radius: 0.5rem;
+    font-family: inherit;
+    font-weight: 600;
+    box-shadow: none !important;
+}
+.fb-auth .firebaseui-id-submit:hover,
+.fb-auth .firebaseui-id-submit:active,
+.fb-auth .firebaseui-id-submit:focus {
+    background-color: #fbbf24 !important;
+}
+
+/* Sekundærknapp (Avbryt o.l.) */
+.fb-auth .firebaseui-id-secondary-link {
+    color: #57534e;
+    font-family: inherit;
+    border-radius: 0.5rem;
+}
