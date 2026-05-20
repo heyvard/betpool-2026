@@ -26,6 +26,7 @@ export interface MatchBet {
     home_result: string | null
     home_team: string
     round: number
+    joker?: boolean
 }
 
 export interface MatchBetMedScore {
@@ -42,6 +43,7 @@ export interface MatchBetMedScore {
     poeng: number
     riktigUtfall: boolean
     riktigResultat: boolean
+    joker: boolean
     matchpoeng: MatchPoeng
 }
 

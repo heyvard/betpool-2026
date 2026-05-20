@@ -16,6 +16,7 @@ const handler = async function handler(opts: ApiHandlerOpts): Promise<void> {
         match_num: number
         home_score: string | null
         away_score: string | null
+        joker: boolean
     }
 
     interface ScoreRow {
@@ -37,7 +38,7 @@ const handler = async function handler(opts: ApiHandlerOpts): Promise<void> {
 
     const [betRows, scoreRows, userRows] = await Promise.all([
         client.query<BetRow>(`
-            SELECT b.user_id, b.match_num, b.home_score, b.away_score
+            SELECT b.user_id, b.match_num, b.home_score, b.away_score, b.joker
             FROM bets b
             JOIN users u ON u.id = b.user_id
             WHERE u.active = true`),
@@ -71,6 +72,7 @@ const handler = async function handler(opts: ApiHandlerOpts): Promise<void> {
                 away_score: b.away_score,
                 home_result: score?.home_score ?? null,
                 away_result: score?.away_score ?? null,
+                joker: b.joker,
             }
         })
         .filter(Boolean)

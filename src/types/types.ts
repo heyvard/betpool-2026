@@ -13,6 +13,7 @@ export interface Bet {
     away_score: number | null
     match_num: number
     round: number
+    joker: boolean
 }
 
 export interface Chat {

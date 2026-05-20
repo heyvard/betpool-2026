@@ -28,6 +28,7 @@ export function calculateAllBetsExtended(allBets: AllBets): AllBetsExtended {
                     poeng: 0,
                     riktigResultat: false,
                     riktigUtfall: false,
+                    joker: b.joker ?? false,
                     matchpoeng: scoreForKamp.get(String(b.match_num))!,
                 }
             } else {
@@ -41,6 +42,10 @@ export function calculateAllBetsExtended(allBets: AllBets): AllBetsExtended {
                 if (riktigResultat) {
                     poeng = poeng + scoreForKamp.get(String(b.match_num))!.riktigResultat
                 }
+                const joker = b.joker ?? false
+                if (joker) {
+                    poeng = poeng * 2
+                }
                 return {
                     ...b,
                     away_score: stringTilNumber(b.away_score),
@@ -48,6 +53,7 @@ export function calculateAllBetsExtended(allBets: AllBets): AllBetsExtended {
                     poeng: poeng,
                     riktigResultat: riktigResultat,
                     riktigUtfall: riktigUtfall,
+                    joker: joker,
                     matchpoeng: scoreForKamp.get(String(b.match_num))!,
                 }
             }

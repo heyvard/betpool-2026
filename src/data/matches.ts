@@ -84,3 +84,7 @@ export function getMatchByNum(num: number): Match | undefined {
 export function getMatchMap(): Map<number, Match> {
     return _matchMap
 }
+
+export function getMatchNumsInRound(round: number): number[] {
+    return _matches.filter((m) => m.round === round).map((m) => m.match_num)
+}

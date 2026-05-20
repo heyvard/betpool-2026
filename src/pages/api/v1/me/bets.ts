@@ -14,11 +14,12 @@ const handler = async function handler(opts: ApiHandlerOpts): Promise<void> {
         match_num: number
         home_score: number | null
         away_score: number | null
+        joker: boolean
     }
 
     const betRows = (
         await client.query<BetRow>(
-            `SELECT b.match_num, b.home_score, b.away_score
+            `SELECT b.match_num, b.home_score, b.away_score, b.joker
              FROM bets b
              JOIN users u ON u.id = b.user_id
              WHERE b.user_id = $1
@@ -47,6 +48,7 @@ const handler = async function handler(opts: ApiHandlerOpts): Promise<void> {
                 home_score: bet?.home_score ?? null,
                 away_score: bet?.away_score ?? null,
                 match_num: match.match_num,
+                joker: bet?.joker ?? false,
             }
         })
         .sort((a, b) => new Date(a.game_start).getTime() - new Date(b.game_start).getTime())

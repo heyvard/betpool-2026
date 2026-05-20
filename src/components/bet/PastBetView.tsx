@@ -5,7 +5,7 @@ import { fixLand } from './BetView'
 import { rundeTilTekst } from '../../utils/rundeTilTekst'
 import React from 'react'
 import nb from 'dayjs/locale/nb'
-import { Calendar, CheckCheck, ChevronRight, Target, X } from 'lucide-react'
+import { Calendar, CheckCheck, ChevronRight, Target, X, Zap } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 interface StatusStyle {
@@ -88,14 +88,22 @@ export const PastBetView = ({ bet, matchside, navn }: { bet: MatchBetMedScore; m
             </div>
 
             <div className="flex items-center justify-between gap-3 pl-5 pr-4 py-3">
-                <span
-                    className={cn(
-                        'inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold ring-1 tabular-nums',
-                        s.poengTone,
+                <div className="flex items-center gap-2 flex-wrap">
+                    <span
+                        className={cn(
+                            'inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold ring-1 tabular-nums',
+                            s.poengTone,
+                        )}
+                    >
+                        {harPoeng ? `+${bet.poeng}` : bet.poeng} poeng
+                    </span>
+                    {bet.joker && (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-1 text-xs font-semibold text-amber-800 ring-1 ring-amber-200">
+                            <Zap className="w-3 h-3 fill-amber-500 text-amber-500" />
+                            Joker ×2
+                        </span>
                     )}
-                >
-                    {harPoeng ? `+${bet.poeng}` : bet.poeng} poeng
-                </span>
+                </div>
                 {!matchside && (
                     <NextLink
                         href={'/match/' + bet.match_num}

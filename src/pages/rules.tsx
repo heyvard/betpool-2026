@@ -3,7 +3,7 @@ import type { NextPage } from 'next'
 import { Spinner } from '../components/loading/Spinner'
 import React from 'react'
 import { UseAllBets } from '../queries/useAllBets'
-import { Calculator, Clock, Info, Sparkles, Star, Trophy, Wallet } from 'lucide-react'
+import { Calculator, Clock, Info, Sparkles, Star, Trophy, Wallet, Zap } from 'lucide-react'
 
 function Seksjon({ ikon, tittel, children }: { ikon: React.ReactNode; tittel: string; children: React.ReactNode }) {
     return (
@@ -155,6 +155,36 @@ const Regler: NextPage = () => {
                     </ul>
                     <p className="mt-1 font-medium text-stone-900">Til sammen: 4 poeng.</p>
                     <p className="mt-1">Samme blink i finalen (kampverdi 4) ville gitt 4 + 12 = 16 poeng.</p>
+                </div>
+            </Seksjon>
+
+            <Seksjon ikon={<Zap className="h-4 w-4" />} tittel="Joker">
+                <p>
+                    I hver runde kan du sette <span className="font-medium">joker</span> på én kamp du har tippet.
+                    Poengene for den kampen — både riktig utfall og riktig resultat —{' '}
+                    <span className="font-medium">dobles</span>.
+                </p>
+                <p>
+                    Jokeren velger du på «Mine kamper». Du kan flytte den fritt mellom kampene i runden helt til
+                    jokerkampen starter — da låses jokeren for den runden.
+                </p>
+                <p>
+                    Gruppespillet har tre runder, og hver sluttspillrunde teller som sin egen runde. Det gir åtte jokere
+                    å fordele gjennom turneringen.
+                </p>
+                <p className="flex items-start gap-2 rounded-lg bg-amber-50 px-3 py-2 text-amber-900">
+                    <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
+                    <span>Spar jokeren til en kamp du har god magefølelse på — en blink dobler uttellingen.</span>
+                </p>
+                <div className="rounded-lg bg-stone-50 px-3 py-2.5 text-stone-600">
+                    <p className="font-medium text-stone-700">Regneeksempel</p>
+                    <p className="mt-1">
+                        Du jokrer en kvartfinale (kampverdi 3) og treffer det eksakte resultatet der under 15 % traff:
+                    </p>
+                    <ul className="mt-1 space-y-0.5">
+                        <li>Riktig utfall 3 poeng + riktig resultat 9 poeng = 12 poeng</li>
+                        <li>Med joker: 12 × 2 = 24 poeng</li>
+                    </ul>
                 </div>
             </Seksjon>
 

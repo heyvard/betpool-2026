@@ -2,16 +2,26 @@ import { Bet } from '../../types/types'
 import dayjs from 'dayjs'
 import React, { useEffect, useState } from 'react'
 import { UseMutateBet } from '../../queries/mutateBet'
+import { UseMutateJoker } from '../../queries/mutateJoker'
 import { hentFlag, hentNorsk } from '../../utils/lag'
 import NextLink from 'next/link'
 import { rundeTilTekst } from '../../utils/rundeTilTekst'
 import { nå } from '../../utils/testClock'
-import { Calendar, Check, ChevronRight, Lock, Minus, Plus, Save } from 'lucide-react'
+import { Calendar, Check, ChevronRight, Lock, Minus, Plus, Save, Zap } from 'lucide-react'
 import nb from 'dayjs/locale/nb'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 
-export const BetView = ({ bet, matchside }: { bet: Bet; matchside: boolean }) => {
+export interface JokerContext {
+    // Denne kampen har jokeren for runden.
+    aktiv: boolean
+    // Navn på en annen kamp i samme runde som har jokeren, ellers null.
+    bruktPå: string | null
+    // Jokeren for runden ligger på en kamp som alt har startet — den kan ikke flyttes.
+    låst: boolean
+}
+
+export const BetView = ({ bet, matchside, joker }: { bet: Bet; matchside: boolean; joker: JokerContext }) => {
     const numberPropTilString = (prop: number | null) => {
         if (prop == null) {
             return ''
@@ -47,6 +57,10 @@ export const BetView = ({ bet, matchside }: { bet: Bet; matchside: boolean }) =>
         lagreCb,
     )
 
+    const jokerMutation = UseMutateJoker()
+    // Jokeren kan bare settes på et tips som er lagret i databasen.
+    const harLagretTips = bet.home_score != null && bet.away_score != null
+
     const disabled = kampstart.isBefore(nå())
     const lagreknappSynlig = (hjemmescore !== hjemmescoreProp || bortescore !== bortescoreProp) && !nyligLagret
     const beggeFylt = hjemmescore !== '' && bortescore !== ''
@@ -71,7 +85,12 @@ export const BetView = ({ bet, matchside }: { bet: Bet; matchside: boolean }) =>
     }, [lagreknappSynlig])
 
     return (
-        <div className="my-4 bg-white rounded-xl shadow-sm ring-1 ring-stone-200/70 overflow-hidden">
+        <div
+            className={cn(
+                'my-4 bg-white rounded-xl shadow-sm overflow-hidden',
+                joker.aktiv ? 'ring-2 ring-amber-300' : 'ring-1 ring-stone-200/70',
+            )}
+        >
             <div className="flex items-center justify-between gap-2 px-4 pt-3 pb-2">
                 <span className="inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-stone-500">
                     <span className="h-1.5 w-1.5 rounded-full bg-amber-500" aria-hidden />
@@ -99,6 +118,15 @@ export const BetView = ({ bet, matchside }: { bet: Bet; matchside: boolean }) =>
                     pending={lagreknappSynlig}
                 />
             </div>
+
+            <JokerSeksjon
+                joker={joker}
+                harLagretTips={harLagretTips}
+                disabled={disabled}
+                isPending={jokerMutation.isPending}
+                feil={jokerMutation.error?.message ?? null}
+                onToggle={(verdi) => jokerMutation.mutate({ matchNum: bet.match_num, joker: verdi })}
+            />
 
             <div className="flex items-center justify-between gap-3 px-4 py-3 min-h-[3.25rem]">
                 <div className="flex items-center gap-2 flex-wrap">
@@ -158,6 +186,78 @@ export const BetView = ({ bet, matchside }: { bet: Bet; matchside: boolean }) =>
                     </NextLink>
                 )}
             </div>
+        </div>
+    )
+}
+
+interface JokerSeksjonProps {
+    joker: JokerContext
+    harLagretTips: boolean
+    disabled: boolean
+    isPending: boolean
+    feil: string | null
+    onToggle: (verdi: boolean) => void
+}
+
+function JokerSeksjon({ joker, harLagretTips, disabled, isPending, feil, onToggle }: JokerSeksjonProps) {
+    if (disabled) {
+        return null
+    }
+
+    let innhold: React.ReactNode
+    if (!harLagretTips) {
+        innhold = (
+            <span className="inline-flex items-center gap-1.5 text-xs text-stone-400">
+                <Zap className="w-3.5 h-3.5" />
+                Lagre et tips for å kunne bruke joker
+            </span>
+        )
+    } else if (joker.aktiv) {
+        innhold = (
+            <div className="flex items-center justify-between gap-3">
+                <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-amber-700">
+                    <Zap className="w-4 h-4 fill-amber-500 text-amber-500" />
+                    Joker aktiv — kampen teller dobbelt
+                </span>
+                <Button size="small" variant="ghost" onClick={() => onToggle(false)} loading={isPending}>
+                    Fjern
+                </Button>
+            </div>
+        )
+    } else if (joker.låst) {
+        innhold = (
+            <span className="inline-flex items-center gap-1.5 text-xs text-stone-500">
+                <Lock className="w-3.5 h-3.5 shrink-0" />
+                <span className="truncate">Joker brukt på {joker.bruktPå} denne runden</span>
+            </span>
+        )
+    } else {
+        innhold = (
+            <div className="flex items-center justify-between gap-3">
+                <span className="inline-flex items-center gap-1.5 text-xs text-stone-500 min-w-0">
+                    <Zap className="w-3.5 h-3.5 shrink-0" />
+                    <span className="truncate">
+                        {joker.bruktPå ? `Joker står på ${joker.bruktPå}` : 'Doble poengene på én kamp i runden'}
+                    </span>
+                </span>
+                <Button
+                    size="small"
+                    variant="outline"
+                    onClick={() => onToggle(true)}
+                    loading={isPending}
+                    icon={<Zap className="w-3.5 h-3.5" />}
+                    className="shrink-0"
+                >
+                    {joker.bruktPå ? 'Flytt hit' : 'Bruk joker'}
+                </Button>
+            </div>
+        )
+    }
+
+    return (
+        <div className={cn('border-b border-stone-100 px-4 py-3', joker.aktiv && 'bg-amber-50/50')}>
+            {innhold}
+            {feil && <p className="mt-1.5 text-xs text-red-600">{feil}</p>}
         </div>
     )
 }
