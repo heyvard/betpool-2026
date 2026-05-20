@@ -19,6 +19,20 @@ const handler = async function handler(opts: ApiHandlerOpts): Promise<void> {
 
     const reqBody = JSON.parse(req.body)
 
+    const homeScore = reqBody.home_score
+    const awayScore = reqBody.away_score
+    if (
+        !Number.isInteger(homeScore) ||
+        !Number.isInteger(awayScore) ||
+        homeScore < 0 ||
+        awayScore < 0 ||
+        homeScore > 99 ||
+        awayScore > 99
+    ) {
+        res.status(400).json({ error: 'home_score og away_score må være heltall mellom 0 og 99' })
+        return
+    }
+
     const match = getMatchByNum(matchNum)
     if (!match) {
         res.status(404).json({ error: 'match not found' })
@@ -34,7 +48,7 @@ const handler = async function handler(opts: ApiHandlerOpts): Promise<void> {
          VALUES ($1, $2, $3, $4)
          ON CONFLICT (user_id, match_num)
          DO UPDATE SET home_score = $3, away_score = $4`,
-        [user.id, matchNum, reqBody.home_score, reqBody.away_score],
+        [user.id, matchNum, homeScore, awayScore],
     )
     res.status(200).json({ ok: 123 })
 }

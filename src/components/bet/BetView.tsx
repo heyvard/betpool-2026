@@ -1,6 +1,6 @@
 import { Bet } from '../../types/types'
 import dayjs from 'dayjs'
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { UseMutateBet } from '../../queries/mutateBet'
 import { hentFlag, hentNorsk } from '../../utils/lag'
 import NextLink from 'next/link'
@@ -49,6 +49,26 @@ export const BetView = ({ bet, matchside }: { bet: Bet; matchside: boolean }) =>
 
     const disabled = kampstart.isBefore(nå())
     const lagreknappSynlig = (hjemmescore !== hjemmescoreProp || bortescore !== bortescoreProp) && !nyligLagret
+    const beggeFylt = hjemmescore !== '' && bortescore !== ''
+
+    const [visSterktHint, setVisSterktHint] = useState(false)
+    useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setVisSterktHint(false)
+        if (!lagreknappSynlig) return
+        const timer = setTimeout(() => setVisSterktHint(true), 5000)
+        return () => clearTimeout(timer)
+    }, [lagreknappSynlig, hjemmescore, bortescore])
+
+    useEffect(() => {
+        if (!lagreknappSynlig) return
+        const handler = (e: BeforeUnloadEvent) => {
+            e.preventDefault()
+            e.returnValue = ''
+        }
+        window.addEventListener('beforeunload', handler)
+        return () => window.removeEventListener('beforeunload', handler)
+    }, [lagreknappSynlig])
 
     return (
         <div className="my-4 bg-white rounded-xl shadow-sm ring-1 ring-stone-200/70 overflow-hidden">
@@ -81,17 +101,40 @@ export const BetView = ({ bet, matchside }: { bet: Bet; matchside: boolean }) =>
             </div>
 
             <div className="flex items-center justify-between gap-3 px-4 py-3 min-h-[3.25rem]">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
                     {lagreknappSynlig && (
-                        <Button
-                            size="small"
-                            variant="accent"
-                            onClick={() => mutate()}
-                            loading={isPending}
-                            icon={<Save className="w-3.5 h-3.5" />}
-                        >
-                            Lagre
-                        </Button>
+                        <>
+                            <Button
+                                size="small"
+                                variant="accent"
+                                onClick={() => mutate()}
+                                loading={isPending}
+                                disabled={!beggeFylt}
+                                icon={<Save className="w-3.5 h-3.5" />}
+                            >
+                                Lagre
+                            </Button>
+                            <span
+                                className={cn(
+                                    'inline-flex items-center gap-1.5 text-xs transition-colors',
+                                    !beggeFylt || visSterktHint ? 'text-amber-700 font-medium' : 'text-stone-600',
+                                )}
+                                aria-live="polite"
+                            >
+                                <span
+                                    aria-hidden
+                                    className={cn(
+                                        'h-1.5 w-1.5 rounded-full bg-amber-500',
+                                        (!beggeFylt || visSterktHint) && 'animate-pulse',
+                                    )}
+                                />
+                                {!beggeFylt
+                                    ? 'Fyll inn score for begge lag'
+                                    : visSterktHint
+                                      ? 'Husk å lagre endringen'
+                                      : 'Ikke lagret'}
+                            </span>
+                        </>
                     )}
                     {nyligLagret && (
                         <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-700">

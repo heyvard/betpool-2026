@@ -44,6 +44,19 @@ describe('tipping', () => {
         expect(res.status).toBe(400)
     })
 
+    it('PUT /api/v1/me/bets/[id] gir 400 når en score mangler', async () => {
+        await seedUser({ firebase_user_id: 'alice' })
+        const res = await api('/api/v1/me/bets/1', {
+            user: 'alice',
+            method: 'PUT',
+            body: { home_score: 2, away_score: null },
+        })
+        expect(res.status).toBe(400)
+
+        const rows = await withDb((c) => c.query('SELECT * FROM bets WHERE match_num = 1'))
+        expect(rows.rows).toHaveLength(0)
+    })
+
     it('GET /api/v1/me/bets returnerer egne tip per kamp', async () => {
         await seedUser({ firebase_user_id: 'alice' })
         await api('/api/v1/me/bets/1', { user: 'alice', method: 'PUT', body: { home_score: 2, away_score: 1 } })
