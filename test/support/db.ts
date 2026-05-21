@@ -31,6 +31,26 @@ export interface SeedUser {
     topscorer: string | null
 }
 
+export interface SeedBet {
+    user_id: string
+    match_num: number
+    home_score: number
+    away_score: number
+    joker?: boolean
+}
+
+// Legger et tips rett i bets-tabellen — uten å gå via API-et, så det virker
+// uavhengig av test-klokka (API-et avviser tips etter kampstart).
+export async function seedBet(b: SeedBet): Promise<void> {
+    await withDb((c) =>
+        c.query(
+            `INSERT INTO bets (user_id, match_num, home_score, away_score, joker)
+             VALUES ($1,$2,$3,$4,$5)`,
+            [b.user_id, b.match_num, b.home_score, b.away_score, b.joker ?? false],
+        ),
+    )
+}
+
 export async function seedUser(overrides: Partial<SeedUser> = {}): Promise<SeedUser & { id: string }> {
     const fid = overrides.firebase_user_id ?? `user-${Math.random().toString(36).slice(2, 8)}`
     const u: SeedUser = {

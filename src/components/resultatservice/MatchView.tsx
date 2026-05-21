@@ -53,7 +53,7 @@ export const MatchView = ({ match }: { match: Match }) => {
         e.target.select()
     }
     return (
-        <BpCard>
+        <BpCard testId={`kamp-${match.match_num}`}>
             <BodyShort spacing>{rundeTilTekst(match.round)}</BodyShort>
 
             <div className="flex items-end mb-1">
