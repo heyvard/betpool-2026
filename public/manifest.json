@@ -1,6 +1,15 @@
 {
   "short_name": "VM Betpool",
-  "name": "VM Betpool",
+  "name": "VM Betpool 2026",
+  "description": "Tippekonkurranse for fotball-VM 2026",
+  "lang": "no",
+  "id": "/",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#fafaf9",
+  "theme_color": "#1c1917",
   "icons": [
     {
       "src": "favicon-180x180.png",

@@ -5,5 +5,11 @@
         "deploymentEnabled": {
             "main": false
         }
-    }
+    },
+    "crons": [
+        {
+            "path": "/api/cron/send-reminders",
+            "schedule": "0 15 * * *"
+        }
+    ]
 }
