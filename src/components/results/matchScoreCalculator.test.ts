@@ -93,4 +93,54 @@ describe('Tester match score calculator', () => {
             uavgjort: 8,
         })
     })
+
+    it('Bronsefinale kamp 10 spillere 1 helt rett — samme vekting som semifinale', () => {
+        const res = regnUtScoreForKamp(
+            skapMatchBetArray({
+                runde: 8,
+                antallHeltRiktig: 1,
+                antallRiktigUtfall: 0,
+                antallFeil: 8,
+            }),
+        )
+        expect(res.size).toEqual(1)
+        expect(res.get('1')).toEqual({
+            antallRiktigeSvar: 1,
+            antallRiktigeUtfall: 1,
+            matchid: '1',
+            riktigResultat: 9,
+            riktigUtfall: 6,
+            utfall: 'B',
+            andelRiktigeResultat: 0.1111111111111111,
+            andelRiktigeUtfall: 0.1111111111111111,
+            borte: 1,
+            hjemme: 0,
+            uavgjort: 8,
+        })
+    })
+
+    it('Finale kamp 10 spillere 1 helt rett', () => {
+        const res = regnUtScoreForKamp(
+            skapMatchBetArray({
+                runde: 9,
+                antallHeltRiktig: 1,
+                antallRiktigUtfall: 0,
+                antallFeil: 8,
+            }),
+        )
+        expect(res.size).toEqual(1)
+        expect(res.get('1')).toEqual({
+            antallRiktigeSvar: 1,
+            antallRiktigeUtfall: 1,
+            matchid: '1',
+            riktigResultat: 12,
+            riktigUtfall: 8,
+            utfall: 'B',
+            andelRiktigeResultat: 0.1111111111111111,
+            andelRiktigeUtfall: 0.1111111111111111,
+            borte: 1,
+            hjemme: 0,
+            uavgjort: 8,
+        })
+    })
 })

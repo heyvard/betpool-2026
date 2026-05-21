@@ -89,6 +89,8 @@ export function regnUtScoreForKamp(bets: MatchBet[]): Map<string, MatchPoeng> {
                     case 7:
                         return 3
                     case 8:
+                        return 3
+                    case 9:
                         return 4
                 }
                 return 1

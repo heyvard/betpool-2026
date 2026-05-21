@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react'
 import { UseMutateBet } from '../../queries/mutateBet'
 import { UseMutateJoker } from '../../queries/mutateJoker'
 import { hentFlag, hentNorsk } from '../../utils/lag'
+import { kanHaJoker } from '../../data/matches'
 import NextLink from 'next/link'
 import { rundeTilTekst } from '../../utils/rundeTilTekst'
 import { nå } from '../../utils/testClock'
@@ -119,14 +120,16 @@ export const BetView = ({ bet, matchside, joker }: { bet: Bet; matchside: boolea
                 />
             </div>
 
-            <JokerSeksjon
-                joker={joker}
-                harLagretTips={harLagretTips}
-                disabled={disabled}
-                isPending={jokerMutation.isPending}
-                feil={jokerMutation.error?.message ?? null}
-                onToggle={(verdi) => jokerMutation.mutate({ matchNum: bet.match_num, joker: verdi })}
-            />
+            {kanHaJoker(bet.round) && (
+                <JokerSeksjon
+                    joker={joker}
+                    harLagretTips={harLagretTips}
+                    disabled={disabled}
+                    isPending={jokerMutation.isPending}
+                    feil={jokerMutation.error?.message ?? null}
+                    onToggle={(verdi) => jokerMutation.mutate({ matchNum: bet.match_num, joker: verdi })}
+                />
+            )}
 
             <div className="flex items-center justify-between gap-3 px-4 py-3 min-h-[3.25rem]">
                 <div className="flex items-center gap-2 flex-wrap">

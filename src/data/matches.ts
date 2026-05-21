@@ -39,9 +39,9 @@ function roundStringToInt(roundStr: string): number {
         case 'Semi-final':
             return 7
         case 'Match for third place':
-            return 7
-        case 'Final':
             return 8
+        case 'Final':
+            return 9
         default:
             return 1
     }
@@ -83,6 +83,12 @@ export function getMatchByNum(num: number): Match | undefined {
 
 export function getMatchMap(): Map<number, Match> {
     return _matchMap
+}
+
+// Joker finnes til og med semifinalen (runde 7). Bronsefinale (8) og finale (9)
+// har bare én kamp hver, så der gir joker ikke noe reelt valg — den er droppet.
+export function kanHaJoker(round: number): boolean {
+    return round >= 1 && round <= 7
 }
 
 export function getMatchNumsInRound(round: number): number[] {

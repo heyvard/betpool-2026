@@ -9,6 +9,8 @@ export function rundeTilTekst(runde: number) {
         case 7:
             return 'Semifinale'
         case 8:
+            return 'Bronsefinale'
+        case 9:
             return 'Finale'
     }
     return 'Gruppespill runde ' + runde

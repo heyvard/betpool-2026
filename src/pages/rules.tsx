@@ -40,6 +40,7 @@ const kampverdier = [
     { runde: 'Åttendedelsfinale', verdi: 2 },
     { runde: 'Kvartfinale', verdi: 3 },
     { runde: 'Semifinale', verdi: 3 },
+    { runde: 'Bronsefinale', verdi: 3 },
     { runde: 'Finale', verdi: 4 },
 ]
 
@@ -169,8 +170,9 @@ const Regler: NextPage = () => {
                     jokerkampen starter — da låses jokeren for den runden.
                 </p>
                 <p>
-                    Gruppespillet har tre runder, og hver sluttspillrunde teller som sin egen runde. Det gir åtte jokere
-                    å fordele gjennom turneringen.
+                    Joker finnes i hver runde til og med semifinalen — tre gruppespillsrunder og fire sluttspillrunder,
+                    altså sju jokere. Bronsefinale og finale har ikke joker, for der er det bare én kamp og dermed ikke
+                    noe valg.
                 </p>
                 <p className="flex items-start gap-2 rounded-lg bg-amber-50 px-3 py-2 text-amber-900">
                     <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />

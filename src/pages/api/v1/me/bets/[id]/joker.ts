@@ -1,7 +1,7 @@
 import { ApiHandlerOpts } from '../../../../../../types/apiHandlerOpts'
 import { serverNå } from '../../../../../../utils/testClock'
 import { auth } from '../../../../../../auth/authHandler'
-import { getMatchByNum, getMatchNumsInRound } from '../../../../../../data/matches'
+import { getMatchByNum, getMatchNumsInRound, kanHaJoker } from '../../../../../../data/matches'
 
 // Setter eller fjerner jokeren på en kamp. Jokeren dobler kamppoengene, og hver
 // bruker kan ha nøyaktig én joker per runde. Når jokerkampen har startet er
@@ -51,7 +51,13 @@ const handler = async function handler(opts: ApiHandlerOpts): Promise<void> {
         return
     }
 
-    // joker = true: håndhev «én joker per runde». Finn en evt. eksisterende joker i runden.
+    // joker = true: bronsefinale og finale har ikke joker.
+    if (!kanHaJoker(match.round)) {
+        res.status(409).json({ error: 'joker er ikke tilgjengelig i denne kampen' })
+        return
+    }
+
+    // Håndhev «én joker per runde». Finn en evt. eksisterende joker i runden.
     const rundensKamper = getMatchNumsInRound(match.round)
     const eksisterende = await client.query<{ match_num: number }>(
         `SELECT match_num FROM bets
