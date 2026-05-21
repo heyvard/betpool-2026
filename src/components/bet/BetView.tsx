@@ -4,11 +4,11 @@ import React, { useEffect, useState } from 'react'
 import { UseMutateBet } from '../../queries/mutateBet'
 import { UseMutateJoker } from '../../queries/mutateJoker'
 import { hentFlag, hentNorsk } from '../../utils/lag'
-import { kanHaJoker } from '../../data/matches'
+import { erNorgeKamp, kanHaJoker } from '../../data/matches'
 import NextLink from 'next/link'
 import { rundeTilTekst } from '../../utils/rundeTilTekst'
 import { nå } from '../../utils/testClock'
-import { Calendar, Check, ChevronRight, Lock, Minus, Plus, Save, Zap } from 'lucide-react'
+import { Calendar, Check, ChevronRight, Flag, Lock, Minus, Plus, Save, Zap } from 'lucide-react'
 import nb from 'dayjs/locale/nb'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
@@ -93,11 +93,19 @@ export const BetView = ({ bet, matchside, joker }: { bet: Bet; matchside: boolea
             )}
         >
             <div className="flex items-center justify-between gap-2 px-4 pt-3 pb-2">
-                <span className="inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-stone-500">
-                    <span className="h-1.5 w-1.5 rounded-full bg-amber-500" aria-hidden />
-                    {rundeTilTekst(bet.round)}
-                </span>
-                <span className="inline-flex items-center gap-1.5 text-xs text-stone-500">
+                <div className="flex items-center gap-2 min-w-0">
+                    <span className="inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-stone-500">
+                        <span className="h-1.5 w-1.5 rounded-full bg-amber-500" aria-hidden />
+                        {rundeTilTekst(bet.round)}
+                    </span>
+                    {erNorgeKamp(bet.home_team, bet.away_team) && (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-red-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-red-800 ring-1 ring-red-200">
+                            <Flag className="w-3 h-3" />
+                            Norge ×2
+                        </span>
+                    )}
+                </div>
+                <span className="inline-flex items-center gap-1.5 text-xs text-stone-500 shrink-0">
                     <Calendar className="w-3.5 h-3.5" />
                     {kampstart.locale(nb).format('ddd D. MMM HH:mm')}
                 </span>

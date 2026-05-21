@@ -94,3 +94,9 @@ export function kanHaJoker(round: number): boolean {
 export function getMatchNumsInRound(round: number): number[] {
     return _matches.filter((m) => m.round === round).map((m) => m.match_num)
 }
+
+// Kamper der Norge spiller teller dobbelt — alle får doblet kamppoengene sine.
+const NORGE_NAVN = ['norway', 'norge']
+export function erNorgeKamp(homeTeam: string, awayTeam: string): boolean {
+    return [homeTeam, awayTeam].some((t) => NORGE_NAVN.includes(t.trim().toLowerCase()))
+}

@@ -5,8 +5,9 @@ import { fixLand } from './BetView'
 import { rundeTilTekst } from '../../utils/rundeTilTekst'
 import React from 'react'
 import nb from 'dayjs/locale/nb'
-import { Calendar, CheckCheck, ChevronRight, Target, X, Zap } from 'lucide-react'
+import { Calendar, CheckCheck, ChevronRight, Flag, Target, X, Zap } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { erNorgeKamp } from '../../data/matches'
 
 interface StatusStyle {
     stripe: string
@@ -101,6 +102,12 @@ export const PastBetView = ({ bet, matchside, navn }: { bet: MatchBetMedScore; m
                         <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-1 text-xs font-semibold text-amber-800 ring-1 ring-amber-200">
                             <Zap className="w-3 h-3 fill-amber-500 text-amber-500" />
                             Joker ×2
+                        </span>
+                    )}
+                    {erNorgeKamp(bet.home_team, bet.away_team) && (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-red-100 px-2 py-1 text-xs font-semibold text-red-800 ring-1 ring-red-200">
+                            <Flag className="w-3 h-3" />
+                            Norge ×2
                         </span>
                     )}
                 </div>

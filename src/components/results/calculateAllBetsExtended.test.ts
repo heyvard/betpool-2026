@@ -2,14 +2,21 @@ import { expect } from '@jest/globals'
 import { calculateAllBetsExtended } from './calculateAllBetsExtended'
 import { AllBets, MatchBet, OtherUser } from '../../queries/useAllBets'
 
-function bet(opts: { user: string; home: string; away: string; joker?: boolean }): MatchBet {
+function bet(opts: {
+    user: string
+    home: string
+    away: string
+    joker?: boolean
+    homeTeam?: string
+    awayTeam?: string
+}): MatchBet {
     return {
         user_id: opts.user,
         match_num: 1,
         round: 1,
         game_start: '2026-06-01T00:00:00Z',
-        home_team: 'Norge',
-        away_team: 'Brasil',
+        home_team: opts.homeTeam ?? 'Brasil',
+        away_team: opts.awayTeam ?? 'Argentina',
         home_score: opts.home,
         away_score: opts.away,
         home_result: '2',
@@ -52,5 +59,42 @@ describe('Joker dobler kamppoengene', () => {
 
         expect(betB.poeng).toEqual(0)
         expect(betB.joker).toEqual(true)
+    })
+})
+
+describe('Norge-kamper teller dobbelt', () => {
+    it('alle får doblet kamppoengene i en kamp der Norge spiller', () => {
+        const allBets: AllBets = {
+            users: [bruker('A'), bruker('B'), bruker('C')],
+            bets: [
+                bet({ user: 'A', home: '2', away: '1', homeTeam: 'Norway' }),
+                bet({ user: 'B', home: '2', away: '1', homeTeam: 'Norway' }),
+                bet({ user: 'C', home: '0', away: '0', homeTeam: 'Norway' }),
+            ],
+        }
+
+        const res = calculateAllBetsExtended(allBets)
+        const poeng = (user: string) => res.bets.find((b) => b.user_id === user)!.poeng
+
+        // Uten Norge-dobling hadde A og B fått 2 poeng hver.
+        expect(poeng('A')).toEqual(4)
+        expect(poeng('B')).toEqual(4)
+        expect(poeng('C')).toEqual(0)
+    })
+
+    it('joker og Norge-dobling stables — kamppoengene firedobles', () => {
+        const allBets: AllBets = {
+            users: [bruker('A'), bruker('B')],
+            bets: [
+                bet({ user: 'A', home: '2', away: '1', awayTeam: 'Norge' }),
+                bet({ user: 'B', home: '2', away: '1', awayTeam: 'Norge', joker: true }),
+            ],
+        }
+
+        const res = calculateAllBetsExtended(allBets)
+        const poeng = (user: string) => res.bets.find((b) => b.user_id === user)!.poeng
+
+        expect(poeng('A')).toEqual(4)
+        expect(poeng('B')).toEqual(8)
     })
 })

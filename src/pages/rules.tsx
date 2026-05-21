@@ -3,7 +3,7 @@ import type { NextPage } from 'next'
 import { Spinner } from '../components/loading/Spinner'
 import React from 'react'
 import { UseAllBets } from '../queries/useAllBets'
-import { Calculator, Clock, Info, Sparkles, Star, Trophy, Wallet, Zap } from 'lucide-react'
+import { Calculator, Clock, Flag, Info, Sparkles, Star, Trophy, Wallet, Zap } from 'lucide-react'
 
 function Seksjon({ ikon, tittel, children }: { ikon: React.ReactNode; tittel: string; children: React.ReactNode }) {
     return (
@@ -170,8 +170,8 @@ const Regler: NextPage = () => {
                     jokerkampen starter — da låses jokeren for den runden.
                 </p>
                 <p>
-                    Joker finnes i hver runde til og med åttendedelsfinalene — tre gruppespillsrunder, sekstendedels-
-                    og åttendedelsfinalene, altså fem jokere. Fra kvartfinalen og utover er det ikke joker.
+                    Joker finnes i hver runde til og med åttendedelsfinalene — tre gruppespillsrunder, sekstendedels- og
+                    åttendedelsfinalene, altså fem jokere. Fra kvartfinalen og utover er det ikke joker.
                 </p>
                 <p className="flex items-start gap-2 rounded-lg bg-amber-50 px-3 py-2 text-amber-900">
                     <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
@@ -188,6 +188,17 @@ const Regler: NextPage = () => {
                         <li>Med joker: 8 × 2 = 16 poeng</li>
                     </ul>
                 </div>
+            </Seksjon>
+
+            <Seksjon ikon={<Flag className="h-4 w-4" />} tittel="Norge-kamper">
+                <p>
+                    Kamper der <span className="font-medium">Norge</span> spiller teller dobbelt — alle får automatisk
+                    doblet kamppoengene sine, uavhengig av hva de har tippet.
+                </p>
+                <p>
+                    Setter du i tillegg joker på en Norge-kamp, stables doblingene: poengene for den kampen{' '}
+                    <span className="font-medium">firedobles</span>.
+                </p>
             </Seksjon>
 
             <Seksjon ikon={<Star className="h-4 w-4" />} tittel="Vinner og toppscorer">

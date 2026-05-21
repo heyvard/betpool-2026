@@ -3,6 +3,7 @@ import { stringTilNumber } from '../../utils/stringnumber'
 import { AllBets, MatchBetMedScore, OtherUser } from '../../queries/useAllBets'
 import { winner } from './winner'
 import { topscorer } from './topscorer'
+import { erNorgeKamp } from '../../data/matches'
 
 export interface AllBetsExtended {
     users: OtherUser[]
@@ -44,6 +45,10 @@ export function calculateAllBetsExtended(allBets: AllBets): AllBetsExtended {
                 }
                 const joker = b.joker ?? false
                 if (joker) {
+                    poeng = poeng * 2
+                }
+                // Norge-kamper teller dobbelt for alle.
+                if (erNorgeKamp(b.home_team, b.away_team)) {
                     poeng = poeng * 2
                 }
                 return {
