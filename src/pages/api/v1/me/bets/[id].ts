@@ -2,6 +2,7 @@ import { ApiHandlerOpts } from '../../../../../types/apiHandlerOpts'
 import { serverNå } from '../../../../../utils/testClock'
 import { auth } from '../../../../../auth/authHandler'
 import { getMatchByNum } from '../../../../../data/matches'
+import { loggEndring } from '../../../../../data/auditLog'
 
 const handler = async function handler(opts: ApiHandlerOpts): Promise<void> {
     const { user, res, req, client } = opts
@@ -43,6 +44,11 @@ const handler = async function handler(opts: ApiHandlerOpts): Promise<void> {
         return
     }
 
+    const før = await client.query<{ home_score: number; away_score: number }>(
+        `SELECT home_score, away_score FROM bets WHERE user_id = $1 AND match_num = $2`,
+        [user.id, matchNum],
+    )
+
     await client.query(
         `INSERT INTO bets (user_id, match_num, home_score, away_score)
          VALUES ($1, $2, $3, $4)
@@ -50,6 +56,16 @@ const handler = async function handler(opts: ApiHandlerOpts): Promise<void> {
          DO UPDATE SET home_score = $3, away_score = $4`,
         [user.id, matchNum, homeScore, awayScore],
     )
+
+    await loggEndring(client, {
+        actorUserId: user.id,
+        entitet: 'bet',
+        entitetNøkkel: `${user.id}:${matchNum}`,
+        handling: før.rowCount === 0 ? 'opprett_tipp' : 'endre_tipp',
+        før: før.rows[0] ?? null,
+        etter: { home_score: homeScore, away_score: awayScore },
+    })
+
     res.status(200).json({ ok: 123 })
 }
 

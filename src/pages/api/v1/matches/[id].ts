@@ -1,5 +1,6 @@
 import { ApiHandlerOpts } from '../../../../types/apiHandlerOpts'
 import { auth } from '../../../../auth/authHandler'
+import { loggEndring } from '../../../../data/auditLog'
 
 const handler = async function handler(opts: ApiHandlerOpts): Promise<void> {
     const { user, res, req, client } = opts
@@ -39,12 +40,27 @@ const handler = async function handler(opts: ApiHandlerOpts): Promise<void> {
     const setClauses = cols.map((col, i) => `${col} = $${i + 2}`).join(', ')
     const values = [matchNum, ...Object.values(updates)]
 
+    const før = await client.query(
+        `SELECT home_score, away_score, home_team_override, away_team_override
+         FROM match_scores WHERE match_num = $1`,
+        [matchNum],
+    )
+
     await client.query(
         `INSERT INTO match_scores (match_num, ${insertCols}, updated_at)
          VALUES ($1, ${insertPlaceholders}, now())
          ON CONFLICT (match_num) DO UPDATE SET ${setClauses}, updated_at = now()`,
         values,
     )
+
+    await loggEndring(client, {
+        actorUserId: user.id,
+        entitet: 'match_score',
+        entitetNøkkel: String(matchNum),
+        handling: 'sett_resultat',
+        før: før.rows[0] ?? null,
+        etter: updates,
+    })
 
     res.status(200).json({ ok: true })
 }

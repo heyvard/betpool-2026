@@ -2,6 +2,7 @@ import { ApiHandlerOpts } from '../../../../../../types/apiHandlerOpts'
 import { serverNå } from '../../../../../../utils/testClock'
 import { auth } from '../../../../../../auth/authHandler'
 import { getMatchByNum, getMatchNumsInRound, kanHaJoker } from '../../../../../../data/matches'
+import { loggEndring } from '../../../../../../data/auditLog'
 
 // Setter eller fjerner jokeren på en kamp. Jokeren dobler kamppoengene, og hver
 // bruker kan ha nøyaktig én joker per runde. Når jokerkampen har startet er
@@ -39,14 +40,26 @@ const handler = async function handler(opts: ApiHandlerOpts): Promise<void> {
         return
     }
 
-    const harBet = await client.query(`SELECT 1 FROM bets WHERE user_id = $1 AND match_num = $2`, [user.id, matchNum])
+    const harBet = await client.query<{ joker: boolean }>(
+        `SELECT joker FROM bets WHERE user_id = $1 AND match_num = $2`,
+        [user.id, matchNum],
+    )
     if (harBet.rowCount === 0) {
         res.status(409).json({ error: 'du må tippe kampen før du kan bruke joker' })
         return
     }
+    const jokerFør = harBet.rows[0].joker
 
     if (!joker) {
         await client.query(`UPDATE bets SET joker = false WHERE user_id = $1 AND match_num = $2`, [user.id, matchNum])
+        await loggEndring(client, {
+            actorUserId: user.id,
+            entitet: 'bet',
+            entitetNøkkel: `${user.id}:${matchNum}`,
+            handling: 'fjern_joker',
+            før: { joker: jokerFør },
+            etter: { joker: false },
+        })
         res.status(200).json({ ok: true })
         return
     }
@@ -82,6 +95,16 @@ const handler = async function handler(opts: ApiHandlerOpts): Promise<void> {
         [user.id, rundensKamper],
     )
     await client.query(`UPDATE bets SET joker = true WHERE user_id = $1 AND match_num = $2`, [user.id, matchNum])
+
+    const flyttetFra = eksisterende.rows.map((r) => r.match_num).filter((n) => n !== matchNum)
+    await loggEndring(client, {
+        actorUserId: user.id,
+        entitet: 'bet',
+        entitetNøkkel: `${user.id}:${matchNum}`,
+        handling: 'sett_joker',
+        før: { joker: jokerFør, joker_var_på_kamp: flyttetFra },
+        etter: { joker: true },
+    })
 
     res.status(200).json({ ok: true })
 }
