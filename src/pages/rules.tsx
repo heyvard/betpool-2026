@@ -196,8 +196,8 @@ const Regler: NextPage = () => {
                     doblet kamppoengene sine, uavhengig av hva de har tippet.
                 </p>
                 <p>
-                    Setter du i tillegg joker på en Norge-kamp, stables doblingene: poengene for den kampen{' '}
-                    <span className="font-medium">firedobles</span>.
+                    Joker kan ikke brukes på Norge-kamper — de teller alt dobbelt for alle, og joker i tillegg ville
+                    gitt for stor uttelling.
                 </p>
             </Seksjon>
 

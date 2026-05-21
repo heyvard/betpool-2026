@@ -128,7 +128,7 @@ export const BetView = ({ bet, matchside, joker }: { bet: Bet; matchside: boolea
                 />
             </div>
 
-            {kanHaJoker(bet.round) && (
+            {kanHaJoker(bet.round) && !erNorgeKamp(bet.home_team, bet.away_team) && (
                 <JokerSeksjon
                     joker={joker}
                     harLagretTips={harLagretTips}

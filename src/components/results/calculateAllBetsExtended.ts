@@ -21,6 +21,9 @@ export function calculateAllBetsExtended(allBets: AllBets): AllBetsExtended {
             }
         })
         .map((b): MatchBetMedScore => {
+            const norgeKamp = erNorgeKamp(b.home_team, b.away_team)
+            // Joker er ikke tillatt på Norge-kamper — en evt. gammel joker der teller ikke.
+            const joker = (b.joker ?? false) && !norgeKamp
             if (b.home_score == null || b.away_score == null) {
                 return {
                     ...b,
@@ -29,7 +32,7 @@ export function calculateAllBetsExtended(allBets: AllBets): AllBetsExtended {
                     poeng: 0,
                     riktigResultat: false,
                     riktigUtfall: false,
-                    joker: b.joker ?? false,
+                    joker: joker,
                     matchpoeng: scoreForKamp.get(String(b.match_num))!,
                 }
             } else {
@@ -43,12 +46,11 @@ export function calculateAllBetsExtended(allBets: AllBets): AllBetsExtended {
                 if (riktigResultat) {
                     poeng = poeng + scoreForKamp.get(String(b.match_num))!.riktigResultat
                 }
-                const joker = b.joker ?? false
                 if (joker) {
                     poeng = poeng * 2
                 }
                 // Norge-kamper teller dobbelt for alle.
-                if (erNorgeKamp(b.home_team, b.away_team)) {
+                if (norgeKamp) {
                     poeng = poeng * 2
                 }
                 return {

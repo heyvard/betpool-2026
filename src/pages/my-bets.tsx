@@ -11,6 +11,7 @@ import { nå } from '../utils/testClock'
 import { LinkPanel } from '@/components/ui/link-panel'
 import { Bet } from '../types/types'
 import { PushVarsler } from '../components/PushVarsler'
+import { erNorgeKamp } from '../data/matches'
 
 const Home: NextPage = () => {
     const { data: myBets } = UseMyBets()
@@ -20,10 +21,11 @@ const Home: NextPage = () => {
         return <Spinner />
     }
 
-    // Hvilken kamp jokeren ligger på i hver runde.
+    // Hvilken kamp jokeren ligger på i hver runde. Norge-kamper kan ikke jokres,
+    // så en evt. gammel joker der ignoreres.
     const jokerPerRunde = new Map<number, Bet>()
     myBets.forEach((b) => {
-        if (b.joker) jokerPerRunde.set(b.round, b)
+        if (b.joker && !erNorgeKamp(b.home_team, b.away_team)) jokerPerRunde.set(b.round, b)
     })
 
     const kampnavn = (b: Bet) => `${fixLand(b.home_team)} – ${fixLand(b.away_team)}`

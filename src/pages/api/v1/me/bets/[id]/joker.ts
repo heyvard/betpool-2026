@@ -1,7 +1,7 @@
 import { ApiHandlerOpts } from '../../../../../../types/apiHandlerOpts'
 import { serverNå } from '../../../../../../utils/testClock'
 import { auth } from '../../../../../../auth/authHandler'
-import { getMatchByNum, getMatchNumsInRound, kanHaJoker } from '../../../../../../data/matches'
+import { erNorgeKamp, getMatchByNum, getMatchNumsInRound, kanHaJoker } from '../../../../../../data/matches'
 import { loggEndring } from '../../../../../../data/auditLog'
 
 // Setter eller fjerner jokeren på en kamp. Jokeren dobler kamppoengene, og hver
@@ -67,6 +67,12 @@ const handler = async function handler(opts: ApiHandlerOpts): Promise<void> {
     // joker = true: bare til og med åttendedelsfinalene.
     if (!kanHaJoker(match.round)) {
         res.status(409).json({ error: 'joker er ikke tilgjengelig i denne kampen' })
+        return
+    }
+
+    // Norge-kamper teller alt dobbelt for alle — joker er ikke tillatt der.
+    if (erNorgeKamp(match.home_team, match.away_team)) {
+        res.status(409).json({ error: 'joker er ikke tilgjengelig på Norge-kamper' })
         return
     }
 

@@ -82,7 +82,7 @@ describe('Norge-kamper teller dobbelt', () => {
         expect(poeng('C')).toEqual(0)
     })
 
-    it('joker og Norge-dobling stables — kamppoengene firedobles', () => {
+    it('joker teller ikke på Norge-kamper — ingen stabling', () => {
         const allBets: AllBets = {
             users: [bruker('A'), bruker('B')],
             bets: [
@@ -92,9 +92,12 @@ describe('Norge-kamper teller dobbelt', () => {
         }
 
         const res = calculateAllBetsExtended(allBets)
-        const poeng = (user: string) => res.bets.find((b) => b.user_id === user)!.poeng
+        const betFor = (user: string) => res.bets.find((b) => b.user_id === user)!
 
-        expect(poeng('A')).toEqual(4)
-        expect(poeng('B')).toEqual(8)
+        // Norge-dobling gir 4, jokeren ignoreres — begge får like mye.
+        expect(betFor('A').poeng).toEqual(4)
+        expect(betFor('B').poeng).toEqual(4)
+        // Jokeren nulles ut i resultatet så merkelapper ikke villeder.
+        expect(betFor('B').joker).toEqual(false)
     })
 })
