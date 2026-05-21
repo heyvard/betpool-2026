@@ -170,9 +170,8 @@ const Regler: NextPage = () => {
                     jokerkampen starter — da låses jokeren for den runden.
                 </p>
                 <p>
-                    Joker finnes i hver runde til og med semifinalen — tre gruppespillsrunder og fire sluttspillrunder,
-                    altså sju jokere. Bronsefinale og finale har ikke joker, for der er det bare én kamp og dermed ikke
-                    noe valg.
+                    Joker finnes i hver runde til og med åttendedelsfinalene — tre gruppespillsrunder, sekstendedels-
+                    og åttendedelsfinalene, altså fem jokere. Fra kvartfinalen og utover er det ikke joker.
                 </p>
                 <p className="flex items-start gap-2 rounded-lg bg-amber-50 px-3 py-2 text-amber-900">
                     <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
@@ -181,11 +180,12 @@ const Regler: NextPage = () => {
                 <div className="rounded-lg bg-stone-50 px-3 py-2.5 text-stone-600">
                     <p className="font-medium text-stone-700">Regneeksempel</p>
                     <p className="mt-1">
-                        Du jokrer en kvartfinale (kampverdi 3) og treffer det eksakte resultatet der under 15 % traff:
+                        Du jokrer en åttendedelsfinale (kampverdi 2) og treffer det eksakte resultatet der under 15 %
+                        traff:
                     </p>
                     <ul className="mt-1 space-y-0.5">
-                        <li>Riktig utfall 3 poeng + riktig resultat 9 poeng = 12 poeng</li>
-                        <li>Med joker: 12 × 2 = 24 poeng</li>
+                        <li>Riktig utfall 2 poeng + riktig resultat 6 poeng = 8 poeng</li>
+                        <li>Med joker: 8 × 2 = 16 poeng</li>
                     </ul>
                 </div>
             </Seksjon>

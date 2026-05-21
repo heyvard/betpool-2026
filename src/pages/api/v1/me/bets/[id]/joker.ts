@@ -64,7 +64,7 @@ const handler = async function handler(opts: ApiHandlerOpts): Promise<void> {
         return
     }
 
-    // joker = true: bronsefinale og finale har ikke joker.
+    // joker = true: bare til og med åttendedelsfinalene.
     if (!kanHaJoker(match.round)) {
         res.status(409).json({ error: 'joker er ikke tilgjengelig i denne kampen' })
         return

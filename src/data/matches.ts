@@ -85,10 +85,10 @@ export function getMatchMap(): Map<number, Match> {
     return _matchMap
 }
 
-// Joker finnes til og med semifinalen (runde 7). Bronsefinale (8) og finale (9)
-// har bare én kamp hver, så der gir joker ikke noe reelt valg — den er droppet.
+// Joker finnes til og med åttendedelsfinalene (Round of 16 = runde 5). Fra
+// kvartfinalen og utover er det ikke joker.
 export function kanHaJoker(round: number): boolean {
-    return round >= 1 && round <= 7
+    return round >= 1 && round <= 5
 }
 
 export function getMatchNumsInRound(round: number): number[] {
