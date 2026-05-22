@@ -113,7 +113,14 @@ export function regnUtScoreForKamp(bets: MatchBet[]): Map<string, MatchPoeng> {
 
             const andelRiktigeResultat = riktigeSvar / faktiskeBets
             const andelRiktigeUtfall = riktigeUtfall / faktiskeBets
+            // Forslag 3: trapp på eksakt resultat — skiller alene fra «flere traff».
             const riktigResultat = () => {
+                if (riktigeSvar === 1) {
+                    return vekting * 5
+                }
+                if (andelRiktigeResultat < 0.05) {
+                    return vekting * 4
+                }
                 if (andelRiktigeResultat < 0.15) {
                     return vekting * 3
                 }
@@ -123,7 +130,11 @@ export function regnUtScoreForKamp(bets: MatchBet[]): Map<string, MatchPoeng> {
                 return vekting
             }
 
+            // Forslag 4: tre trinn på utfall — belønner «umulige» treff bedre.
             const riktigUtfall = () => {
+                if (andelRiktigeUtfall < 0.1) {
+                    return vekting * 3
+                }
                 if (andelRiktigeUtfall < 0.2) {
                     return vekting * 2
                 }

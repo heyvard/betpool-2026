@@ -44,8 +44,9 @@ interface KampOppsett {
 // Tipsene er valgt så hver delsum er entydig — ingen poenglikhet på
 // leaderboarden, slik at radrekkefølgen kan verifiseres direkte.
 // Kampvekting: gruppespill = 1, Round of 32 = 2. Med fire tippere pr. kamp
-// betaler «riktig utfall» alltid vekting, og «riktig resultat» betaler
-// vekting × 2 når nøyaktig én av fire traff (25 % < 30 %), ellers vekting.
+// betaler «riktig utfall» alltid vekting (minste andel er 25 % — over alle
+// utfallstrinnene), og i dette scenarioet traff alltid to av fire det eksakte
+// resultatet (50 %) → vekting. (Alene-treff hadde gitt vekting × 5.)
 const SCENARIO: KampOppsett[] = [
     {
         kamp: r1a,

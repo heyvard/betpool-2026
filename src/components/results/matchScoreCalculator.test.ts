@@ -23,7 +23,7 @@ describe('Tester match score calculator', () => {
             antallRiktigeSvar: 1,
             antallRiktigeUtfall: 1,
             matchid: '1',
-            riktigResultat: 3,
+            riktigResultat: 5,
             riktigUtfall: 2,
             utfall: 'B',
             andelRiktigeResultat: 0.1111111111111111,
@@ -83,7 +83,7 @@ describe('Tester match score calculator', () => {
             antallRiktigeSvar: 1,
             antallRiktigeUtfall: 1,
             matchid: '1',
-            riktigResultat: 9,
+            riktigResultat: 15,
             riktigUtfall: 6,
             utfall: 'B',
             andelRiktigeResultat: 0.1111111111111111,
@@ -108,7 +108,7 @@ describe('Tester match score calculator', () => {
             antallRiktigeSvar: 1,
             antallRiktigeUtfall: 1,
             matchid: '1',
-            riktigResultat: 9,
+            riktigResultat: 15,
             riktigUtfall: 6,
             utfall: 'B',
             andelRiktigeResultat: 0.1111111111111111,
@@ -133,7 +133,7 @@ describe('Tester match score calculator', () => {
             antallRiktigeSvar: 1,
             antallRiktigeUtfall: 1,
             matchid: '1',
-            riktigResultat: 12,
+            riktigResultat: 20,
             riktigUtfall: 8,
             utfall: 'B',
             andelRiktigeResultat: 0.1111111111111111,
@@ -142,5 +142,47 @@ describe('Tester match score calculator', () => {
             hjemme: 0,
             uavgjort: 8,
         })
+    })
+})
+
+describe('Forslag 3 og 4: trapper på eksakt resultat og utfall', () => {
+    // Gruppespill (vekting 1) gjør at multiplikatoren leses rett av poengene.
+    it('alene om eksakt resultat gir vekt × 5', () => {
+        const res = regnUtScoreForKamp(
+            skapMatchBetArray({ runde: 1, antallHeltRiktig: 1, antallRiktigUtfall: 0, antallFeil: 19 }),
+        )
+        expect(res.get('1')!.riktigResultat).toEqual(5)
+    })
+
+    it('< 5 % traff eksakt (men ikke alene) gir vekt × 4', () => {
+        // 2 av 50 = 4 %
+        const res = regnUtScoreForKamp(
+            skapMatchBetArray({ runde: 1, antallHeltRiktig: 2, antallRiktigUtfall: 0, antallFeil: 48 }),
+        )
+        expect(res.get('1')!.riktigResultat).toEqual(4)
+    })
+
+    it('< 15 % traff eksakt gir vekt × 3', () => {
+        // 2 av 20 = 10 %
+        const res = regnUtScoreForKamp(
+            skapMatchBetArray({ runde: 1, antallHeltRiktig: 2, antallRiktigUtfall: 0, antallFeil: 18 }),
+        )
+        expect(res.get('1')!.riktigResultat).toEqual(3)
+    })
+
+    it('< 30 % traff eksakt gir vekt × 2', () => {
+        // 4 av 20 = 20 %
+        const res = regnUtScoreForKamp(
+            skapMatchBetArray({ runde: 1, antallHeltRiktig: 4, antallRiktigUtfall: 0, antallFeil: 16 }),
+        )
+        expect(res.get('1')!.riktigResultat).toEqual(2)
+    })
+
+    it('< 10 % traff utfallet gir vekt × 3', () => {
+        // 1 riktig utfall av 11 = 9,1 %
+        const res = regnUtScoreForKamp(
+            skapMatchBetArray({ runde: 1, antallHeltRiktig: 0, antallRiktigUtfall: 1, antallFeil: 10 }),
+        )
+        expect(res.get('1')!.riktigUtfall).toEqual(3)
     })
 })
