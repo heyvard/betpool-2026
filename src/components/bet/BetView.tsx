@@ -212,19 +212,14 @@ interface JokerSeksjonProps {
 }
 
 function JokerSeksjon({ joker, harLagretTips, disabled, isPending, feil, onToggle }: JokerSeksjonProps) {
-    if (disabled) {
+    // Joker-seksjonen dukker først opp når tipset er lagret — før det er den ikke
+    // brukbar, og en forklarende tekst ville bare vært støy.
+    if (disabled || !harLagretTips) {
         return null
     }
 
     let innhold: React.ReactNode
-    if (!harLagretTips) {
-        innhold = (
-            <span className="inline-flex items-center gap-1.5 text-xs text-stone-400">
-                <Zap className="w-3.5 h-3.5" />
-                Lagre et tips for å kunne bruke joker
-            </span>
-        )
-    } else if (joker.aktiv) {
+    if (joker.aktiv) {
         innhold = (
             <div className="flex items-center justify-between gap-3">
                 <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-amber-700">
