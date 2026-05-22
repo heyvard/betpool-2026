@@ -10,6 +10,27 @@ export interface AllBetsExtended {
     bets: MatchBetMedScore[]
 }
 
+/**
+ * Bonuspoeng for winner-/topscorer-tips, basert på en trapp over andelen av poolen
+ * som traff. Erstatter den gamle `min(ceil(users·3/ok), 15)`-formelen: «alene» heves
+ * og premien faller brattere når flere treffer. Tersklene er andel-baserte og
+ * skalerer dermed med pool-størrelsen.
+ */
+export function regnUtBonuspoeng(antallOk: number, antallUsers: number): number {
+    if (antallOk === 0 || antallUsers === 0) {
+        return 0
+    }
+    if (antallOk === 1) {
+        return 25
+    }
+    const andel = antallOk / antallUsers
+    if (andel < 0.05) return 18
+    if (andel < 0.1) return 12
+    if (andel < 0.2) return 8
+    if (andel < 0.35) return 5
+    return 3
+}
+
 export function calculateAllBetsExtended(allBets: AllBets): AllBetsExtended {
     let scoreForKamp = regnUtScoreForKamp(allBets.bets)
     const betsMedScore = allBets.bets
@@ -67,10 +88,7 @@ export function calculateAllBetsExtended(allBets: AllBets): AllBetsExtended {
         })
     const winnerPointsFun = () => {
         const antallOk = allBets.users.filter((u) => u.winner == winner).length
-        if (antallOk == 0) {
-            return 0
-        }
-        return Math.min(Math.ceil((allBets.users.length * 3) / antallOk), 15)
+        return regnUtBonuspoeng(antallOk, allBets.users.length)
     }
     const poengPerVinner = winnerPointsFun()
     function riktigTopscorer(userTopscorer: string | undefined) {
@@ -81,10 +99,7 @@ export function calculateAllBetsExtended(allBets: AllBets): AllBetsExtended {
     }
     const topscorerPointsFun = () => {
         const antallOk = allBets.users.filter((u) => riktigTopscorer(u.topscorer)).length
-        if (antallOk == 0) {
-            return 0
-        }
-        return Math.min(Math.ceil((allBets.users.length * 3) / antallOk), 15)
+        return regnUtBonuspoeng(antallOk, allBets.users.length)
     }
     const poengPerTopscorer = topscorerPointsFun()
     return {

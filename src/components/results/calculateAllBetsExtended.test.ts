@@ -1,5 +1,5 @@
 import { expect } from '@jest/globals'
-import { calculateAllBetsExtended } from './calculateAllBetsExtended'
+import { calculateAllBetsExtended, regnUtBonuspoeng } from './calculateAllBetsExtended'
 import { AllBets, MatchBet, OtherUser } from '../../queries/useAllBets'
 
 function bet(opts: {
@@ -59,6 +59,52 @@ describe('Joker dobler kamppoengene', () => {
 
         expect(betB.poeng).toEqual(0)
         expect(betB.joker).toEqual(true)
+    })
+})
+
+describe('regnUtBonuspoeng — trapp på winner-/topscorer-bonus', () => {
+    it('gir 0 poeng når ingen traff', () => {
+        expect(regnUtBonuspoeng(0, 35)).toEqual(0)
+    })
+
+    it('gir 25 poeng til den som er alene, uansett pool-størrelse', () => {
+        expect(regnUtBonuspoeng(1, 35)).toEqual(25)
+        expect(regnUtBonuspoeng(1, 3)).toEqual(25)
+    })
+
+    it('< 5 % traff gir 18 poeng', () => {
+        // 2 av 41 = 4,9 %
+        expect(regnUtBonuspoeng(2, 41)).toEqual(18)
+    })
+
+    it('< 10 % traff gir 12 poeng', () => {
+        // 2 av 35 = 5,7 %, 3 av 35 = 8,6 %
+        expect(regnUtBonuspoeng(2, 35)).toEqual(12)
+        expect(regnUtBonuspoeng(3, 35)).toEqual(12)
+    })
+
+    it('< 20 % traff gir 8 poeng', () => {
+        // 4 av 35 = 11 %, 6 av 35 = 17 %
+        expect(regnUtBonuspoeng(4, 35)).toEqual(8)
+        expect(regnUtBonuspoeng(6, 35)).toEqual(8)
+    })
+
+    it('< 35 % traff gir 5 poeng', () => {
+        // 7 av 35 = akkurat 20 %, 12 av 35 = 34 %
+        expect(regnUtBonuspoeng(7, 35)).toEqual(5)
+        expect(regnUtBonuspoeng(12, 35)).toEqual(5)
+    })
+
+    it('>= 35 % traff gir 3 poeng', () => {
+        // 13 av 35 = 37 %
+        expect(regnUtBonuspoeng(13, 35)).toEqual(3)
+    })
+
+    it('tersklene er strikt mindre-enn på de eksakte grensene', () => {
+        expect(regnUtBonuspoeng(5, 100)).toEqual(12) // 0,05 -> ikke < 0,05
+        expect(regnUtBonuspoeng(10, 100)).toEqual(8) // 0,10 -> ikke < 0,10
+        expect(regnUtBonuspoeng(20, 100)).toEqual(5) // 0,20 -> ikke < 0,20
+        expect(regnUtBonuspoeng(35, 100)).toEqual(3) // 0,35 -> ikke < 0,35
     })
 })
 
