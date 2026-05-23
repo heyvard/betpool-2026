@@ -6,6 +6,9 @@ export interface LeagueInput {
     name?: string
     innsats?: number | null
     betalingsinfo?: string | null
+    premie_forste_prosent?: number
+    premie_andre_prosent?: number
+    premie_tredje_prosent?: number
 }
 
 async function sjekkOk(response: Response): Promise<unknown> {

@@ -11,6 +11,7 @@ import { UseLeague } from '../queries/useLeague'
 import { UseUser } from '../queries/useUser'
 import { useValgtLiga } from '../utils/useValgtLiga'
 import { LigaVelger } from '../components/LigaVelger'
+import { PremieKort } from '../components/PremieKort'
 import { LeagueDetail } from '../types/league'
 import { Banknote, Check, Clock } from 'lucide-react'
 
@@ -88,6 +89,12 @@ const Leaderboard: NextPage = () => {
         <div className="space-y-4">
             {mineLigaer.length > 0 && <LigaVelger ligaer={ligaer} valgt={effektivLiga} onVelg={setValgtLiga} />}
             {ligaDetalj && <LigaBanner liga={ligaDetalj} megId={megselv?.id} />}
+            {ligaDetalj && (
+                <PremieKort
+                    liga={ligaDetalj}
+                    antallMedlemmer={ligaDetalj.members.filter((m) => m.status === 'medlem').length}
+                />
+            )}
             <Table>
                 <Table.Header>
                     <Table.Row>

@@ -12,8 +12,15 @@ export interface LeagueMember {
     paid: boolean
 }
 
+/** Premiefordeling i prosent for 1./2./3. plass. Sum må være ≤ 100. */
+export interface PremieProsent {
+    premie_forste_prosent: number
+    premie_andre_prosent: number
+    premie_tredje_prosent: number
+}
+
 /** En liga slik den vises i lista «Mine ligaer» / invitasjoner. */
-export interface LeagueSummary {
+export interface LeagueSummary extends PremieProsent {
     id: string
     name: string
     owner_user_id: string
@@ -28,7 +35,7 @@ export interface LeagueSummary {
 }
 
 /** Full ligadetalj med medlemsliste. */
-export interface LeagueDetail {
+export interface LeagueDetail extends PremieProsent {
     id: string
     name: string
     owner_user_id: string

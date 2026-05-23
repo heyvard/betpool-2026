@@ -14,6 +14,8 @@ import { LeagueDetail, LeagueMember } from '../../types/league'
 import { Button } from '@/components/ui/button'
 import { Switch } from '@/components/ui/switch'
 import { TextField } from '@/components/ui/text-field'
+import { PremieKort } from '../../components/PremieKort'
+import { PremieInputs, ProsentState } from '../../components/PremieInputs'
 import { cn } from '@/lib/utils'
 
 const LigaSide: NextPage = () => {
@@ -42,6 +44,7 @@ const LigaSide: NextPage = () => {
             <h1 className="text-2xl font-bold text-stone-900">{liga.name}</h1>
 
             <InnsatsKort liga={liga} />
+            <PremieKort liga={liga} antallMedlemmer={liga.members.filter((m) => m.status === 'medlem').length} />
             <MedlemsSeksjon liga={liga} />
             {liga.is_owner && <InviterSeksjon liga={liga} />}
             {liga.is_owner && <RedigerSeksjon liga={liga} />}
@@ -238,20 +241,34 @@ function InviterSeksjon({ liga }: { liga: LeagueDetail }) {
     )
 }
 
-/** Verten endrer navn, innsats og betalingsinfo. */
+/** Verten endrer navn, innsats, betalingsinfo og premiefordeling. */
 function RedigerSeksjon({ liga }: { liga: LeagueDetail }) {
     const { mutate, isPending, error, isSuccess } = UseUpdateLeague(liga.id)
     const [navn, setNavn] = useState(liga.name)
     const [innsats, setInnsats] = useState(liga.innsats != null ? String(liga.innsats) : '')
     const [betalingsinfo, setBetalingsinfo] = useState(liga.betalingsinfo ?? '')
+    const [prosenter, setProsenter] = useState<ProsentState>({
+        forste: liga.premie_forste_prosent ? String(liga.premie_forste_prosent) : '',
+        andre: liga.premie_andre_prosent ? String(liga.premie_andre_prosent) : '',
+        tredje: liga.premie_tredje_prosent ? String(liga.premie_tredje_prosent) : '',
+    })
+
+    const summer =
+        (parseInt(prosenter.forste, 10) || 0) +
+        (parseInt(prosenter.andre, 10) || 0) +
+        (parseInt(prosenter.tredje, 10) || 0)
+    const ugyldigSum = summer > 100
 
     const lagre = (e: React.FormEvent) => {
         e.preventDefault()
-        if (navn.trim() === '') return
+        if (navn.trim() === '' || ugyldigSum) return
         mutate({
             name: navn.trim(),
             innsats: innsats.trim() === '' ? null : Number(innsats),
             betalingsinfo: betalingsinfo.trim() === '' ? null : betalingsinfo.trim(),
+            premie_forste_prosent: parseInt(prosenter.forste, 10) || 0,
+            premie_andre_prosent: parseInt(prosenter.andre, 10) || 0,
+            premie_tredje_prosent: parseInt(prosenter.tredje, 10) || 0,
         })
     }
 
@@ -289,9 +306,13 @@ function RedigerSeksjon({ liga }: { liga: LeagueDetail }) {
                         )}
                     />
                 </div>
+                <PremieInputs
+                    verdier={prosenter}
+                    onChange={(felt, verdi) => setProsenter((p) => ({ ...p, [felt]: verdi }))}
+                />
                 {error && <p className="text-sm text-red-600">{error.message}</p>}
                 {isSuccess && !isPending && <p className="text-sm font-medium text-emerald-700">Lagret</p>}
-                <Button type="submit" loading={isPending} disabled={navn.trim() === ''}>
+                <Button type="submit" loading={isPending} disabled={navn.trim() === '' || ugyldigSum}>
                     Lagre endringer
                 </Button>
             </form>

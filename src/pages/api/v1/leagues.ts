@@ -1,6 +1,7 @@
 import { ApiHandlerOpts } from '../../../types/apiHandlerOpts'
 import { auth } from '../../../auth/authHandler'
 import { loggEndring } from '../../../data/auditLog'
+import { parseProsenter } from '../../../data/premier'
 
 // /api/v1/leagues
 //  GET  — ligaer der innlogget bruker er medlem eller invitert.
@@ -36,12 +37,28 @@ const handler = async function handler(opts: ApiHandlerOpts): Promise<void> {
                 ? reqBody.betalingsinfo.trim()
                 : null
 
+        const prosenter = parseProsenter(reqBody)
+        if (!prosenter.ok) {
+            res.status(400).json({ error: prosenter.error })
+            return
+        }
+        const { premie_forste_prosent, premie_andre_prosent, premie_tredje_prosent } = prosenter.verdier
+
         const ligaId = (
             await client.query<{ id: string }>(
-                `INSERT INTO leagues (name, owner_user_id, innsats, betalingsinfo)
-                 VALUES ($1, $2, $3, $4)
+                `INSERT INTO leagues (name, owner_user_id, innsats, betalingsinfo,
+                                     premie_forste_prosent, premie_andre_prosent, premie_tredje_prosent)
+                 VALUES ($1, $2, $3, $4, $5, $6, $7)
                  RETURNING id`,
-                [name, user.id, innsats, betalingsinfo],
+                [
+                    name,
+                    user.id,
+                    innsats,
+                    betalingsinfo,
+                    premie_forste_prosent,
+                    premie_andre_prosent,
+                    premie_tredje_prosent,
+                ],
             )
         ).rows[0].id
 
@@ -57,7 +74,14 @@ const handler = async function handler(opts: ApiHandlerOpts): Promise<void> {
             entitetNøkkel: ligaId,
             handling: 'opprett_liga',
             før: null,
-            etter: { name, innsats, betalingsinfo },
+            etter: {
+                name,
+                innsats,
+                betalingsinfo,
+                premie_forste_prosent,
+                premie_andre_prosent,
+                premie_tredje_prosent,
+            },
         })
 
         res.status(201).json({ id: ligaId })
@@ -71,6 +95,9 @@ const handler = async function handler(opts: ApiHandlerOpts): Promise<void> {
         owner_name: string
         innsats: number | null
         betalingsinfo: string | null
+        premie_forste_prosent: number
+        premie_andre_prosent: number
+        premie_tredje_prosent: number
         my_status: string
         my_paid: boolean
         member_count: string
@@ -84,6 +111,9 @@ const handler = async function handler(opts: ApiHandlerOpts): Promise<void> {
                     ou.name AS owner_name,
                     l.innsats,
                     l.betalingsinfo,
+                    l.premie_forste_prosent,
+                    l.premie_andre_prosent,
+                    l.premie_tredje_prosent,
                     lm.status AS my_status,
                     lm.paid AS my_paid,
                     (SELECT COUNT(*) FROM league_members m
@@ -105,6 +135,9 @@ const handler = async function handler(opts: ApiHandlerOpts): Promise<void> {
             owner_name: r.owner_name,
             innsats: r.innsats,
             betalingsinfo: r.betalingsinfo,
+            premie_forste_prosent: r.premie_forste_prosent,
+            premie_andre_prosent: r.premie_andre_prosent,
+            premie_tredje_prosent: r.premie_tredje_prosent,
             member_count: Number(r.member_count),
             my_status: r.my_status,
             my_paid: r.my_paid,

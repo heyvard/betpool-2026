@@ -13,6 +13,7 @@ import { LeagueSummary } from '../types/league'
 import { LinkPanel } from '@/components/ui/link-panel'
 import { Button } from '@/components/ui/button'
 import { TextField } from '@/components/ui/text-field'
+import { PremieInputs, ProsentState } from '../components/PremieInputs'
 import { cn } from '@/lib/utils'
 
 const Ligaer: NextPage = () => {
@@ -116,15 +117,25 @@ function NyLigaSkjema() {
     const [navn, setNavn] = useState('')
     const [innsats, setInnsats] = useState('')
     const [betalingsinfo, setBetalingsinfo] = useState('')
+    const [prosenter, setProsenter] = useState<ProsentState>({ forste: '', andre: '', tredje: '' })
+
+    const summer =
+        (parseInt(prosenter.forste, 10) || 0) +
+        (parseInt(prosenter.andre, 10) || 0) +
+        (parseInt(prosenter.tredje, 10) || 0)
+    const ugyldigSum = summer > 100
 
     const opprett = (e: React.FormEvent) => {
         e.preventDefault()
-        if (navn.trim() === '') return
+        if (navn.trim() === '' || ugyldigSum) return
         mutate(
             {
                 name: navn.trim(),
                 innsats: innsats.trim() === '' ? null : Number(innsats),
                 betalingsinfo: betalingsinfo.trim() === '' ? null : betalingsinfo.trim(),
+                premie_forste_prosent: parseInt(prosenter.forste, 10) || 0,
+                premie_andre_prosent: parseInt(prosenter.andre, 10) || 0,
+                premie_tredje_prosent: parseInt(prosenter.tredje, 10) || 0,
             },
             { onSuccess: (data) => router.push('/ligaer/' + data.id) },
         )
@@ -167,12 +178,16 @@ function NyLigaSkjema() {
                         )}
                     />
                 </div>
+                <PremieInputs
+                    verdier={prosenter}
+                    onChange={(felt, verdi) => setProsenter((p) => ({ ...p, [felt]: verdi }))}
+                />
                 {error && <p className="text-sm text-red-600">{error.message}</p>}
                 <Button
                     type="submit"
                     variant="accent"
                     loading={isPending}
-                    disabled={navn.trim() === ''}
+                    disabled={navn.trim() === '' || ugyldigSum}
                     icon={<Plus className="h-4 w-4" />}
                 >
                     Opprett liga

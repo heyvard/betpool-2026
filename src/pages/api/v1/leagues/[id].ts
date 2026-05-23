@@ -1,6 +1,7 @@
 import { ApiHandlerOpts } from '../../../../types/apiHandlerOpts'
 import { auth } from '../../../../auth/authHandler'
 import { loggEndring } from '../../../../data/auditLog'
+import { parseProsenter } from '../../../../data/premier'
 
 // /api/v1/leagues/:id
 //  GET    — ligadetalj med medlemsliste (kun medlem/invitert).
@@ -24,8 +25,13 @@ const handler = async function handler(opts: ApiHandlerOpts): Promise<void> {
             innsats: number | null
             betalingsinfo: string | null
             owner_name: string
+            premie_forste_prosent: number
+            premie_andre_prosent: number
+            premie_tredje_prosent: number
         }>(
-            `SELECT l.id, l.name, l.owner_user_id, l.innsats, l.betalingsinfo, ou.name AS owner_name
+            `SELECT l.id, l.name, l.owner_user_id, l.innsats, l.betalingsinfo,
+                    l.premie_forste_prosent, l.premie_andre_prosent, l.premie_tredje_prosent,
+                    ou.name AS owner_name
              FROM leagues l
              JOIN users ou ON ou.id = l.owner_user_id
              WHERE l.id = $1`,
@@ -90,20 +96,46 @@ const handler = async function handler(opts: ApiHandlerOpts): Promise<void> {
                     : null
         }
 
-        await client.query(`UPDATE leagues SET name = $1, innsats = $2, betalingsinfo = $3 WHERE id = $4`, [
-            name,
-            innsats,
-            betalingsinfo,
-            ligaId,
-        ])
+        const prosenter = parseProsenter(reqBody, {
+            premie_forste_prosent: liga.premie_forste_prosent,
+            premie_andre_prosent: liga.premie_andre_prosent,
+            premie_tredje_prosent: liga.premie_tredje_prosent,
+        })
+        if (!prosenter.ok) {
+            res.status(400).json({ error: prosenter.error })
+            return
+        }
+
+        await client.query(
+            `UPDATE leagues
+             SET name = $1, innsats = $2, betalingsinfo = $3,
+                 premie_forste_prosent = $4, premie_andre_prosent = $5, premie_tredje_prosent = $6
+             WHERE id = $7`,
+            [
+                name,
+                innsats,
+                betalingsinfo,
+                prosenter.verdier.premie_forste_prosent,
+                prosenter.verdier.premie_andre_prosent,
+                prosenter.verdier.premie_tredje_prosent,
+                ligaId,
+            ],
+        )
 
         await loggEndring(client, {
             actorUserId: user.id,
             entitet: 'league',
             entitetNøkkel: ligaId,
             handling: 'endre_liga',
-            før: { name: liga.name, innsats: liga.innsats, betalingsinfo: liga.betalingsinfo },
-            etter: { name, innsats, betalingsinfo },
+            før: {
+                name: liga.name,
+                innsats: liga.innsats,
+                betalingsinfo: liga.betalingsinfo,
+                premie_forste_prosent: liga.premie_forste_prosent,
+                premie_andre_prosent: liga.premie_andre_prosent,
+                premie_tredje_prosent: liga.premie_tredje_prosent,
+            },
+            etter: { name, innsats, betalingsinfo, ...prosenter.verdier },
         })
 
         res.status(200).json({ ok: true })
@@ -152,6 +184,9 @@ const handler = async function handler(opts: ApiHandlerOpts): Promise<void> {
         owner_name: liga.owner_name,
         innsats: liga.innsats,
         betalingsinfo: liga.betalingsinfo,
+        premie_forste_prosent: liga.premie_forste_prosent,
+        premie_andre_prosent: liga.premie_andre_prosent,
+        premie_tredje_prosent: liga.premie_tredje_prosent,
         is_owner: erEier,
         members,
     })
