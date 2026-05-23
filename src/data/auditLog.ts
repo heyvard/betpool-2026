@@ -7,7 +7,7 @@ import { PoolClient } from 'pg'
 // Logging er «best effort»: en feil her skal aldri velte selve operasjonen
 // brukeren ba om. Vi logger til console og går videre.
 
-export type AuditEntitet = 'bet' | 'match_score' | 'user'
+export type AuditEntitet = 'bet' | 'match_score' | 'user' | 'league'
 
 export interface AuditEndring {
     /** Hvem som utførte endringen (users.id). For et bet er det brukeren selv,

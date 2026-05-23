@@ -6,6 +6,13 @@ import NextLink from 'next/link'
 import { calculateLeaderboard, LeaderBoard } from '../components/results/calculateAllScores'
 import { Table } from '@/components/ui/table'
 import classNames from 'classnames'
+import { UseLeagues } from '../queries/useLeagues'
+import { UseLeague } from '../queries/useLeague'
+import { UseUser } from '../queries/useUser'
+import { useValgtLiga } from '../utils/useValgtLiga'
+import { LigaVelger } from '../components/LigaVelger'
+import { LeagueDetail } from '../types/league'
+import { Banknote, Check, Clock } from 'lucide-react'
 
 function plassVisning(plass: number) {
     switch (plass) {
@@ -21,10 +28,46 @@ function plassVisning(plass: number) {
 
 const Leaderboard: NextPage = () => {
     const { data, isLoading } = UseAllBets()
-    if (!data || isLoading) {
+    const { data: ligaer } = UseLeagues()
+    const { data: megselv } = UseUser()
+    const [valgtLiga, setValgtLiga] = useValgtLiga()
+
+    const mineLigaer = (ligaer ?? []).filter((l) => l.my_status === 'medlem')
+    // Et lagret valg kan peke på en liga brukeren ikke lenger er med i — fall
+    // tilbake til hovedligaen til velgeren får et gyldig valg.
+    const effektivLiga = valgtLiga && mineLigaer.some((l) => l.id === valgtLiga) ? valgtLiga : null
+    const { data: ligaDetalj } = UseLeague(effektivLiga)
+
+    if (!data || isLoading || !ligaer) {
         return <Spinner />
     }
-    const lista = calculateLeaderboard(data.bets, data.users)
+    if (effektivLiga && !ligaDetalj) {
+        return <Spinner />
+    }
+
+    const full = calculateLeaderboard(data.bets, data.users)
+
+    // I en privat liga bygger vi tabellen fra medlemslista, slik at også
+    // medlemmer uten tipp vises (på 0 poeng). Poengene er de samme som i
+    // hovedligaen — `paid` er derimot ligaens egen betalt-status.
+    let lista: LeaderBoard[]
+    if (effektivLiga && ligaDetalj) {
+        lista = ligaDetalj.members
+            .filter((m) => m.status === 'medlem')
+            .map((m) => {
+                const rad = full.find((r) => r.userid === m.user_id)
+                return {
+                    userid: m.user_id,
+                    poeng: rad?.poeng ?? 0,
+                    userName: m.name,
+                    paid: m.paid,
+                    picture: m.picture,
+                }
+            })
+    } else {
+        lista = [...full]
+    }
+
     lista.sort((a, b) => {
         if (b.poeng === a.poeng) {
             return a.userid.localeCompare(b.userid)
@@ -40,40 +83,80 @@ const Leaderboard: NextPage = () => {
         }
         return index + 1
     }
+
     return (
-        <Table>
-            <Table.Header>
-                <Table.Row>
-                    <Table.HeaderCell align="center">Plass</Table.HeaderCell>
-                    <Table.HeaderCell></Table.HeaderCell>
-                    <Table.HeaderCell>Navn</Table.HeaderCell>
-                    <Table.HeaderCell align="right">Poeng</Table.HeaderCell>
-                </Table.Row>
-            </Table.Header>
-            <Table.Body>
-                {lista.map((row, i) => (
-                    <Table.Row key={row.userid}>
-                        <Table.DataCell align="center">
-                            <span className="text-5xl">{plassVisning(finnFaktiskPlass(i, lista))}</span>
-                        </Table.DataCell>
-                        <Table.DataCell align="left">
-                            <NextLink href={'/user/' + row.userid}>
-                                <Avatar src={row?.picture} name={row.userName} />
-                            </NextLink>
-                        </Table.DataCell>
-                        <Table.DataCell>
-                            <NextLink href={'/user/' + row.userid} className="text-blue-600 hover:underline">
-                                {row.userName.split('@')[0]}
-                            </NextLink>
-                            {!row.paid && '⚠️'}
-                        </Table.DataCell>
-                        <Table.DataCell align="right" className="pr-4 font-bold">
-                            {row.poeng.toFixed(0)}
-                        </Table.DataCell>
+        <div className="space-y-4">
+            {mineLigaer.length > 0 && <LigaVelger ligaer={ligaer} valgt={effektivLiga} onVelg={setValgtLiga} />}
+            {ligaDetalj && <LigaBanner liga={ligaDetalj} megId={megselv?.id} />}
+            <Table>
+                <Table.Header>
+                    <Table.Row>
+                        <Table.HeaderCell align="center">Plass</Table.HeaderCell>
+                        <Table.HeaderCell></Table.HeaderCell>
+                        <Table.HeaderCell>Navn</Table.HeaderCell>
+                        <Table.HeaderCell align="right">Poeng</Table.HeaderCell>
                     </Table.Row>
-                ))}
-            </Table.Body>
-        </Table>
+                </Table.Header>
+                <Table.Body>
+                    {lista.map((row, i) => (
+                        <Table.Row key={row.userid}>
+                            <Table.DataCell align="center">
+                                <span className="text-5xl">{plassVisning(finnFaktiskPlass(i, lista))}</span>
+                            </Table.DataCell>
+                            <Table.DataCell align="left">
+                                <NextLink href={'/user/' + row.userid}>
+                                    <Avatar src={row?.picture} name={row.userName} />
+                                </NextLink>
+                            </Table.DataCell>
+                            <Table.DataCell>
+                                <NextLink href={'/user/' + row.userid} className="text-blue-600 hover:underline">
+                                    {row.userName.split('@')[0]}
+                                </NextLink>
+                                {!row.paid && '⚠️'}
+                            </Table.DataCell>
+                            <Table.DataCell align="right" className="pr-4 font-bold">
+                                {row.poeng.toFixed(0)}
+                            </Table.DataCell>
+                        </Table.Row>
+                    ))}
+                </Table.Body>
+            </Table>
+        </div>
+    )
+}
+
+/** Banner over tabellen når en privat liga er valgt — innsats, betalingsinfo og
+ *  egen betalt-status. */
+function LigaBanner({ liga, megId }: { liga: LeagueDetail; megId?: string }) {
+    const megSelv = liga.members.find((m) => m.user_id === megId)
+    const harBetalt = megSelv?.paid ?? false
+
+    return (
+        <div className="rounded-xl bg-white p-4 shadow-sm ring-1 ring-stone-200/70">
+            <div className="flex items-center justify-between gap-3">
+                <h1 className="text-lg font-bold text-stone-900">{liga.name}</h1>
+                <span
+                    className={classNames(
+                        'inline-flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium',
+                        harBetalt ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700',
+                    )}
+                >
+                    {harBetalt ? <Check className="h-3.5 w-3.5" /> : <Clock className="h-3.5 w-3.5" />}
+                    {harBetalt ? 'Du har betalt' : 'Du har ikke betalt'}
+                </span>
+            </div>
+            <p className="mt-0.5 text-xs text-stone-500">Ligavert: {liga.owner_name}</p>
+
+            {liga.innsats != null && (
+                <p className="mt-2 flex items-center gap-1.5 text-sm font-medium text-stone-800">
+                    <Banknote className="h-4 w-4 text-stone-400" />
+                    Innsats: {liga.innsats} kr
+                </p>
+            )}
+            {liga.betalingsinfo && (
+                <p className="mt-1 whitespace-pre-line text-sm text-stone-600">{liga.betalingsinfo}</p>
+            )}
+        </div>
     )
 }
 

@@ -14,7 +14,7 @@ export async function withDb<T>(fn: (client: Client) => Promise<T>): Promise<T> 
 }
 
 export async function truncateAll(): Promise<void> {
-    await withDb((c) => c.query('TRUNCATE users, bets, chat, match_scores CASCADE'))
+    await withDb((c) => c.query('TRUNCATE users, bets, chat, match_scores, leagues, league_members CASCADE'))
 }
 
 export interface SeedUser {
