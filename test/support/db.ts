@@ -69,8 +69,8 @@ export async function seedUser(overrides: Partial<SeedUser> = {}): Promise<SeedU
     return withDb(async (c) => {
         const r = await c.query(
             `INSERT INTO users
-               (firebase_user_id, name, email, picture, active, scoreadmin, paymentadmin, superadmin, paid, winner, topscorer)
-             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
+               (firebase_user_id, name, email, picture, active, scoreadmin, paymentadmin, superadmin, paid, winner, topscorer, onboarded_at)
+             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11, NOW())
              RETURNING *`,
             [
                 u.firebase_user_id,

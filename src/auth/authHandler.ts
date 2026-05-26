@@ -46,6 +46,7 @@ export function auth(fn: { (_opts: ApiHandlerOpts): Promise<void> }) {
                     notif_general: true,
                     notif_reminders: true,
                     notif_summary: true,
+                    onboarded_at: new Date().toISOString(),
                 } as User,
             })
         }

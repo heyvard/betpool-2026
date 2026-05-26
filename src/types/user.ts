@@ -16,4 +16,5 @@ export interface User {
     notif_general: boolean
     notif_reminders: boolean
     notif_summary: boolean
+    onboarded_at: string | null
 }
