@@ -117,22 +117,14 @@ function NesteKampSeksjon() {
 
     // Neste kampdag = kalenderdagen til den tidligste kommende kampen
     const nesteKampDag = dayjs(kommende[0].game_start).startOf('day')
-    const kampene = kommende.filter((b) =>
-        dayjs(b.game_start).startOf('day').isSame(nesteKampDag, 'day'),
-    )
+    const kampene = kommende.filter((b) => dayjs(b.game_start).startOf('day').isSame(nesteKampDag, 'day'))
 
-    const manglerTips = kampene.filter(
-        (b) => b.home_score == null || b.away_score == null,
-    ).length
+    const manglerTips = kampene.filter((b) => b.home_score == null || b.away_score == null).length
     const altTippet = manglerTips === 0
 
     const erIDag = nesteKampDag.isSame(nå(), 'day')
     const erIMorgen = nesteKampDag.isSame(nå().add(1, 'day'), 'day')
-    const datoEtikett = erIDag
-        ? 'I dag'
-        : erIMorgen
-          ? 'I morgen'
-          : nesteKampDag.locale(nb).format('dddd D. MMM')
+    const datoEtikett = erIDag ? 'I dag' : erIMorgen ? 'I morgen' : nesteKampDag.locale(nb).format('dddd D. MMM')
 
     return (
         <div className="space-y-2">
@@ -187,9 +179,7 @@ function NesteKampSeksjon() {
                 href="/my-bets"
                 className="block text-center text-sm font-semibold text-amber-700 hover:text-amber-800"
             >
-                {altTippet
-                    ? 'Se alle dine tips →'
-                    : `Tippe ${manglerTips === 1 ? 'kampen' : 'kampene'} →`}
+                {altTippet ? 'Se alle dine tips →' : `Tippe ${manglerTips === 1 ? 'kampen' : 'kampene'} →`}
             </NextLink>
         </div>
     )
