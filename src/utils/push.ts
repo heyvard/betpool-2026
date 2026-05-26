@@ -11,11 +11,11 @@ export function pushStøttes(): boolean {
 }
 
 // VAPID-nøkkelen er base64url-kodet; PushManager vil ha en Uint8Array.
-function base64TilUint8Array(base64: string): Uint8Array {
+function base64TilUint8Array(base64: string): Uint8Array<ArrayBuffer> {
     const padding = '='.repeat((4 - (base64.length % 4)) % 4)
     const base64Trygg = (base64 + padding).replace(/-/g, '+').replace(/_/g, '/')
     const raw = atob(base64Trygg)
-    const ut = new Uint8Array(raw.length)
+    const ut = new Uint8Array(new ArrayBuffer(raw.length))
     for (let i = 0; i < raw.length; i++) {
         ut[i] = raw.charCodeAt(i)
     }
