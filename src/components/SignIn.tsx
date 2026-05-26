@@ -1,13 +1,6 @@
 import React from 'react'
-import { EmailAuthProvider, GoogleAuthProvider } from 'firebase/auth'
-import StyledFirebaseAuth from '../auth/StyledFirebaseAuth'
 import { Goal, TriangleAlert, Users, Wallet } from 'lucide-react'
-
-const uiConfig = {
-    signInSuccessUrl: '/',
-    signInFlow: 'popup',
-    signInOptions: [GoogleAuthProvider.PROVIDER_ID, EmailAuthProvider.PROVIDER_ID],
-}
+import { InnloggingKnapper } from '../auth/InnloggingKnapper'
 
 const punkter = [
     {
@@ -69,7 +62,7 @@ export function SignInScreen() {
             ) : (
                 <div className="bp-card">
                     <p className="mb-3 text-center text-sm font-medium text-stone-700">Logg inn for å bli med</p>
-                    <StyledFirebaseAuth uiConfig={uiConfig} className="fb-auth" />
+                    <InnloggingKnapper />
                     <p className="mt-3 text-center text-xs text-stone-400">Bruk din vanlige nettleser på mobil.</p>
                 </div>
             )}
