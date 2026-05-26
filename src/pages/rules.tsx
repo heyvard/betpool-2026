@@ -33,6 +33,15 @@ function PoengKort({ tittel, verdi, children }: { tittel: string; verdi: string;
     )
 }
 
+const bonustrapper = [
+    { terskel: 'Du alene traff', poeng: 25 },
+    { terskel: 'Under 5 % traff', poeng: 18 },
+    { terskel: 'Under 10 % traff', poeng: 12 },
+    { terskel: 'Under 20 % traff', poeng: 8 },
+    { terskel: 'Under 35 % traff', poeng: 5 },
+    { terskel: '35 % eller flere traff', poeng: 3 },
+]
+
 const kampverdier = [
     { runde: 'Gruppespill', verdi: 1 },
     { runde: 'Sekstendelsfinale', verdi: 2 },
@@ -53,7 +62,6 @@ const Regler: NextPage = () => {
     const deltakere = data.users.length
     const pot = deltakere * 300
     const premier = [Math.round(pot * 0.5), Math.round(pot * 0.3), Math.round(pot * 0.2)]
-    const bonuspott = deltakere * 3
 
     const premieRader = [
         { plass: 1 as const, label: '1. plass', andel: '50 %', kr: premier[0] },
@@ -104,14 +112,16 @@ const Regler: NextPage = () => {
             <Seksjon ikon={<Calculator className="h-4 w-4" />} tittel="Slik får du poeng på en kamp">
                 <p>For hver kamp kan du tjene poeng på to måter — og de legges sammen:</p>
 
-                <PoengKort tittel="Riktig utfall" verdi="1 × kampverdi">
+                <PoengKort tittel="Riktig utfall" verdi="1–3 × kampverdi">
                     Du traff hvem som vant — eller at det ble uavgjort. Verdien{' '}
-                    <span className="font-medium">dobles</span> hvis under 20 % av dem som tippet kampen traff utfallet.
+                    <span className="font-medium">tredobles</span> hvis under 10 % traff utfallet,{' '}
+                    <span className="font-medium">dobles</span> hvis under 20 %, og er normal ellers.
                 </PoengKort>
 
-                <PoengKort tittel="Riktig resultat" verdi="1–3 × kampverdi">
-                    Du traff den eksakte stillingen. Gir 3 poeng hvis under 15 % traff, 2 poeng hvis under 30 %, ellers
-                    1 poeng. Dette kommer <span className="font-medium">i tillegg</span> til poengene for riktig utfall.
+                <PoengKort tittel="Riktig resultat" verdi="1–5 × kampverdi">
+                    Du traff den eksakte stillingen. Gir 5× poeng hvis du alene traff, 4× hvis under 5 % traff, 3× hvis
+                    under 15 %, 2× hvis under 30 %, ellers 1×. Dette kommer{' '}
+                    <span className="font-medium">i tillegg</span> til poengene for riktig utfall.
                 </PoengKort>
 
                 <p className="flex items-start gap-2 rounded-lg bg-amber-50 px-3 py-2 text-amber-900">
@@ -202,17 +212,24 @@ const Regler: NextPage = () => {
                 </p>
                 <p>Begge kan endres så lenge den første gruppespillsrunden pågår. Når andre runde starter, låses de.</p>
                 <p>
-                    For hvert av de to spørsmålene finnes en pott på antall deltakere × 3 poeng — akkurat nå{' '}
-                    <span className="font-semibold text-stone-900">{bonuspott} poeng</span>. Potten deles på alle som
-                    gjettet riktig (rundet opp), men ingen får mer enn 15 poeng.
+                    For hvert av de to spørsmålene gir en riktig gjetning et antall bonuspoeng som avhenger av hvor
+                    mange andre som også traff:
                 </p>
+                <div className="divide-y divide-stone-100 rounded-lg ring-1 ring-stone-200/70">
+                    {bonustrapper.map((rad) => (
+                        <div key={rad.terskel} className="flex items-center justify-between px-3 py-2">
+                            <span className="text-stone-700">{rad.terskel}</span>
+                            <span className="bp-chip-gold shrink-0">{rad.poeng} poeng</span>
+                        </div>
+                    ))}
+                </div>
                 <p className="flex items-start gap-2 rounded-lg bg-amber-50 px-3 py-2 text-amber-900">
                     <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
-                    <span>Gjetter få riktig, blir hvert tips mye verdt — opp til taket på 15 poeng.</span>
+                    <span>Gjetter få riktig, blir hvert tips mye verdt — opp til 25 poeng.</span>
                 </p>
                 <p className="rounded-lg bg-stone-50 px-3 py-2 text-stone-600">
-                    <span className="font-medium text-stone-700">Eksempel:</span> 30 deltakere gir en pott på 90 poeng.
-                    Gjettet 6 riktig vinner → 15 poeng hver. Gjettet 20 riktig → 5 poeng hver (90 ÷ 20, rundet opp).
+                    <span className="font-medium text-stone-700">Eksempel:</span> Bare du tippet riktig vinner → 25
+                    poeng. Rundt 15 % tippet riktig → 8 poeng. Over 35 % tippet riktig → 3 poeng.
                 </p>
             </Seksjon>
 
