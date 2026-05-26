@@ -111,8 +111,8 @@ const KATEGORIER = [
     },
     {
         felt: 'notif_reminders' as const,
-        tittel: 'Påminnelser om manglende bets',
-        forklaring: 'Daglig påminnelse hvis du har utipsa kamper neste dag.',
+        tittel: 'Påminnelser om utippede kamper',
+        forklaring: 'Daglig påminnelse hvis du har kamper du ikke har tippet neste dag.',
     },
     {
         felt: 'notif_summary' as const,
@@ -145,7 +145,7 @@ const Varsler: NextPage = () => {
                         <div className="min-w-0">
                             <p className="font-semibold text-stone-900">Push-varsler på denne enheten</p>
                             <p className="text-sm text-stone-600">
-                                Skru på for å la oss sende varsler til denne nettleseren eller telefonen.
+                                Slå på for å la oss sende varsler til denne nettleseren eller telefonen.
                             </p>
                         </div>
                     </div>
@@ -155,7 +155,7 @@ const Varsler: NextPage = () => {
                             onCheckedChange={(v) => (v ? slåPå() : slåAv())}
                             loading={jobber}
                             disabled={jobber}
-                            aria-label="Skru push-varsler av eller på"
+                            aria-label="Slå push-varsler av eller på"
                         />
                     )}
                 </div>
@@ -168,7 +168,7 @@ const Varsler: NextPage = () => {
                 )}
                 {status === 'nektet' && (
                     <p className="mt-3 text-xs text-stone-500">
-                        Varsler er blokkert. Skru dem på igjen i nettleser- eller systeminnstillingene for å få varsler.
+                        Varsler er blokkert. Slå dem på igjen i nettleser- eller systeminnstillingene for å få varsler.
                     </p>
                 )}
                 {status === 'på' && (
@@ -191,7 +191,7 @@ const Varsler: NextPage = () => {
                     <p className="font-semibold text-stone-900">Hva vil du varsles om?</p>
                     {kategoriDeaktivert && (
                         <p className="mt-1 text-xs text-stone-500">
-                            Skru på push-varsler over for å motta noen av disse.
+                            Slå på push-varsler over for å motta noen av disse.
                         </p>
                     )}
                 </div>

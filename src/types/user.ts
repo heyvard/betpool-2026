@@ -12,6 +12,12 @@ export interface User {
     created_at: string
     updated_at: string
     winner: string
+    /**
+     * Kommer fra `users.topscorer`-kolonnen (én p — etablert DB-navn). I
+     * UI-strenger skriver vi "toppscorer" (to p-er, korrekt norsk). Ikke
+     * gi etter for fristelsen til å migrere kolonnen — det krever en
+     * koordinert deploy uten gevinst.
+     */
     topscorer: string | undefined
     notif_general: boolean
     notif_reminders: boolean

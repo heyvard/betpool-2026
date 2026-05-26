@@ -38,6 +38,9 @@ const Home: NextPage = () => {
     return (
         <>
             <div>
+                {/* Bevisst en lenke til en egen side og ikke en collapsable seksjon her —
+                    /my-bets skal være "framoverlent": bare det du *kan* fortsatt tippe på.
+                    Spilte kamper er historikk og hører hjemme et annet sted. */}
                 <NextLink passHref legacyBehavior href={'/user/' + megselv.id}>
                     <LinkPanel className="text-xl">Spilte kamper</LinkPanel>
                 </NextLink>
@@ -47,11 +50,11 @@ const Home: NextPage = () => {
 
             {sortertRunder.map((round) => {
                 const kamperIRunde = grupper.get(round)!
-                const tippet = kamperIRunde.filter((b) => b.home_score != null && b.away_score != null).length
+                const antallTippet = kamperIRunde.filter((b) => b.home_score != null && b.away_score != null).length
                 return (
                     <section key={round} className="space-y-1">
                         <h2 className="sticky top-0 z-10 -mx-2 bg-stone-50/80 px-3 py-2 text-xs font-bold uppercase tracking-wider text-stone-600 backdrop-blur">
-                            {rundeTilTekst(round)} · {tippet} / {kamperIRunde.length} tippet
+                            {rundeTilTekst(round)} · {antallTippet} / {kamperIRunde.length} tippet
                         </h2>
                         {kanHaJoker(round) &&
                             !jokerPerRunde.has(round) &&
@@ -78,14 +81,14 @@ const Home: NextPage = () => {
 
 function ProgresjonsKort({ myBets }: { myBets: Bet[] }) {
     const kommende = myBets.filter((b) => dayjs(b.game_start).isAfter(nå()))
-    const tippet = kommende.filter((b) => b.home_score != null && b.away_score != null).length
+    const antallTippet = kommende.filter((b) => b.home_score != null && b.away_score != null).length
     const totalt = kommende.length
-    const prosent = totalt > 0 ? (tippet / totalt) * 100 : 0
+    const prosent = totalt > 0 ? (antallTippet / totalt) * 100 : 0
     return (
         <div className="bp-card">
             <div className="flex items-baseline justify-between">
                 <span className="text-sm font-semibold text-stone-900">
-                    {tippet} av {totalt} kommende kamper tippet
+                    {antallTippet} av {totalt} kommende kamper tippet
                 </span>
                 <span className="bp-tabular text-xs text-stone-500">{Math.round(prosent)} %</span>
             </div>
