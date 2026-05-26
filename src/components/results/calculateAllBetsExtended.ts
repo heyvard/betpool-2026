@@ -34,13 +34,6 @@ export function regnUtBonuspoeng(antallOk: number, antallUsers: number): number 
 export function calculateAllBetsExtended(allBets: AllBets): AllBetsExtended {
     let scoreForKamp = regnUtScoreForKamp(allBets.bets)
     const betsMedScore = allBets.bets
-        .map((b) => {
-            return {
-                ...b,
-                home_result: b.home_result || '0',
-                away_result: b.away_result || '0',
-            }
-        })
         .map((b): MatchBetMedScore => {
             const norgeKamp = erNorgeKamp(b.home_team, b.away_team)
             // Joker er ikke tillatt på Norge-kamper — en evt. gammel joker der teller ikke.

@@ -147,3 +147,25 @@ describe('Norge-kamper teller dobbelt', () => {
         expect(betFor('B').joker).toEqual(false)
     })
 })
+
+describe('riktigResultat er false for uspilte kamper', () => {
+    it('et 0-0-tips på en kamp uten resultat skal ikke markeres som riktig', () => {
+        const allBets: AllBets = {
+            users: [bruker('A')],
+            bets: [
+                {
+                    ...bet({ user: 'A', home: '0', away: '0' }),
+                    home_result: null,
+                    away_result: null,
+                },
+            ],
+        }
+
+        const res = calculateAllBetsExtended(allBets)
+        const b = res.bets.find((b) => b.user_id === 'A')!
+
+        expect(b.riktigResultat).toEqual(false)
+        expect(b.riktigUtfall).toEqual(false)
+        expect(b.poeng).toEqual(0)
+    })
+})
