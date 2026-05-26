@@ -5,9 +5,10 @@ import { UseUser } from '../queries/useUser'
 import React, { useState } from 'react'
 import { alleLagSortert, hentFlag, hentNorsk } from '../utils/lag'
 import { UseMatches } from '../queries/useMatches'
+import { UseMyBets } from '../queries/useMyBets'
 import dayjs from 'dayjs'
 import NextLink from 'next/link'
-import { fixLand } from '../components/bet/BetView'
+import { BetView, fixLand } from '../components/bet/BetView'
 import { useAuthedFetch } from '../auth/authedFetch'
 import { Check, ChevronRight, Clock, Goal, Lock, Trophy, TriangleAlert } from 'lucide-react'
 import { useQueryClient } from '@tanstack/react-query'
@@ -22,6 +23,7 @@ import { KopierNummerKnapp } from '../components/KopierNummerKnapp'
 import { LinkPanel } from '@/components/ui/link-panel'
 import { cn } from '@/lib/utils'
 import { User } from '../types/user'
+import { byggJokerPerRunde, jokerContextFor } from '../utils/jokerContext'
 
 dayjs.locale(nb)
 
@@ -45,33 +47,41 @@ const Home: NextPage = () => {
         <div className="space-y-4">
             <VarslerHint />
             {kamper.map((k) => (
-                <div key={k.match_num}>
-                    <NextLink passHref legacyBehavior href={'/match/' + k.match_num}>
-                        <LinkPanel>
-                            Nå pågår {fixLand(k.home_team)} vs {fixLand(k.away_team)}
-                        </LinkPanel>
-                    </NextLink>
-                </div>
+                <NextLink
+                    key={k.match_num}
+                    href={'/match/' + k.match_num}
+                    className="block rounded-xl bg-red-50 px-4 py-3 ring-1 ring-red-200"
+                >
+                    <span className="inline-flex items-center gap-2 text-sm font-semibold text-red-800">
+                        <span className="h-2 w-2 animate-pulse rounded-full bg-red-600" />
+                        Nå pågår {fixLand(k.home_team)} vs {fixLand(k.away_team)}
+                    </span>
+                </NextLink>
             ))}
             {snartKamper.map((k) => (
-                <div key={k.match_num}>
-                    <NextLink passHref legacyBehavior href={'/my-bets/'}>
-                        <LinkPanel>
-                            {fixLand(k.home_team)} vs {fixLand(k.away_team)} starter kl{' '}
-                            {dayjs(k.game_start).format('HH:mm')}
-                        </LinkPanel>
-                    </NextLink>
-                </div>
+                <NextLink
+                    key={k.match_num}
+                    href="/my-bets/"
+                    className="block rounded-xl bg-amber-50 px-4 py-3 ring-1 ring-amber-200"
+                >
+                    <span className="inline-flex items-center gap-2 text-sm font-semibold text-amber-800">
+                        <Clock className="h-3.5 w-3.5" />
+                        {fixLand(k.home_team)} vs {fixLand(k.away_team)} starter kl{' '}
+                        {dayjs(k.game_start).format('HH:mm')}
+                    </span>
+                </NextLink>
             ))}
 
             {!megselv.paid && <InnbetalingsAlert />}
 
+            <NesteKampSeksjon />
+
             <div className="pt-2">
                 <div className="flex items-center justify-between gap-3">
-                    <h1 className="text-xl font-bold text-stone-900">Dine VM-tips</h1>
+                    <h2 className="text-base font-bold text-stone-900">Dine VM-tips</h2>
                     <FristMerke laast={laast} />
                 </div>
-                <p className="mt-0.5 text-sm text-stone-500">
+                <p className="mt-0.5 text-xs text-stone-500">
                     {laast
                         ? 'VM er i gang — vinner og toppscorer er låst.'
                         : `Kan endres frem til ${førsteRunde.locale(nb).format('dddd D. MMM [kl] HH:mm')}.`}
@@ -80,14 +90,51 @@ const Home: NextPage = () => {
 
             <VinnerKort megselv={megselv} laast={laast} />
             <ToppscorerKort megselv={megselv} laast={laast} />
+        </div>
+    )
+}
 
+function NesteKampSeksjon() {
+    const { data: bets } = UseMyBets()
+    if (!bets) return null
+
+    // Første ikke-tippa kamp som starter etter nå.
+    const utippa = bets
+        .filter((b) => dayjs(b.game_start).isAfter(nå()))
+        .filter((b) => b.home_score == null || b.away_score == null)
+        .sort((a, b) => dayjs(a.game_start).valueOf() - dayjs(b.game_start).valueOf())[0]
+
+    if (!utippa) {
+        return (
             <NextLink passHref legacyBehavior href="/my-bets">
                 <LinkPanel>
                     <span className="flex flex-col">
-                        <span className="text-base font-semibold text-stone-900">Tipp kampene</span>
-                        <span className="text-xs text-stone-500">Sett resultater for hver enkelt kamp</span>
+                        <span className="text-base font-semibold text-stone-900">Alt er tippa</span>
+                        <span className="text-xs text-stone-500">Bla gjennom kampene dine</span>
                     </span>
                 </LinkPanel>
+            </NextLink>
+        )
+    }
+
+    const jokerPerRunde = byggJokerPerRunde(bets)
+    const jc = jokerContextFor(utippa, jokerPerRunde)
+    const antallKommende = bets.filter((b) => dayjs(b.game_start).isAfter(nå())).length
+
+    return (
+        <div className="space-y-2">
+            <div className="flex items-center justify-between px-1">
+                <h2 className="text-sm font-bold text-stone-900">Neste kamp</h2>
+                <span className="text-xs text-stone-500">
+                    {dayjs(utippa.game_start).locale(nb).format('ddd D. MMM HH:mm')}
+                </span>
+            </div>
+            <BetView bet={utippa} matchside={false} joker={jc} />
+            <NextLink
+                href="/my-bets"
+                className="block text-center text-sm font-semibold text-amber-700 hover:text-amber-800"
+            >
+                Se alle {antallKommende} kamper →
             </NextLink>
         </div>
     )
