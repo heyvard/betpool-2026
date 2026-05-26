@@ -33,52 +33,51 @@ export function regnUtBonuspoeng(antallOk: number, antallUsers: number): number 
 
 export function calculateAllBetsExtended(allBets: AllBets): AllBetsExtended {
     let scoreForKamp = regnUtScoreForKamp(allBets.bets)
-    const betsMedScore = allBets.bets
-        .map((b): MatchBetMedScore => {
-            const norgeKamp = erNorgeKamp(b.home_team, b.away_team)
-            // Joker er ikke tillatt på Norge-kamper — en evt. gammel joker der teller ikke.
-            const joker = (b.joker ?? false) && !norgeKamp
-            if (b.home_score == null || b.away_score == null) {
-                return {
-                    ...b,
-                    away_score: stringTilNumber(b.away_score),
-                    home_score: stringTilNumber(b.home_score),
-                    poeng: 0,
-                    riktigResultat: false,
-                    riktigUtfall: false,
-                    joker: joker,
-                    matchpoeng: scoreForKamp.get(String(b.match_num))!,
-                }
-            } else {
-                const utfall = finnUtfall(b.home_score, b.away_score)
-                const riktigResultat = b.home_result == b.home_score && b.away_result == b.away_score
-                let poeng = 0
-                let riktigUtfall = utfall == scoreForKamp.get(String(b.match_num))!.utfall
-                if (riktigUtfall) {
-                    poeng = poeng + scoreForKamp.get(String(b.match_num))!.riktigUtfall
-                }
-                if (riktigResultat) {
-                    poeng = poeng + scoreForKamp.get(String(b.match_num))!.riktigResultat
-                }
-                if (joker) {
-                    poeng = poeng * 2
-                }
-                // Norge-kamper teller dobbelt for alle.
-                if (norgeKamp) {
-                    poeng = poeng * 2
-                }
-                return {
-                    ...b,
-                    away_score: stringTilNumber(b.away_score),
-                    home_score: stringTilNumber(b.home_score),
-                    poeng: poeng,
-                    riktigResultat: riktigResultat,
-                    riktigUtfall: riktigUtfall,
-                    joker: joker,
-                    matchpoeng: scoreForKamp.get(String(b.match_num))!,
-                }
+    const betsMedScore = allBets.bets.map((b): MatchBetMedScore => {
+        const norgeKamp = erNorgeKamp(b.home_team, b.away_team)
+        // Joker er ikke tillatt på Norge-kamper — en evt. gammel joker der teller ikke.
+        const joker = (b.joker ?? false) && !norgeKamp
+        if (b.home_score == null || b.away_score == null) {
+            return {
+                ...b,
+                away_score: stringTilNumber(b.away_score),
+                home_score: stringTilNumber(b.home_score),
+                poeng: 0,
+                riktigResultat: false,
+                riktigUtfall: false,
+                joker: joker,
+                matchpoeng: scoreForKamp.get(String(b.match_num))!,
             }
-        })
+        } else {
+            const utfall = finnUtfall(b.home_score, b.away_score)
+            const riktigResultat = b.home_result == b.home_score && b.away_result == b.away_score
+            let poeng = 0
+            let riktigUtfall = utfall == scoreForKamp.get(String(b.match_num))!.utfall
+            if (riktigUtfall) {
+                poeng = poeng + scoreForKamp.get(String(b.match_num))!.riktigUtfall
+            }
+            if (riktigResultat) {
+                poeng = poeng + scoreForKamp.get(String(b.match_num))!.riktigResultat
+            }
+            if (joker) {
+                poeng = poeng * 2
+            }
+            // Norge-kamper teller dobbelt for alle.
+            if (norgeKamp) {
+                poeng = poeng * 2
+            }
+            return {
+                ...b,
+                away_score: stringTilNumber(b.away_score),
+                home_score: stringTilNumber(b.home_score),
+                poeng: poeng,
+                riktigResultat: riktigResultat,
+                riktigUtfall: riktigUtfall,
+                joker: joker,
+                matchpoeng: scoreForKamp.get(String(b.match_num))!,
+            }
+        }
+    })
     const winnerPointsFun = () => {
         const antallOk = allBets.users.filter((u) => u.winner == winner).length
         return regnUtBonuspoeng(antallOk, allBets.users.length)
