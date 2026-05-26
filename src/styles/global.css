@@ -193,7 +193,7 @@
 
     /* CTA — gull, til premier/finale-momenter */
     .bp-btn-gold {
-        @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-amber-500 px-4 font-bold text-stone-900 shadow-[0_8px_24px_rgb(245_158_11_/_0.35)] hover:bg-amber-400 focus-visible:outline-2 focus-visible:outline-stone-900 active:bg-amber-600;
+        @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-amber-500 px-4 font-bold text-stone-900 shadow-gold hover:bg-amber-400 focus-visible:outline-2 focus-visible:outline-stone-900 active:bg-amber-600;
     }
 
     /* Sekundær — kontur */

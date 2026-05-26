@@ -49,6 +49,24 @@ The interesting business logic. Per match, `regnUtScoreForKamp` looks at all use
 
 `erIFørsteRunde()` (`src/utils/isInFirstRound.ts`) gates whether other users' `winner`/`topscorer` picks are visible — picks are hidden from other users until the cutoff date in that file.
 
+### Brand-tokens og UI-konvensjoner
+
+`src/styles/global.css` definerer hele design-systemet via Tailwind v4 `@theme` + `@layer components`:
+
+- **Farger** — `gold-50/100/300/500/700/900` (primær aksent), `brand-pitch`/`brand-pitch-light` (fotballbane-grønn), `brand-royal`/`brand-royal-deep` (premie/splash). `stone-*` brukes som nøytral base over hele appen. Bruk tokens, ikke ad-hoc amber/emerald.
+- **Komponent-klasser** (`bp-*`) — gjenbrukbare. Foretrekk disse fremfor å bygge mønsteret på nytt:
+  - `bp-card` — `rounded-xl bg-white p-4 shadow-xs ring-1 ring-stone-200/70`. Standard hvit kort-overflate. Pakk med `divide-y` eller `space-y-*` ved behov.
+  - `bp-btn-primary` / `bp-btn-gold` / `bp-btn-ghost` — knapper. **Bruk `<Button>` fra `src/components/ui/button.tsx`** (cva-variantene `default`/`accent`/`outline`/`ghost` følger samme tokens og legger til `loading`, `icon`, `size`). `bp-btn-*` brukes bare ved ad-hoc lenker som ikke kan være knapp-element.
+  - `bp-chip-gold` / `bp-chip-blue` / `bp-chip-green` / `bp-chip-live` — pills/badges. Felles base via gruppert selector.
+  - `bp-overline` — seksjons-overskrifter (`text-[11px] font-bold tracking-[0.18em] uppercase text-stone-500`).
+  - `bp-tabular` — `font-variant-numeric: tabular-nums`. Bruk på score, poeng og kr-kolonner.
+  - `bp-trophy-bg` — royal-radial bakgrunn til splash/premie-modaler. Brukt i `LoadingScreen.tsx`.
+- **Loading-animasjoner** — `@layer utilities` har `ls-bar`, `ls-rise`, `ls-spin`, `ls-pulse-ring`, `ls-stamp`, `ls-confetti`, `ls-roll`, `ls-pulse-soft` keyframes. Bruk `animate-[ls-name_…]` i Tailwind i stedet for runtime style-injection (gammelt mønster, ikke gjenta).
+- **App-ikon** — `public/favicon.svg` er kilden (Mono VM26-design). PNG-størrelsene (180/192/310/512) i `public/manifest.json` regenereres fra SVG med `rsvg-convert`; `favicon.ico` lages av Python `PIL` fra 16/32/48-rasteriseringer.
+- **Hva som *ikke* skal brukes** — ingen `@navikt/ds-react` lenger (alle Aksel-imports er borte). Ikke introduser nytt komponent-bibliotek uten å diskutere.
+
+Den fulle design-handoff-pakken (med prototyper og 6 ikon-/5 loading-screen-varianter) lå i `design_handoff_branding 2/` og ble slettet etter implementasjon — F (Mono VM26) og A (Pokal fylles) er valgt.
+
 ### Conventions
 
 - API routes are thin: SQL via `client.query(...)` directly, no ORM layer. Handlers return JSON via `res.json(...)`.
