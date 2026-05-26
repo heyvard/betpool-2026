@@ -8,7 +8,7 @@ import { UseMatches } from '../queries/useMatches'
 import { UseMyBets } from '../queries/useMyBets'
 import dayjs from 'dayjs'
 import NextLink from 'next/link'
-import { BetView, fixLand } from '../components/bet/BetView'
+import { fixLand } from '../components/bet/BetView'
 import { useAuthedFetch } from '../auth/authedFetch'
 import { Check, ChevronRight, Clock, Goal, Lock, Trophy, TriangleAlert } from 'lucide-react'
 import { useQueryClient } from '@tanstack/react-query'
@@ -23,7 +23,6 @@ import { KopierNummerKnapp } from '../components/KopierNummerKnapp'
 import { LinkPanel } from '@/components/ui/link-panel'
 import { cn } from '@/lib/utils'
 import { User } from '../types/user'
-import { byggJokerPerRunde, jokerContextFor } from '../utils/jokerContext'
 
 dayjs.locale(nb)
 
@@ -98,43 +97,99 @@ function NesteKampSeksjon() {
     const { data: bets } = UseMyBets()
     if (!bets) return null
 
-    // Første utippede kamp som starter etter nå.
-    const utippet = bets
+    // Alle kamper som starter etter nå, sortert kronologisk
+    const kommende = bets
         .filter((b) => dayjs(b.game_start).isAfter(nå()))
-        .filter((b) => b.home_score == null || b.away_score == null)
-        .sort((a, b) => dayjs(a.game_start).valueOf() - dayjs(b.game_start).valueOf())[0]
+        .sort((a, b) => dayjs(a.game_start).valueOf() - dayjs(b.game_start).valueOf())
 
-    if (!utippet) {
+    if (kommende.length === 0) {
         return (
             <NextLink passHref legacyBehavior href="/my-bets">
                 <LinkPanel>
                     <span className="flex flex-col">
-                        <span className="text-base font-semibold text-stone-900">Alt er tippet</span>
-                        <span className="text-xs text-stone-500">Bla gjennom kampene dine</span>
+                        <span className="text-base font-semibold text-stone-900">Ingen flere kamper</span>
+                        <span className="text-xs text-stone-500">VM er snart over</span>
                     </span>
                 </LinkPanel>
             </NextLink>
         )
     }
 
-    const jokerPerRunde = byggJokerPerRunde(bets)
-    const jc = jokerContextFor(utippet, jokerPerRunde)
-    const antallKommende = bets.filter((b) => dayjs(b.game_start).isAfter(nå())).length
+    // Neste kampdag = kalenderdagen til den tidligste kommende kampen
+    const nesteKampDag = dayjs(kommende[0].game_start).startOf('day')
+    const kampene = kommende.filter((b) =>
+        dayjs(b.game_start).startOf('day').isSame(nesteKampDag, 'day'),
+    )
+
+    const manglerTips = kampene.filter(
+        (b) => b.home_score == null || b.away_score == null,
+    ).length
+    const altTippet = manglerTips === 0
+
+    const erIDag = nesteKampDag.isSame(nå(), 'day')
+    const erIMorgen = nesteKampDag.isSame(nå().add(1, 'day'), 'day')
+    const datoEtikett = erIDag
+        ? 'I dag'
+        : erIMorgen
+          ? 'I morgen'
+          : nesteKampDag.locale(nb).format('dddd D. MMM')
 
     return (
         <div className="space-y-2">
             <div className="flex items-center justify-between px-1">
-                <h2 className="text-sm font-bold text-stone-900">Neste kamp</h2>
-                <span className="text-xs text-stone-500">
-                    {dayjs(utippet.game_start).locale(nb).format('ddd D. MMM HH:mm')}
-                </span>
+                <h2 className="text-sm font-bold text-stone-900">Neste kampdag</h2>
+                <span className="text-xs capitalize text-stone-500">{datoEtikett}</span>
             </div>
-            <BetView bet={utippet} matchside={false} joker={jc} />
+
+            <div className="overflow-hidden rounded-xl bg-white shadow-xs ring-1 ring-stone-200/70">
+                <div className="flex items-center justify-between border-b border-stone-100 px-4 py-2.5">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-stone-500">
+                        {nesteKampDag.locale(nb).format('dddd D. MMMM')}
+                    </span>
+                    {altTippet ? (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-0.5 text-[10px] font-bold text-emerald-700 ring-1 ring-emerald-200">
+                            <Check className="h-2.5 w-2.5" /> Alt tippet
+                        </span>
+                    ) : (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-0.5 text-[10px] font-bold text-amber-800 ring-1 ring-amber-200">
+                            {manglerTips} mangler tips
+                        </span>
+                    )}
+                </div>
+
+                {kampene.map((b) => {
+                    const tippet = b.home_score != null && b.away_score != null
+                    return (
+                        <NextLink
+                            key={b.match_num}
+                            href="/my-bets"
+                            className="flex items-center gap-3 border-b border-stone-100 px-4 py-2.5 last:border-b-0 hover:bg-stone-50 transition-colors"
+                        >
+                            <span className="w-9 shrink-0 text-[11px] font-bold tabular-nums text-stone-400">
+                                {dayjs(b.game_start).format('HH:mm')}
+                            </span>
+                            <span className="min-w-0 flex-1 truncate text-xs font-semibold text-stone-900">
+                                {fixLand(b.home_team)} – {fixLand(b.away_team)}
+                            </span>
+                            {tippet ? (
+                                <span className="shrink-0 rounded-md bg-emerald-50 px-1.5 py-0.5 text-[11px] font-bold tabular-nums text-emerald-700">
+                                    {b.home_score}–{b.away_score}
+                                </span>
+                            ) : (
+                                <span className="h-4 w-4 shrink-0 rounded border-[1.5px] border-dashed border-stone-300" />
+                            )}
+                        </NextLink>
+                    )
+                })}
+            </div>
+
             <NextLink
                 href="/my-bets"
                 className="block text-center text-sm font-semibold text-amber-700 hover:text-amber-800"
             >
-                Se alle {antallKommende} kamper →
+                {altTippet
+                    ? 'Se alle dine tips →'
+                    : `Tippe ${manglerTips === 1 ? 'kampen' : 'kampene'} →`}
             </NextLink>
         </div>
     )
