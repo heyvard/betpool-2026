@@ -15,17 +15,11 @@ import { PremieKort } from '../components/PremieKort'
 import { LeagueDetail } from '../types/league'
 import { Banknote, Check, Clock } from 'lucide-react'
 import { KopierNummerKnapp } from '../components/KopierNummerKnapp'
+import { Medalje } from '../components/ui/medalje'
 
-function plassVisning(plass: number) {
-    switch (plass) {
-        case 1:
-            return '🥇'
-        case 2:
-            return '🥈'
-        case 3:
-            return '🥉'
-    }
-    return plass
+function plassVisning(plass: number): React.ReactNode {
+    if (plass === 1 || plass === 2 || plass === 3) return <Medalje plass={plass} size={28} />
+    return <span className="bp-tabular text-sm font-semibold text-stone-600">{plass}</span>
 }
 
 const Leaderboard: NextPage = () => {
@@ -108,9 +102,7 @@ const Leaderboard: NextPage = () => {
                 <Table.Body>
                     {lista.map((row, i) => (
                         <Table.Row key={row.userid}>
-                            <Table.DataCell align="center">
-                                <span className="text-5xl">{plassVisning(finnFaktiskPlass(i, lista))}</span>
-                            </Table.DataCell>
+                            <Table.DataCell align="center">{plassVisning(finnFaktiskPlass(i, lista))}</Table.DataCell>
                             <Table.DataCell align="left">
                                 <NextLink href={'/user/' + row.userid}>
                                     <Avatar src={row?.picture} name={row.userName} />

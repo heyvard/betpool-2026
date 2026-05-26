@@ -4,6 +4,7 @@ import { Spinner } from '../components/loading/Spinner'
 import React from 'react'
 import { UseAllBets } from '../queries/useAllBets'
 import { Calculator, Clock, Flag, Info, Sparkles, Star, Trophy, Wallet, Zap } from 'lucide-react'
+import { Medalje } from '../components/ui/medalje'
 
 function Seksjon({ ikon, tittel, children }: { ikon: React.ReactNode; tittel: string; children: React.ReactNode }) {
     return (
@@ -55,9 +56,9 @@ const Regler: NextPage = () => {
     const bonuspott = deltakere * 3
 
     const premieRader = [
-        { medalje: '🥇', plass: '1. plass', andel: '50 %', kr: premier[0] },
-        { medalje: '🥈', plass: '2. plass', andel: '30 %', kr: premier[1] },
-        { medalje: '🥉', plass: '3. plass', andel: '20 %', kr: premier[2] },
+        { plass: 1 as const, label: '1. plass', andel: '50 %', kr: premier[0] },
+        { plass: 2 as const, label: '2. plass', andel: '30 %', kr: premier[1] },
+        { plass: 3 as const, label: '3. plass', andel: '20 %', kr: premier[2] },
     ]
 
     return (
@@ -82,10 +83,8 @@ const Regler: NextPage = () => {
                     {premieRader.map((rad) => (
                         <div key={rad.plass} className="flex items-center justify-between py-2">
                             <span className="flex items-center gap-2">
-                                <span aria-hidden className="text-lg">
-                                    {rad.medalje}
-                                </span>
-                                <span className="font-medium text-stone-900">{rad.plass}</span>
+                                <Medalje plass={rad.plass} size={24} />
+                                <span className="font-medium text-stone-900">{rad.label}</span>
                                 <span className="text-xs text-stone-500">{rad.andel}</span>
                             </span>
                             <span className="bp-tabular font-semibold text-stone-900">{rad.kr} kr</span>
