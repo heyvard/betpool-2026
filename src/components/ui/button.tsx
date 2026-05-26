@@ -46,15 +46,28 @@ export function Button({
     asChild,
     ...props
 }: ButtonProps) {
-    const Comp = asChild ? Slot : 'button'
+    const iconNode = loading ? (
+        <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+    ) : (
+        icon
+    )
+    const classes = cn(buttonVariants({ variant, size }), className)
+
+    if (asChild) {
+        // Slot krever nøyaktig ett barn — flett ikon inn i barnet i stedet for å rendre som søsken.
+        const child = React.Children.only(children) as React.ReactElement<{ children?: React.ReactNode }>
+        const slotProps = { ...props, disabled: disabled || loading } as React.ComponentProps<typeof Slot>
+        return (
+            <Slot className={classes} {...slotProps}>
+                {React.cloneElement(child, undefined, iconNode, child.props.children)}
+            </Slot>
+        )
+    }
+
     return (
-        <Comp className={cn(buttonVariants({ variant, size }), className)} disabled={disabled || loading} {...props}>
-            {loading ? (
-                <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-            ) : (
-                icon
-            )}
+        <button className={classes} disabled={disabled || loading} {...props}>
+            {iconNode}
             {children}
-        </Comp>
+        </button>
     )
 }
