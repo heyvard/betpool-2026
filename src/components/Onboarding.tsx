@@ -56,13 +56,13 @@ export function Onboarding({ onFerdig }: { onFerdig: () => void }) {
     }
 
     return (
-        <div className="fixed inset-0 z-50 flex flex-col bg-stone-900 text-white">
+        <div className="fixed inset-0 z-[60] flex flex-col bg-stone-900 text-white">
             <div className="flex flex-1 flex-col items-center justify-center px-6">
                 <div className="mb-2">{aktiv.visual}</div>
                 <h1 className="mt-8 text-2xl font-bold">{aktiv.tittel}</h1>
                 <p className="mt-3 max-w-sm text-center text-stone-300">{aktiv.tekst}</p>
             </div>
-            <div className="flex items-center justify-between gap-3 px-6 pb-8">
+            <div className="flex items-center justify-between gap-3 px-6 pb-[max(2rem,env(safe-area-inset-bottom))]">
                 <button
                     type="button"
                     onClick={fullfør}
