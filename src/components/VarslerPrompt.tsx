@@ -5,6 +5,7 @@ import dayjs from 'dayjs'
 import { abonner, pushStøttes } from '../utils/push'
 import { useAuthedFetch } from '../auth/authedFetch'
 import { Button } from '@/components/ui/button'
+import { useLanguage } from '../i18n/LanguageContext'
 
 const STATE_NØKKEL = 'betpool:varsler-prompt'
 // betpool:vis-varsler-prompt event dispatches åpning av modalen.
@@ -29,6 +30,7 @@ export function brukerKanPrompttes(): boolean {
  */
 export function VarslerPrompt() {
     const authedFetch = useAuthedFetch()
+    const { t } = useLanguage()
     const [synlig, setSynlig] = useState(false)
     const [jobber, setJobber] = useState(false)
     const [feil, setFeil] = useState<string | null>(null)
@@ -82,7 +84,7 @@ export function VarslerPrompt() {
                 <button
                     type="button"
                     onClick={ikkeNå}
-                    aria-label="Lukk"
+                    aria-label={t.felles.lukk}
                     className="absolute right-3 top-3 rounded-md p-1 text-stone-500 hover:bg-stone-100 hover:text-stone-700"
                 >
                     <X className="h-4 w-4" />
@@ -93,11 +95,9 @@ export function VarslerPrompt() {
                         <Bell className="h-6 w-6" />
                     </span>
                     <h2 id="varsler-prompt-tittel" className="mt-3 text-base font-bold text-stone-900">
-                        Slå på varsler?
+                        {t.varslerPrompt.tittel}
                     </h2>
-                    <p className="mt-1 text-sm text-stone-700">
-                        Få påminnelse om kamper du ikke har tippa, og en oppsummering dagen etter.
-                    </p>
+                    <p className="mt-1 text-sm text-stone-700">{t.varslerPrompt.tekst}</p>
                 </div>
 
                 {feil && (
@@ -108,10 +108,10 @@ export function VarslerPrompt() {
 
                 <div className="mt-5 flex flex-col gap-2">
                     <Button variant="accent" onClick={aksepter} loading={jobber}>
-                        Slå på varsler
+                        {t.varslerPrompt.slaaPaa}
                     </Button>
                     <Button variant="ghost" onClick={ikkeNå}>
-                        Ikke nå
+                        {t.varslerPrompt.ikkeNaa}
                     </Button>
                 </div>
             </div>

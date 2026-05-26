@@ -14,10 +14,13 @@ import { kanHaJoker } from '../data/matches'
 import { rundeTilTekst } from '../utils/rundeTilTekst'
 import { byggJokerPerRunde, jokerContextFor } from '../utils/jokerContext'
 import { Zap } from 'lucide-react'
+import { useLanguage } from '../i18n/LanguageContext'
+import { tx } from '../i18n/interpolate'
 
 const Home: NextPage = () => {
     const { data: myBets } = UseMyBets()
     const { data: megselv } = UseUser()
+    const { t, locale } = useLanguage()
 
     if (!myBets || !megselv) {
         return <Spinner />
@@ -38,11 +41,8 @@ const Home: NextPage = () => {
     return (
         <>
             <div>
-                {/* Bevisst en lenke til en egen side og ikke en collapsable seksjon her —
-                    /my-bets skal være "framoverlent": bare det du *kan* fortsatt tippe på.
-                    Spilte kamper er historikk og hører hjemme et annet sted. */}
                 <NextLink passHref legacyBehavior href={'/user/' + megselv.id}>
-                    <LinkPanel className="text-xl">Spilte kamper</LinkPanel>
+                    <LinkPanel className="text-xl">{t.mineTips.spilteKamper}</LinkPanel>
                 </NextLink>
             </div>
 
@@ -54,14 +54,18 @@ const Home: NextPage = () => {
                 return (
                     <section key={round} className="space-y-1">
                         <h2 className="sticky top-0 z-10 -mx-2 bg-stone-50/80 px-3 py-2 text-xs font-bold uppercase tracking-wider text-stone-600 backdrop-blur">
-                            {rundeTilTekst(round)} · {antallTippet} / {kamperIRunde.length} tippet
+                            {tx(t.mineTips.rundeTippet, {
+                                runde: rundeTilTekst(round, locale),
+                                antall: antallTippet,
+                                totalt: kamperIRunde.length,
+                            })}
                         </h2>
                         {kanHaJoker(round) &&
                             !jokerPerRunde.has(round) &&
                             kamperIRunde.some((b) => dayjs(b.game_start).isAfter(nå())) && (
                                 <div className="mt-2 flex items-center gap-2 rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-900 ring-1 ring-amber-200">
                                     <Zap className="h-3.5 w-3.5 fill-amber-500 text-amber-500" />
-                                    Jokeren er ikke brukt denne runden — dobler én kamp.
+                                    {t.mineTips.jokerIkkeBrukt}
                                 </div>
                             )}
                         {kamperIRunde.map((b) => (
@@ -80,6 +84,7 @@ const Home: NextPage = () => {
 }
 
 function ProgresjonsKort({ myBets }: { myBets: Bet[] }) {
+    const { t } = useLanguage()
     const kommende = myBets.filter((b) => dayjs(b.game_start).isAfter(nå()))
     const antallTippet = kommende.filter((b) => b.home_score != null && b.away_score != null).length
     const totalt = kommende.length
@@ -88,7 +93,7 @@ function ProgresjonsKort({ myBets }: { myBets: Bet[] }) {
         <div className="bp-card">
             <div className="flex items-baseline justify-between">
                 <span className="text-sm font-semibold text-stone-900">
-                    {antallTippet} av {totalt} kommende kamper tippet
+                    {tx(t.mineTips.kommendeKamperTippet, { antall: antallTippet, totalt })}
                 </span>
                 <span className="bp-tabular text-xs text-stone-500">{Math.round(prosent)} %</span>
             </div>

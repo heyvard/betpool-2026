@@ -10,10 +10,13 @@ import { rundeTilTekst } from '../../utils/rundeTilTekst'
 import { hentFlag } from '../../utils/lag'
 import { UseUser } from '../../queries/useUser'
 import { BodyShort, Heading } from '@/components/ui/typography'
+import { useLanguage } from '../../i18n/LanguageContext'
+import { tx } from '../../i18n/interpolate'
 
 const Home: NextPage = () => {
     const { data, isLoading } = UseAllBets()
     const { data: me } = UseUser()
+    const { t, locale } = useLanguage()
 
     const router = useRouter()
     const { id } = router.query
@@ -63,9 +66,9 @@ const Home: NextPage = () => {
     return (
         <>
             <Heading level="1" size="large" align="center">
-                {fixLand(match.home_team)} vs {fixLand(match.away_team)}
+                {fixLand(match.home_team, locale)} vs {fixLand(match.away_team, locale)}
             </Heading>
-            <BodyShort align="center">{rundeTilTekst(match.round)}</BodyShort>
+            <BodyShort align="center">{rundeTilTekst(match.round, locale)}</BodyShort>
             <BodyShort align="center">
                 {match.home_result} - {match.away_result}
             </BodyShort>
@@ -91,13 +94,23 @@ const Home: NextPage = () => {
                     </div>
                 </div>
                 <BodyShort>
-                    {`${match.matchpoeng.antallRiktigeSvar} stk (${Math.floor(match.matchpoeng.andelRiktigeResultat * 100)} %) har riktig resultat`}
+                    {tx(t.spilteKamper.riktigResultatAntall, {
+                        antall: match.matchpoeng.antallRiktigeSvar,
+                        prosent: Math.floor(match.matchpoeng.andelRiktigeResultat * 100),
+                    })}
                 </BodyShort>
                 <BodyShort spacing>
-                    {`${match.matchpoeng.antallRiktigeUtfall} stk (${Math.floor(match.matchpoeng.andelRiktigeUtfall * 100)} %) har riktig utfall`}
+                    {tx(t.spilteKamper.riktigUtfallAntall, {
+                        antall: match.matchpoeng.antallRiktigeUtfall,
+                        prosent: Math.floor(match.matchpoeng.andelRiktigeUtfall * 100),
+                    })}
                 </BodyShort>
-                <BodyShort>{`${match.matchpoeng.riktigResultat} poeng for riktig resultat`}</BodyShort>
-                <BodyShort>{`${match.matchpoeng.riktigUtfall} poeng for riktig utfall`}</BodyShort>
+                <BodyShort>
+                    {tx(t.spilteKamper.poengForRiktigResultat, { poeng: match.matchpoeng.riktigResultat })}
+                </BodyShort>
+                <BodyShort>
+                    {tx(t.spilteKamper.poengForRiktigUtfall, { poeng: match.matchpoeng.riktigUtfall })}
+                </BodyShort>
             </div>
             {matchensBets
                 .filter((a) => a.user.id == me.id)
