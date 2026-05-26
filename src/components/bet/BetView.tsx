@@ -112,6 +112,17 @@ export const BetView = ({ bet, matchside, joker }: { bet: Bet; matchside: boolea
                 </span>
             </div>
 
+            {kanHaJoker(bet.round) && !erNorgeKamp(bet.home_team, bet.away_team) && (
+                <JokerSeksjon
+                    joker={joker}
+                    harLagretTips={harLagretTips}
+                    disabled={disabled}
+                    isPending={jokerMutation.isPending}
+                    feil={jokerMutation.error?.message ?? null}
+                    onToggle={(verdi) => jokerMutation.mutate({ matchNum: bet.match_num, joker: verdi })}
+                />
+            )}
+
             <div className="border-y border-stone-100 divide-y divide-stone-100">
                 <TeamScoreRow
                     team={bet.home_team}
@@ -128,17 +139,6 @@ export const BetView = ({ bet, matchside, joker }: { bet: Bet; matchside: boolea
                     pending={lagreknappSynlig}
                 />
             </div>
-
-            {kanHaJoker(bet.round) && !erNorgeKamp(bet.home_team, bet.away_team) && (
-                <JokerSeksjon
-                    joker={joker}
-                    harLagretTips={harLagretTips}
-                    disabled={disabled}
-                    isPending={jokerMutation.isPending}
-                    feil={jokerMutation.error?.message ?? null}
-                    onToggle={(verdi) => jokerMutation.mutate({ matchNum: bet.match_num, joker: verdi })}
-                />
-            )}
 
             <div className="flex items-center justify-between gap-3 px-4 py-3 min-h-13">
                 <div className="flex items-center gap-2 flex-wrap">
@@ -172,7 +172,7 @@ export const BetView = ({ bet, matchside, joker }: { bet: Bet; matchside: boolea
                                     ? 'Fyll inn score for begge lag'
                                     : visSterktHint
                                       ? 'Husk å lagre endringen'
-                                      : 'Ikke lagret'}
+                                      : 'Endring ikke lagret'}
                             </span>
                         </>
                     )}
@@ -262,7 +262,14 @@ function JokerSeksjon({ joker, harLagretTips, disabled, isPending, feil, onToggl
     }
 
     return (
-        <div className={cn('border-b border-stone-100 px-4 py-3', joker.aktiv && 'bg-amber-50/50')}>
+        <div
+            className={cn(
+                'px-4 py-3 transition-colors',
+                joker.aktiv
+                    ? 'border-b-2 border-amber-300 bg-gradient-to-r from-amber-50 to-amber-100/40'
+                    : 'border-b border-stone-100',
+            )}
+        >
             {innhold}
             {feil && <p className="mt-1.5 text-xs text-red-600">{feil}</p>}
         </div>
@@ -280,19 +287,14 @@ interface TeamScoreRowProps {
 function TeamScoreRow({ team, value, onValueChange, disabled, pending }: TeamScoreRowProps) {
     const numeric = value === '' ? null : Number(value)
     const canDec = !disabled && numeric !== null && numeric > 0
-    const canInc = !disabled && (numeric === null || numeric < 99)
+    const canInc = !disabled && (numeric === null || numeric < 20)
 
     const handleDec = () => {
-        if (numeric !== null && numeric > 0) {
-            onValueChange(String(numeric - 1))
-        }
+        if (numeric !== null && numeric > 0) onValueChange(String(numeric - 1))
     }
     const handleInc = () => {
-        if (numeric === null) {
-            onValueChange('1')
-        } else if (numeric < 99) {
-            onValueChange(String(numeric + 1))
-        }
+        if (numeric === null) onValueChange('1')
+        else if (numeric < 20) onValueChange(String(numeric + 1))
     }
 
     return (
@@ -310,19 +312,31 @@ function TeamScoreRow({ team, value, onValueChange, disabled, pending }: TeamSco
                     aria-label={`Reduser ${team}`}
                     disabled={!canDec}
                     onClick={handleDec}
-                    className="h-11 w-11 flex items-center justify-center rounded-l-lg text-stone-700 hover:bg-stone-50 active:bg-stone-100 disabled:text-stone-300 disabled:hover:bg-transparent disabled:cursor-not-allowed transition-colors"
+                    className="flex h-11 w-11 items-center justify-center rounded-l-lg text-stone-700 hover:bg-stone-50 active:bg-stone-100 disabled:cursor-not-allowed disabled:text-stone-300 disabled:hover:bg-transparent"
                 >
                     <Minus className="w-4 h-4" />
                 </button>
-                <span className="bp-tabular flex h-11 min-w-9 items-center justify-center px-1 text-2xl font-semibold text-stone-900 select-none">
-                    {numeric ?? '–'}
-                </span>
+                <input
+                    type="number"
+                    inputMode="numeric"
+                    min={0}
+                    max={20}
+                    value={value}
+                    disabled={disabled}
+                    onChange={(e) => {
+                        const v = e.target.value
+                        if (v === '' || /^\d{1,2}$/.test(v)) onValueChange(v)
+                    }}
+                    onFocus={(e) => e.currentTarget.select()}
+                    aria-label={`Score for ${team}`}
+                    className="bp-tabular h-11 w-12 select-none bg-transparent text-center text-2xl font-semibold text-stone-900 focus:outline-none"
+                />
                 <button
                     type="button"
                     aria-label={`Øk ${team}`}
                     disabled={!canInc}
                     onClick={handleInc}
-                    className="h-11 w-11 flex items-center justify-center rounded-r-lg text-stone-700 hover:bg-stone-50 active:bg-stone-100 disabled:text-stone-300 disabled:hover:bg-transparent disabled:cursor-not-allowed transition-colors"
+                    className="flex h-11 w-11 items-center justify-center rounded-r-lg text-stone-700 hover:bg-stone-50 active:bg-stone-100 disabled:cursor-not-allowed disabled:text-stone-300 disabled:hover:bg-transparent"
                 >
                     <Plus className="w-4 h-4" />
                 </button>

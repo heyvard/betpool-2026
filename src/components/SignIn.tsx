@@ -22,7 +22,7 @@ const punkter = [
     },
     {
         ikon: <Users className="h-4 w-4" />,
-        tittel: 'Åpent for alle',
+        tittel: 'Åpent for alle med lenken',
         tekst: 'Hvem som helst med denne lenken kan bli med.',
     },
 ]
