@@ -349,7 +349,7 @@ const no = {
     testBruker: {
         velg: 'Velg en test-bruker nederst til høyre.',
     },
-} as const
+}
 
 export type Translations = typeof no
 export default no
