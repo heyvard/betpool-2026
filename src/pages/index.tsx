@@ -9,7 +9,7 @@ import dayjs from 'dayjs'
 import NextLink from 'next/link'
 import { fixLand } from '../components/bet/BetView'
 import { useAuthedFetch } from '../auth/authedFetch'
-import { Check, ChevronDown, Clock, Goal, Lock, Trophy, TriangleAlert } from 'lucide-react'
+import { Check, ChevronRight, Clock, Goal, Lock, Trophy, TriangleAlert } from 'lucide-react'
 import { useQueryClient } from '@tanstack/react-query'
 import { useDebouncedCallback } from 'use-debounce'
 import nb from 'dayjs/locale/nb'
@@ -126,8 +126,12 @@ function FristMerke({ laast }: { laast: boolean }) {
     )
 }
 
-/** Felles kort-skall: ikon-badge + tittel/undertittel øverst, valgfritt innhold under. */
-function TipsKort({
+/**
+ * Trykkbar rad-kort: ikon-badge + tittel/undertittel til venstre, valgt verdi
+ * + chevron til høyre. Selve "klikket" leveres av barnet (et `<label>` rundt
+ * en skjult `<select>` for Vinner, et inline input for Toppscorer).
+ */
+function RadKort({
     ikon,
     tittel,
     undertittel,
@@ -139,17 +143,17 @@ function TipsKort({
     children: React.ReactNode
 }) {
     return (
-        <section className="overflow-hidden rounded-2xl bg-white shadow-xs ring-1 ring-stone-200/70">
-            <div className="flex items-center gap-3 border-b border-stone-100 px-4 py-3">
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-amber-100 text-amber-700">
+        <section className="rounded-2xl bg-white shadow-xs ring-1 ring-stone-200/70">
+            <div className="flex min-h-16 items-center gap-3 px-4 py-3">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-amber-100 text-amber-700">
                     {ikon}
                 </span>
-                <div className="min-w-0">
+                <div className="min-w-0 flex-1">
                     <h2 className="text-sm font-semibold text-stone-900">{tittel}</h2>
                     <p className="text-xs text-stone-500">{undertittel}</p>
                 </div>
+                {children}
             </div>
-            {children}
         </section>
     )
 }
@@ -164,8 +168,6 @@ function VinnerKort({ megselv, laast }: { megselv: User; laast: boolean }) {
     const [nyligLagret, setNyligLagret] = useState(false)
     const [feil, setFeil] = useState<string | null>(null)
 
-    // Synk lokal optimistisk verdi med ny serververdi når denne endrer seg
-    // (egen lagring eller eksternt). Avledet state i render, ikke effect.
     if (lagretWinner !== forrigeLagret) {
         setForrigeLagret(lagretWinner)
         setWinner(lagretWinner)
@@ -182,7 +184,7 @@ function VinnerKort({ megselv, laast }: { megselv: User; laast: boolean }) {
                 body: JSON.stringify({ winner: ny }),
             })
             if (!response.ok) {
-                setFeil('Kunne ikke lagre — sjekk forbindelsen og prøv igjen.')
+                setFeil('Kunne ikke lagre — prøv igjen.')
                 setWinner(forrige)
                 return
             }
@@ -194,41 +196,39 @@ function VinnerKort({ megselv, laast }: { megselv: User; laast: boolean }) {
         }
     }
 
-    const harValg = winner !== ''
-
     return (
-        <TipsKort ikon={<Trophy className="h-5 w-5" />} tittel="Verdensmester" undertittel="Hvem løfter pokalen?">
-            <div className="flex flex-col items-center px-4 py-6 text-center">
-                {harValg ? (
-                    <>
-                        <span className="text-6xl leading-none" aria-hidden>
-                            {hentFlag(winner)}
-                        </span>
-                        <span className="mt-2 text-xl font-bold text-stone-900">{hentNorsk(winner)}</span>
-                    </>
+        <div className="space-y-1">
+            <RadKort ikon={<Trophy className="h-5 w-5" />} tittel="Verdensmester" undertittel="Hvem løfter pokalen?">
+                {laast ? (
+                    <ValgtVerdi
+                        venstre={<span className="text-xl leading-none">{hentFlag(winner)}</span>}
+                        tekst={hentNorsk(winner)}
+                        ikon={<Lock className="h-4 w-4 text-stone-400" />}
+                    />
                 ) : (
-                    <TomtValg tekst="Ingen vinner valgt ennå" />
-                )}
-            </div>
-
-            {laast ? (
-                <LaastFot />
-            ) : (
-                <div className="border-t border-stone-100 bg-stone-50/70 px-4 py-3">
-                    <label htmlFor="winner-select" className="sr-only">
-                        Velg verdensmester
-                    </label>
-                    <div className="relative">
+                    <label className="relative -mr-2 flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1 hover:bg-stone-50">
+                        <span className="sr-only">Velg verdensmester</span>
+                        {winner ? (
+                            <>
+                                <span className="text-xl leading-none" aria-hidden>
+                                    {hentFlag(winner)}
+                                </span>
+                                <span className="max-w-[8rem] truncate text-sm font-bold text-stone-900">
+                                    {hentNorsk(winner)}
+                                </span>
+                            </>
+                        ) : (
+                            <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-bold text-amber-800">
+                                Velg lag
+                            </span>
+                        )}
+                        <ChevronRight className="h-4 w-4 text-stone-400" />
                         <select
-                            id="winner-select"
                             value={winner}
                             disabled={lagrer}
                             onChange={(e) => lagre(e.target.value)}
-                            className={cn(
-                                'h-11 w-full appearance-none rounded-xl border border-stone-300 bg-white pl-3 pr-10 text-sm font-medium text-stone-900',
-                                'transition-shadow focus:border-amber-500 focus:outline-hidden focus:ring-2 focus:ring-amber-400',
-                                'disabled:cursor-not-allowed disabled:bg-stone-100 disabled:text-stone-500',
-                            )}
+                            aria-label="Velg verdensmester"
+                            className="absolute inset-0 cursor-pointer opacity-0 disabled:cursor-not-allowed"
                         >
                             <option value="" disabled>
                                 Velg lag …
@@ -239,14 +239,11 @@ function VinnerKort({ megselv, laast }: { megselv: User; laast: boolean }) {
                                 </option>
                             ))}
                         </select>
-                        <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-stone-400">
-                            <ChevronDown className="h-4 w-4" />
-                        </span>
-                    </div>
-                    <StatusLinje lagrer={lagrer} nyligLagret={nyligLagret} hint="Endres til VM starter" feil={feil} />
-                </div>
-            )}
-        </TipsKort>
+                    </label>
+                )}
+            </RadKort>
+            <StatusLinjeKompakt lagrer={lagrer} nyligLagret={nyligLagret} feil={feil} />
+        </div>
     )
 }
 
@@ -260,8 +257,6 @@ function ToppscorerKort({ megselv, laast }: { megselv: User; laast: boolean }) {
     const [nyligLagret, setNyligLagret] = useState(false)
     const [feil, setFeil] = useState<string | null>(null)
 
-    // Avledet state: ny serververdi overskriver lokal redigering. OK her — det
-    // er enten brukerens egen lagring eller en sync fra annen fane.
     if (lagretTopscorer !== forrigeLagret) {
         setForrigeLagret(lagretTopscorer)
         setTopscorer(lagretTopscorer)
@@ -276,7 +271,7 @@ function ToppscorerKort({ megselv, laast }: { megselv: User; laast: boolean }) {
                 body: JSON.stringify({ topscorer: ny.trim() }),
             })
             if (!response.ok) {
-                setFeil('Kunne ikke lagre — sjekk forbindelsen og prøv igjen.')
+                setFeil('Kunne ikke lagre — prøv igjen.')
                 return
             }
             queryClient.invalidateQueries({ queryKey: ['user-me'] }).then()
@@ -291,112 +286,96 @@ function ToppscorerKort({ megselv, laast }: { megselv: User; laast: boolean }) {
         lagreDebounced(e.target.value)
     }
 
-    const lagret = lagretTopscorer.trim()
+    const lagret = topscorer.trim()
 
     return (
-        <TipsKort ikon={<Goal className="h-5 w-5" />} tittel="Toppscorer" undertittel="Hvem scorer flest mål?">
-            <div className="flex flex-col items-center px-4 py-6 text-center">
-                {lagret ? (
-                    <>
-                        <span className="flex h-16 w-16 items-center justify-center rounded-full bg-amber-100 text-xl font-bold text-amber-700">
-                            {initialer(lagret)}
-                        </span>
-                        <span className="mt-2 text-xl font-bold text-stone-900">{lagret}</span>
-                    </>
-                ) : (
-                    <TomtValg tekst="Du har ikke tippet toppscorer" />
-                )}
-            </div>
-
-            {laast ? (
-                <LaastFot />
-            ) : (
-                <div className="border-t border-stone-100 bg-stone-50/70 px-4 py-3">
-                    <label htmlFor="topscorer-input" className="sr-only">
-                        Hvilken spiller scorer flest mål?
-                    </label>
-                    <input
-                        id="topscorer-input"
-                        type="text"
-                        value={topscorer}
-                        disabled={lagrer}
-                        placeholder="Spillerens navn"
-                        onChange={onChange}
-                        className={cn(
-                            'h-11 w-full rounded-xl border border-stone-300 bg-white px-3 text-sm text-stone-900',
-                            'transition-shadow placeholder:text-stone-400',
-                            'focus:border-amber-500 focus:outline-hidden focus:ring-2 focus:ring-amber-400',
-                            'disabled:cursor-not-allowed disabled:bg-stone-100',
-                        )}
+        <div className="space-y-1">
+            <RadKort ikon={<Goal className="h-5 w-5" />} tittel="Toppscorer" undertittel="Hvem scorer flest mål?">
+                {laast ? (
+                    <ValgtVerdi
+                        venstre={
+                            lagret ? (
+                                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-amber-100 text-xs font-bold text-amber-700">
+                                    {initialer(lagret)}
+                                </span>
+                            ) : null
+                        }
+                        tekst={lagret || 'Ikke valgt'}
+                        ikon={<Lock className="h-4 w-4 text-stone-400" />}
                     />
-                    <StatusLinje lagrer={lagrer} nyligLagret={nyligLagret} hint="Lagres automatisk." feil={feil} />
-                </div>
-            )}
-        </TipsKort>
-    )
-}
-
-/** Plassholder når brukeren ikke har valgt noe ennå. */
-function TomtValg({ tekst }: { tekst: string }) {
-    return (
-        <>
-            <span
-                className="flex h-16 w-16 items-center justify-center rounded-full border-2 border-dashed border-stone-300 text-2xl text-stone-300"
-                aria-hidden
-            >
-                ?
-            </span>
-            <span className="mt-2 text-base font-medium text-stone-400">{tekst}</span>
-        </>
-    )
-}
-
-/** Fot på et kort når fristen er ute. */
-function LaastFot() {
-    return (
-        <div className="flex items-center gap-2 border-t border-stone-100 bg-stone-50/70 px-4 py-3 text-xs text-stone-500">
-            <Lock className="h-3.5 w-3.5 shrink-0" />
-            VM er i gang — dette tipset kan ikke endres.
+                ) : (
+                    <div className="flex min-w-0 items-center gap-2">
+                        {lagret && (
+                            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-amber-100 text-xs font-bold text-amber-700">
+                                {initialer(lagret)}
+                            </span>
+                        )}
+                        <label htmlFor="topscorer-input" className="sr-only">
+                            Hvilken spiller scorer flest mål?
+                        </label>
+                        <input
+                            id="topscorer-input"
+                            type="text"
+                            value={topscorer}
+                            disabled={lagrer}
+                            placeholder="Skriv navn"
+                            onChange={onChange}
+                            className={cn(
+                                'w-32 min-w-0 rounded-md bg-transparent px-1 py-1 text-right text-sm font-bold text-stone-900',
+                                'placeholder:font-normal placeholder:text-stone-400',
+                                'focus:bg-stone-50 focus:outline-hidden focus:ring-2 focus:ring-amber-400',
+                                'disabled:cursor-not-allowed',
+                            )}
+                        />
+                    </div>
+                )}
+            </RadKort>
+            <StatusLinjeKompakt lagrer={lagrer} nyligLagret={nyligLagret} feil={feil} />
         </div>
     )
 }
 
-/** Lagre-status under et inntastingsfelt. */
-function StatusLinje({
+/** Valgt verdi til høyre i en rad — brukes når VM er i gang og tipset er låst. */
+function ValgtVerdi({ venstre, tekst, ikon }: { venstre?: React.ReactNode; tekst: string; ikon: React.ReactNode }) {
+    return (
+        <div className="flex min-w-0 items-center gap-2">
+            {venstre}
+            <span className="max-w-[8rem] truncate text-sm font-bold text-stone-900">{tekst}</span>
+            {ikon}
+        </div>
+    )
+}
+
+function StatusLinjeKompakt({
     lagrer,
     nyligLagret,
-    hint,
     feil,
 }: {
     lagrer: boolean
     nyligLagret: boolean
-    hint?: string
     feil?: string | null
 }) {
     if (feil) {
         return (
-            <p className="mt-2 flex items-center gap-1.5 text-xs text-red-600" role="alert">
-                <TriangleAlert className="h-3.5 w-3.5" /> {feil}
+            <p className="flex items-center gap-1.5 px-4 text-xs text-red-600" role="alert">
+                <TriangleAlert className="h-3 w-3" /> {feil}
             </p>
         )
     }
     if (lagrer) {
         return (
-            <p className="mt-2 flex items-center gap-1.5 text-xs text-stone-500">
-                <span className="h-3 w-3 animate-spin rounded-full border-2 border-stone-300 border-t-stone-500" />
+            <p className="flex items-center gap-1.5 px-4 text-xs text-stone-500">
+                <span className="h-2.5 w-2.5 animate-spin rounded-full border-2 border-stone-300 border-t-stone-500" />
                 Lagrer …
             </p>
         )
     }
     if (nyligLagret) {
         return (
-            <p className="mt-2 flex items-center gap-1.5 text-xs font-medium text-emerald-700">
-                <Check className="h-3.5 w-3.5" /> Lagret
+            <p className="flex items-center gap-1.5 px-4 text-xs font-medium text-emerald-700">
+                <Check className="h-3 w-3" /> Lagret
             </p>
         )
-    }
-    if (hint) {
-        return <p className="mt-2 text-xs text-stone-400">{hint}</p>
     }
     return null
 }
