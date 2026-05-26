@@ -43,6 +43,11 @@
         "tailwindcss-animate": "^1.0.7",
         "web-push": "^3.6.7"
     },
+    "pnpm": {
+        "overrides": {
+            "@babel/helper-plugin-utils": "7.28.6"
+        }
+    },
     "devDependencies": {
         "@babel/runtime": "^7.29.2",
         "@jest/globals": "30.4.1",
