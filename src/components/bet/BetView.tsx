@@ -314,7 +314,7 @@ function TeamScoreRow({ team, value, onValueChange, disabled, pending }: TeamSco
                 >
                     <Minus className="w-4 h-4" />
                 </button>
-                <span className="h-11 min-w-9 flex items-center justify-center text-2xl font-semibold text-stone-900 tabular-nums px-1 select-none">
+                <span className="bp-tabular flex h-11 min-w-9 items-center justify-center px-1 text-2xl font-semibold text-stone-900 select-none">
                     {numeric ?? '–'}
                 </span>
                 <button

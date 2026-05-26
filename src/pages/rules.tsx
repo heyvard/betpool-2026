@@ -25,9 +25,7 @@ function PoengKort({ tittel, verdi, children }: { tittel: string; verdi: string;
         <div className="rounded-lg ring-1 ring-stone-200/70 p-3">
             <div className="flex items-center justify-between gap-2">
                 <span className="font-semibold text-stone-900">{tittel}</span>
-                <span className="shrink-0 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-800">
-                    {verdi}
-                </span>
+                <span className="bp-chip-gold shrink-0">{verdi}</span>
             </div>
             <p className="mt-1 text-stone-600">{children}</p>
         </div>
@@ -90,7 +88,7 @@ const Regler: NextPage = () => {
                                 <span className="font-medium text-stone-900">{rad.plass}</span>
                                 <span className="text-xs text-stone-500">{rad.andel}</span>
                             </span>
-                            <span className="font-semibold tabular-nums text-stone-900">{rad.kr} kr</span>
+                            <span className="bp-tabular font-semibold text-stone-900">{rad.kr} kr</span>
                         </div>
                     ))}
                 </div>

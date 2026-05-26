@@ -79,12 +79,7 @@ function BrukerView({ me, user }: { user: UserForAdmin; me: User }) {
                         </div>
                     )}
                 </div>
-                <span
-                    className={cn(
-                        'inline-flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium',
-                        user.paid ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700',
-                    )}
-                >
+                <span className={cn('shrink-0', user.paid ? 'bp-chip-green' : 'bp-chip-gold')}>
                     {user.paid ? <Check className="h-3.5 w-3.5" /> : <Clock className="h-3.5 w-3.5" />}
                     {user.paid ? 'Betalt' : 'Ikke betalt'}
                 </span>

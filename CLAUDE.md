@@ -24,7 +24,7 @@ This is a private betting pool for a football tournament (currently VM 2026; the
 
 ### Stack
 
-Next.js 14 pages router + React 18 + TypeScript, Tailwind + `@navikt/ds-react` (NAV's Aksel design system) for UI, `@tanstack/react-query` for server state, Firebase Auth (Google sign-in) on the client, CockroachDB via `pg` Pool on the server, Knex only for migrations. Deployed to Vercel.
+Next.js 16 pages router + React 19 + TypeScript, Tailwind v4 med eget brand-token-sett (se `src/styles/global.css` — `@theme`, `bp-card`/`bp-btn-*`/`bp-chip-*`/`bp-overline`/`bp-trophy-bg`) og en lokal shadcn-aktig komponent-mappe under `src/components/ui/` (Button, Switch, TextField, Table, LinkPanel — bygd på `class-variance-authority`). `@tanstack/react-query` for server state, Firebase Auth (Google sign-in) on the client, CockroachDB via `pg` Pool on the server, Knex only for migrations. Deployed to Vercel.
 
 ### Request flow
 

@@ -142,12 +142,7 @@ function LigaBanner({ liga, megId }: { liga: LeagueDetail; megId?: string }) {
         <div className="bp-card">
             <div className="flex items-center justify-between gap-3">
                 <h1 className="text-lg font-bold text-stone-900">{liga.name}</h1>
-                <span
-                    className={classNames(
-                        'inline-flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium',
-                        harBetalt ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700',
-                    )}
-                >
+                <span className={classNames('shrink-0', harBetalt ? 'bp-chip-green' : 'bp-chip-gold')}>
                     {harBetalt ? <Check className="h-3.5 w-3.5" /> : <Clock className="h-3.5 w-3.5" />}
                     {harBetalt ? 'Du har betalt' : 'Du har ikke betalt'}
                 </span>
