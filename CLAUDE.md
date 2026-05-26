@@ -18,6 +18,36 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 UI strings and many identifiers are Norwegian (e.g., `erIFørsteRunde`, `rundeTilTekst`, `brukere`, `sluttspill`, `regnUtScoreForKamp`). Match the existing language when adding code in a file — don't translate to English.
 
+### Stavemåter som er bevisst inkonsistente
+
+- `topscorer` (én p) er navnet på DB-kolonnen og det tilhørende type-feltet, av historiske
+  grunner. I UI-strenger skal det norske ordet **toppscorer** (to p-er) brukes.
+  Tilsvarende: `winner` (DB/type) ↔ «vinner» / «verdensmester» (UI).
+
+### Vokabular i UI-strenger
+
+Bruk disse ordene konsistent. Når du står mellom to alternativer i en ny streng,
+sjekk her først.
+
+| Konsept | Bruk | Ikke |
+|---|---|---|
+| Handling, verb | tippe | bette, gjette på |
+| Et innsendt tipp (subst.) | tipset (bestemt form), tips (plural) | bet, bets, tippene |
+| Kamp uten score satt | ikke tippet, utippet | utipsa, utippa, tippa, manglende bets |
+| Spilte kamper-historikk | spilte kamper | tidligere kamper, gamle kamper |
+| Liste over kommende kamper | "Tipp kampene" (lenke), "Tipp" (nav) | Mine kamper, Kamper |
+| VM-vinner-tipset | vinner (UI), winner (DB/type) | — |
+| Toppscorer-tipset | toppscorer (UI), topscorer (DB/type) | top scorer, målkonge |
+| Bonus-doblet kamp | joker | wildcard, doubler |
+| Lagrings-status | "Lagrer …" → "Lagret" | Saving, Saved |
+| Lagre-feil | "Kunne ikke lagre — prøv igjen." | oops, noe gikk galt |
+| Slå på/av en bryter | "Slå på" / "Slå av" | Skru på/av, Aktiver |
+| Betalt (chip) | "Betalt" / "Ikke betalt" | OK / ⚠️, paid |
+| Betalt (full setning) | "Du har betalt" / "Innbetaling mangler" | — |
+| Logge ut | "Logg ut" | Logout |
+
+Bokmål, ikke dialekt: `tippet` (ikke `tippa`/`tipsa`), `ikke tippet` (ikke `utipsa`/`utippa`).
+
 ## Architecture
 
 This is a private betting pool for a football tournament (currently VM 2026; the active tournament-winner team is in `src/components/results/winner.ts` and top scorer in `topscorer.ts`).

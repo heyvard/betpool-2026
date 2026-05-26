@@ -45,7 +45,7 @@ const handler = async function handler(opts: ApiHandlerOpts): Promise<void> {
         [user.id, matchNum],
     )
     if (harBet.rowCount === 0) {
-        res.status(409).json({ error: 'du må tippe kampen før du kan bruke joker' })
+        res.status(409).json({ error: 'Du må tippe kampen før du kan bruke joker.' })
         return
     }
     const jokerFør = harBet.rows[0].joker
@@ -72,7 +72,7 @@ const handler = async function handler(opts: ApiHandlerOpts): Promise<void> {
 
     // Norge-kamper teller alt dobbelt for alle — joker er ikke tillatt der.
     if (erNorgeKamp(match.home_team, match.away_team)) {
-        res.status(409).json({ error: 'joker er ikke tilgjengelig på Norge-kamper' })
+        res.status(409).json({ error: 'Joker er ikke tilgjengelig på Norge-kamper.' })
         return
     }
 

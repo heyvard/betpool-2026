@@ -2,7 +2,7 @@ import { finnUtfall, regnUtScoreForKamp } from './matchScoreCalculator'
 import { stringTilNumber } from '../../utils/stringnumber'
 import { AllBets, MatchBetMedScore, OtherUser } from '../../queries/useAllBets'
 import { winner } from './winner'
-import { topscorer } from './topscorer'
+import { topscorer } from './topscorer' // "topscorer" er DB-/type-navn (én p); UI bruker "toppscorer"
 import { erNorgeKamp } from '../../data/matches'
 
 export interface AllBetsExtended {

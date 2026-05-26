@@ -161,7 +161,7 @@ const Regler: NextPage = () => {
                     <span className="font-medium">dobles</span>.
                 </p>
                 <p>
-                    Jokeren velger du på «Mine kamper». Du kan flytte den fritt mellom kampene i runden helt til
+                    Jokeren velger du på «Tipp» (i bunnmenyen). Du kan flytte den fritt mellom kampene i runden helt til
                     jokerkampen starter — da låses jokeren for den runden.
                 </p>
                 <p>

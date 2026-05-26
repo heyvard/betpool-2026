@@ -16,7 +16,7 @@ export interface PåminnelseResultat {
     brukereVarslet: number
 }
 
-// Sender én daglig digest til hver bruker som har utipsa kamper i morgen
+// Sender én daglig digest til hver bruker som har kamper de ikke har tippet i morgen
 // (norsk kalenderdøgn). Brukere uten push-abonnement hoppes naturlig over.
 export async function sendPåminnelser(client: PoolClient): Promise<PåminnelseResultat> {
     const iMorgen = dayjs().tz(OSLO).add(1, 'day')
@@ -55,13 +55,16 @@ export async function sendPåminnelser(client: PoolClient): Promise<PåminnelseR
     let brukereVarslet = 0
     for (const bruker of brukere) {
         const tippetSet = tippetPerBruker.get(bruker.id) ?? new Set<number>()
-        const utipsa = matchNums.filter((n) => !tippetSet.has(n)).length
-        if (utipsa === 0) {
+        const antallUtippet = matchNums.filter((n) => !tippetSet.has(n)).length
+        if (antallUtippet === 0) {
             continue
         }
         const sendt = await sendPushTilBruker(client, bruker.id, {
             title: 'Husk å tippe! ⚽️',
-            body: utipsa === 1 ? 'Du har 1 utipsa kamp i morgen.' : `Du har ${utipsa} utipsa kamper i morgen.`,
+            body:
+                antallUtippet === 1
+                    ? 'Du har 1 kamp du ikke har tippet i morgen.'
+                    : `Du har ${antallUtippet} kamper du ikke har tippet i morgen.`,
             url: '/my-bets',
         })
         if (sendt > 0) {

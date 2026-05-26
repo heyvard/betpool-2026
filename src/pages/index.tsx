@@ -98,18 +98,18 @@ function NesteKampSeksjon() {
     const { data: bets } = UseMyBets()
     if (!bets) return null
 
-    // Første ikke-tippa kamp som starter etter nå.
-    const utippa = bets
+    // Første utippede kamp som starter etter nå.
+    const utippet = bets
         .filter((b) => dayjs(b.game_start).isAfter(nå()))
         .filter((b) => b.home_score == null || b.away_score == null)
         .sort((a, b) => dayjs(a.game_start).valueOf() - dayjs(b.game_start).valueOf())[0]
 
-    if (!utippa) {
+    if (!utippet) {
         return (
             <NextLink passHref legacyBehavior href="/my-bets">
                 <LinkPanel>
                     <span className="flex flex-col">
-                        <span className="text-base font-semibold text-stone-900">Alt er tippa</span>
+                        <span className="text-base font-semibold text-stone-900">Alt er tippet</span>
                         <span className="text-xs text-stone-500">Bla gjennom kampene dine</span>
                     </span>
                 </LinkPanel>
@@ -118,7 +118,7 @@ function NesteKampSeksjon() {
     }
 
     const jokerPerRunde = byggJokerPerRunde(bets)
-    const jc = jokerContextFor(utippa, jokerPerRunde)
+    const jc = jokerContextFor(utippet, jokerPerRunde)
     const antallKommende = bets.filter((b) => dayjs(b.game_start).isAfter(nå())).length
 
     return (
@@ -126,10 +126,10 @@ function NesteKampSeksjon() {
             <div className="flex items-center justify-between px-1">
                 <h2 className="text-sm font-bold text-stone-900">Neste kamp</h2>
                 <span className="text-xs text-stone-500">
-                    {dayjs(utippa.game_start).locale(nb).format('ddd D. MMM HH:mm')}
+                    {dayjs(utippet.game_start).locale(nb).format('ddd D. MMM HH:mm')}
                 </span>
             </div>
-            <BetView bet={utippa} matchside={false} joker={jc} />
+            <BetView bet={utippet} matchside={false} joker={jc} />
             <NextLink
                 href="/my-bets"
                 className="block text-center text-sm font-semibold text-amber-700 hover:text-amber-800"

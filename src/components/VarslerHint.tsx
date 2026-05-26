@@ -44,7 +44,7 @@ export function VarslerHint() {
             <div className="min-w-0 flex-1">
                 <p className="text-sm font-semibold text-stone-900">Slå på varsler?</p>
                 <p className="text-xs text-stone-600">
-                    Få påminnelse om kamper du ikke har tippa, og en oppsummering dagen etter.
+                    Få påminnelse om kamper du ikke har tippet, og en oppsummering dagen etter.
                 </p>
                 <NextLink
                     href="/varsler"
