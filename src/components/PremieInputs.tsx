@@ -8,15 +8,7 @@ export interface ProsentState {
     tredje: string
 }
 
-function PremieFelt({
-    plass,
-    value,
-    onChange,
-}: {
-    plass: 1 | 2 | 3
-    value: string
-    onChange: (v: string) => void
-}) {
+function PremieFelt({ plass, value, onChange }: { plass: 1 | 2 | 3; value: string; onChange: (v: string) => void }) {
     const tekst = `${plass}. plass`
     return (
         <div className="flex flex-col gap-1">

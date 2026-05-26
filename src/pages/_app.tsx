@@ -17,6 +17,7 @@ import { BookOpen, House, ListChecks, ListOrdered, Menu } from 'lucide-react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { LoadingScreen } from '../components/loading/LoadingScreen'
 import { PullToRefresh } from '../components/PullToRefresh'
+import { VarslerPrompt } from '../components/VarslerPrompt'
 import { cn } from '@/lib/utils'
 
 // firebaseui er tungt og brukes bare i utlogga-tilstand — last det først når vi
@@ -52,6 +53,7 @@ function Layout({ children }: { children: React.ReactNode }) {
                     <p className="mt-8 text-center text-stone-600">Velg en test-bruker nederst til høyre.</p>
                 )}
                 {user && <PullToRefresh>{children}</PullToRefresh>}
+                {user && <VarslerPrompt />}
             </div>
 
             <nav className="fixed bottom-0 left-0 z-50 w-full h-16 flex bg-stone-900 text-stone-300 border-t border-stone-800 shadow-[0_-2px_12px_rgba(0,0,0,0.08)]">
