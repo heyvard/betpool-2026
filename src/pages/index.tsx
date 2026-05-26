@@ -9,7 +9,7 @@ import dayjs from 'dayjs'
 import NextLink from 'next/link'
 import { fixLand } from '../components/bet/BetView'
 import { useAuthedFetch } from '../auth/authedFetch'
-import { Check, ChevronDown, Clock, ExternalLink, Goal, Lock, Trophy, TriangleAlert } from 'lucide-react'
+import { Check, ChevronDown, Clock, Goal, Lock, Trophy, TriangleAlert } from 'lucide-react'
 import { useQueryClient } from '@tanstack/react-query'
 import { useDebouncedCallback } from 'use-debounce'
 import nb from 'dayjs/locale/nb'
@@ -18,7 +18,7 @@ import { nå } from '../utils/testClock'
 import { LoadingScreen } from '../components/loading/LoadingScreen'
 import { VarslerHint } from '../components/VarslerHint'
 import { Alert } from '@/components/ui/alert'
-import { Button } from '@/components/ui/button'
+import { KopierNummerKnapp } from '../components/KopierNummerKnapp'
 import { LinkPanel } from '@/components/ui/link-panel'
 import { cn } from '@/lib/utils'
 import { User } from '../types/user'
@@ -64,7 +64,7 @@ const Home: NextPage = () => {
                 </div>
             ))}
 
-            {!megselv.paid && <InnbetalingsAlert navn={megselv.name} />}
+            {!megselv.paid && <InnbetalingsAlert />}
 
             <div className="pt-2">
                 <div className="flex items-center justify-between gap-3">
@@ -95,17 +95,14 @@ const Home: NextPage = () => {
 
 export default Home
 
-function InnbetalingsAlert({ navn }: { navn: string }) {
-    const vippsLenke = `vipps://send/91865052?msg=${encodeURIComponent('VM Betpool ' + navn)}`
+function InnbetalingsAlert() {
     return (
         <Alert variant="warning">
             <div className="space-y-2">
                 <p>
                     Vipps 300 kr til <span className="font-semibold">918 65 052</span> før første kamp starter.
                 </p>
-                <Button asChild variant="accent" size="default" icon={<ExternalLink className="h-4 w-4" />}>
-                    <a href={vippsLenke}>Åpne i Vipps</a>
-                </Button>
+                <KopierNummerKnapp nummer="91865052" />
             </div>
         </Alert>
     )

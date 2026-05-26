@@ -13,8 +13,8 @@ import { useValgtLiga } from '../utils/useValgtLiga'
 import { LigaVelger } from '../components/LigaVelger'
 import { PremieKort } from '../components/PremieKort'
 import { LeagueDetail } from '../types/league'
-import { Banknote, Check, Clock, ExternalLink } from 'lucide-react'
-import { Button } from '@/components/ui/button'
+import { Banknote, Check, Clock } from 'lucide-react'
+import { KopierNummerKnapp } from '../components/KopierNummerKnapp'
 
 function plassVisning(plass: number) {
     switch (plass) {
@@ -162,11 +162,7 @@ function LigaBanner({ liga, megId }: { liga: LeagueDetail; megId?: string }) {
             )}
             {!harBetalt && liga.innsats != null && megselv && (
                 <div className="mt-3">
-                    <Button asChild variant="accent" size="default" icon={<ExternalLink className="h-4 w-4" />}>
-                        <a href={`vipps://send/91865052?msg=${encodeURIComponent('VM Betpool ' + megselv.name)}`}>
-                            Åpne i Vipps
-                        </a>
-                    </Button>
+                    <KopierNummerKnapp nummer="91865052" />
                 </div>
             )}
         </div>
