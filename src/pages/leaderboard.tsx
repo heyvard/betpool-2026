@@ -13,7 +13,8 @@ import { useValgtLiga } from '../utils/useValgtLiga'
 import { LigaVelger } from '../components/LigaVelger'
 import { PremieKort } from '../components/PremieKort'
 import { LeagueDetail } from '../types/league'
-import { Banknote, Check, Clock } from 'lucide-react'
+import { Banknote, Check, Clock, ExternalLink } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 
 function plassVisning(plass: number) {
     switch (plass) {
@@ -135,6 +136,7 @@ const Leaderboard: NextPage = () => {
 /** Banner over tabellen når en privat liga er valgt — innsats, betalingsinfo og
  *  egen betalt-status. */
 function LigaBanner({ liga, megId }: { liga: LeagueDetail; megId?: string }) {
+    const { data: megselv } = UseUser()
     const megSelv = liga.members.find((m) => m.user_id === megId)
     const harBetalt = megSelv?.paid ?? false
 
@@ -144,7 +146,7 @@ function LigaBanner({ liga, megId }: { liga: LeagueDetail; megId?: string }) {
                 <h1 className="text-lg font-bold text-stone-900">{liga.name}</h1>
                 <span className={classNames('shrink-0', harBetalt ? 'bp-chip-green' : 'bp-chip-gold')}>
                     {harBetalt ? <Check className="h-3.5 w-3.5" /> : <Clock className="h-3.5 w-3.5" />}
-                    {harBetalt ? 'Du har betalt' : 'Du har ikke betalt'}
+                    {harBetalt ? 'Du har betalt' : 'Innbetaling mangler'}
                 </span>
             </div>
             <p className="mt-0.5 text-xs text-stone-500">Ligavert: {liga.owner_name}</p>
@@ -157,6 +159,15 @@ function LigaBanner({ liga, megId }: { liga: LeagueDetail; megId?: string }) {
             )}
             {liga.betalingsinfo && (
                 <p className="mt-1 whitespace-pre-line text-sm text-stone-600">{liga.betalingsinfo}</p>
+            )}
+            {!harBetalt && liga.innsats != null && megselv && (
+                <div className="mt-3">
+                    <Button asChild variant="accent" size="default" icon={<ExternalLink className="h-4 w-4" />}>
+                        <a href={`vipps://send/91865052?msg=${encodeURIComponent('VM Betpool ' + megselv.name)}`}>
+                            Åpne i Vipps
+                        </a>
+                    </Button>
+                </div>
             )}
         </div>
     )

@@ -9,8 +9,9 @@ import dayjs from 'dayjs'
 import NextLink from 'next/link'
 import { fixLand } from '../components/bet/BetView'
 import { useAuthedFetch } from '../auth/authedFetch'
-import { Check, ChevronDown, Clock, Goal, Lock, Save, Trophy } from 'lucide-react'
+import { Check, ChevronDown, Clock, ExternalLink, Goal, Lock, Trophy, TriangleAlert } from 'lucide-react'
 import { useQueryClient } from '@tanstack/react-query'
+import { useDebouncedCallback } from 'use-debounce'
 import nb from 'dayjs/locale/nb'
 import { erEtterFørsteRunde, førsteRunde } from '../utils/isInFirstRound'
 import { nå } from '../utils/testClock'
@@ -63,12 +64,7 @@ const Home: NextPage = () => {
                 </div>
             ))}
 
-            {!megselv.paid && (
-                <Alert variant="warning">
-                    Din innbetaling er ikke registrert ennå. 300kr må være vippset innen start på første kamp til 918 65
-                    052.
-                </Alert>
-            )}
+            {!megselv.paid && <InnbetalingsAlert navn={megselv.name} />}
 
             <div className="pt-2">
                 <div className="flex items-center justify-between gap-3">
@@ -88,7 +84,7 @@ const Home: NextPage = () => {
             <NextLink passHref legacyBehavior href="/my-bets">
                 <LinkPanel>
                     <span className="flex flex-col">
-                        <span className="text-base font-semibold text-stone-900">Tips på kampene</span>
+                        <span className="text-base font-semibold text-stone-900">Tipp kampene</span>
                         <span className="text-xs text-stone-500">Sett resultater for hver enkelt kamp</span>
                     </span>
                 </LinkPanel>
@@ -98,6 +94,22 @@ const Home: NextPage = () => {
 }
 
 export default Home
+
+function InnbetalingsAlert({ navn }: { navn: string }) {
+    const vippsLenke = `vipps://send/91865052?msg=${encodeURIComponent('VM Betpool ' + navn)}`
+    return (
+        <Alert variant="warning">
+            <div className="space-y-2">
+                <p>
+                    Vipps 300 kr til <span className="font-semibold">918 65 052</span> før første kamp starter.
+                </p>
+                <Button asChild variant="accent" size="default" icon={<ExternalLink className="h-4 w-4" />}>
+                    <a href={vippsLenke}>Åpne i Vipps</a>
+                </Button>
+            </div>
+        </Alert>
+    )
+}
 
 /** Liten statusmarkør ved siden av overskriften — åpent for endring, eller låst. */
 function FristMerke({ laast }: { laast: boolean }) {
@@ -153,6 +165,7 @@ function VinnerKort({ megselv, laast }: { megselv: User; laast: boolean }) {
     const [forrigeLagret, setForrigeLagret] = useState(lagretWinner)
     const [lagrer, setLagrer] = useState(false)
     const [nyligLagret, setNyligLagret] = useState(false)
+    const [feil, setFeil] = useState<string | null>(null)
 
     // Synk lokal optimistisk verdi med ny serververdi når denne endrer seg
     // (egen lagring eller eksternt). Avledet state i render, ikke effect.
@@ -162,6 +175,7 @@ function VinnerKort({ megselv, laast }: { megselv: User; laast: boolean }) {
     }
 
     const lagre = async (ny: string) => {
+        setFeil(null)
         const forrige = winner
         setWinner(ny)
         setLagrer(true)
@@ -171,7 +185,7 @@ function VinnerKort({ megselv, laast }: { megselv: User; laast: boolean }) {
                 body: JSON.stringify({ winner: ny }),
             })
             if (!response.ok) {
-                window.alert('oops, feil ved lagring')
+                setFeil('Kunne ikke lagre — sjekk forbindelsen og prøv igjen.')
                 setWinner(forrige)
                 return
             }
@@ -232,7 +246,7 @@ function VinnerKort({ megselv, laast }: { megselv: User; laast: boolean }) {
                             <ChevronDown className="h-4 w-4" />
                         </span>
                     </div>
-                    <StatusLinje lagrer={lagrer} nyligLagret={nyligLagret} hint="Lagres automatisk." />
+                    <StatusLinje lagrer={lagrer} nyligLagret={nyligLagret} hint="Endres til VM starter" feil={feil} />
                 </div>
             )}
         </TipsKort>
@@ -247,6 +261,7 @@ function ToppscorerKort({ megselv, laast }: { megselv: User; laast: boolean }) {
     const [forrigeLagret, setForrigeLagret] = useState(lagretTopscorer)
     const [lagrer, setLagrer] = useState(false)
     const [nyligLagret, setNyligLagret] = useState(false)
+    const [feil, setFeil] = useState<string | null>(null)
 
     // Avledet state: ny serververdi overskriver lokal redigering. OK her — det
     // er enten brukerens egen lagring eller en sync fra annen fane.
@@ -255,19 +270,16 @@ function ToppscorerKort({ megselv, laast }: { megselv: User; laast: boolean }) {
         setTopscorer(lagretTopscorer)
     }
 
-    const lagret = lagretTopscorer.trim()
-    const endret = topscorer.trim() !== lagret
-
-    const lagre = async (e: React.FormEvent) => {
-        e.preventDefault()
+    const lagreDebounced = useDebouncedCallback(async (ny: string) => {
+        setFeil(null)
         setLagrer(true)
         try {
             const response = await authedFetch('/api/v1/me/', {
                 method: 'PUT',
-                body: JSON.stringify({ topscorer: topscorer.trim() }),
+                body: JSON.stringify({ topscorer: ny.trim() }),
             })
             if (!response.ok) {
-                window.alert('oops, feil ved lagring')
+                setFeil('Kunne ikke lagre — sjekk forbindelsen og prøv igjen.')
                 return
             }
             queryClient.invalidateQueries({ queryKey: ['user-me'] }).then()
@@ -275,7 +287,14 @@ function ToppscorerKort({ megselv, laast }: { megselv: User; laast: boolean }) {
         } finally {
             setLagrer(false)
         }
+    }, 600)
+
+    const onChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setTopscorer(e.target.value)
+        lagreDebounced(e.target.value)
     }
+
+    const lagret = lagretTopscorer.trim()
 
     return (
         <TipsKort ikon={<Goal className="h-5 w-5" />} tittel="Toppscorer" undertittel="Hvem scorer flest mål?">
@@ -288,50 +307,33 @@ function ToppscorerKort({ megselv, laast }: { megselv: User; laast: boolean }) {
                         <span className="mt-2 text-xl font-bold text-stone-900">{lagret}</span>
                     </>
                 ) : (
-                    <TomtValg tekst="Ingen toppscorer valgt ennå" />
+                    <TomtValg tekst="Du har ikke tippet toppscorer" />
                 )}
             </div>
 
             {laast ? (
                 <LaastFot />
             ) : (
-                <form onSubmit={lagre} className="border-t border-stone-100 bg-stone-50/70 px-4 py-3">
+                <div className="border-t border-stone-100 bg-stone-50/70 px-4 py-3">
                     <label htmlFor="topscorer-input" className="sr-only">
                         Hvilken spiller scorer flest mål?
                     </label>
-                    <div className="flex items-center gap-2">
-                        <input
-                            id="topscorer-input"
-                            type="text"
-                            value={topscorer}
-                            disabled={lagrer}
-                            placeholder="Spillerens navn"
-                            onChange={(e) => setTopscorer(e.target.value)}
-                            className={cn(
-                                'h-11 min-w-0 flex-1 rounded-xl border border-stone-300 bg-white px-3 text-sm text-stone-900',
-                                'transition-shadow placeholder:text-stone-400',
-                                'focus:border-amber-500 focus:outline-hidden focus:ring-2 focus:ring-amber-400',
-                                'disabled:cursor-not-allowed disabled:bg-stone-100',
-                            )}
-                        />
-                        {endret && (
-                            <Button
-                                type="submit"
-                                variant="accent"
-                                className="h-11 shrink-0"
-                                loading={lagrer}
-                                icon={<Save className="h-4 w-4" />}
-                            >
-                                Lagre
-                            </Button>
+                    <input
+                        id="topscorer-input"
+                        type="text"
+                        value={topscorer}
+                        disabled={lagrer}
+                        placeholder="Spillerens navn"
+                        onChange={onChange}
+                        className={cn(
+                            'h-11 w-full rounded-xl border border-stone-300 bg-white px-3 text-sm text-stone-900',
+                            'transition-shadow placeholder:text-stone-400',
+                            'focus:border-amber-500 focus:outline-hidden focus:ring-2 focus:ring-amber-400',
+                            'disabled:cursor-not-allowed disabled:bg-stone-100',
                         )}
-                    </div>
-                    <StatusLinje
-                        lagrer={lagrer}
-                        nyligLagret={nyligLagret}
-                        hint={endret ? 'Husk å lagre endringen.' : undefined}
                     />
-                </form>
+                    <StatusLinje lagrer={lagrer} nyligLagret={nyligLagret} hint="Lagres automatisk." feil={feil} />
+                </div>
             )}
         </TipsKort>
     )
@@ -363,7 +365,24 @@ function LaastFot() {
 }
 
 /** Lagre-status under et inntastingsfelt. */
-function StatusLinje({ lagrer, nyligLagret, hint }: { lagrer: boolean; nyligLagret: boolean; hint?: string }) {
+function StatusLinje({
+    lagrer,
+    nyligLagret,
+    hint,
+    feil,
+}: {
+    lagrer: boolean
+    nyligLagret: boolean
+    hint?: string
+    feil?: string | null
+}) {
+    if (feil) {
+        return (
+            <p className="mt-2 flex items-center gap-1.5 text-xs text-red-600" role="alert">
+                <TriangleAlert className="h-3.5 w-3.5" /> {feil}
+            </p>
+        )
+    }
     if (lagrer) {
         return (
             <p className="mt-2 flex items-center gap-1.5 text-xs text-stone-500">
