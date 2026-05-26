@@ -26,7 +26,7 @@ export function LigaVelger({
                 onChange={(e) => onVelg(e.target.value || null)}
                 className={cn(
                     'h-11 w-full appearance-none rounded-xl border border-stone-300 bg-white pl-3 pr-10 text-sm font-semibold text-stone-900',
-                    'transition-shadow focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-400',
+                    'transition-shadow focus:border-amber-500 focus:outline-hidden focus:ring-2 focus:ring-amber-400',
                 )}
             >
                 <option value="">🏆 Hovedligaen</option>

@@ -37,7 +37,7 @@ export function VarslerHint() {
     }
 
     return (
-        <div className="flex items-start gap-3 rounded-xl bg-white p-3 shadow-sm ring-1 ring-stone-200/70">
+        <div className="flex items-start gap-3 rounded-xl bg-white p-3 shadow-xs ring-1 ring-stone-200/70">
             <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-amber-100 text-amber-700">
                 <Bell className="h-4 w-4" />
             </span>

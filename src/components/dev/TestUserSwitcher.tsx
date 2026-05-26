@@ -38,7 +38,7 @@ export function TestUserSwitcher() {
     }
 
     return (
-        <div className="fixed bottom-20 right-2 z-[100] text-sm">
+        <div className="fixed bottom-20 right-2 z-100 text-sm">
             {open && (
                 <div className="mb-2 max-h-80 w-64 overflow-auto rounded-xl border border-amber-300 bg-white shadow-xl">
                     <div className="border-b border-zinc-200 px-3 py-2 font-semibold text-amber-700">Test-bruker</div>

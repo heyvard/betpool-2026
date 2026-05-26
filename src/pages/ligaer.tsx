@@ -85,7 +85,7 @@ function InvitasjonsKort({ liga, megId }: { liga: LeagueSummary; megId: string }
     }
 
     return (
-        <div className="rounded-xl bg-white p-4 shadow-sm ring-1 ring-stone-200/70">
+        <div className="rounded-xl bg-white p-4 shadow-xs ring-1 ring-stone-200/70">
             <div className="flex items-start gap-3">
                 <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-amber-100 text-amber-700">
                     <Mail className="h-5 w-5" />
@@ -144,7 +144,7 @@ function NyLigaSkjema() {
     return (
         <section className="space-y-2">
             <h2 className="text-sm font-semibold uppercase tracking-wide text-stone-500">Lag ny liga</h2>
-            <form onSubmit={opprett} className="space-y-3 rounded-xl bg-white p-4 shadow-sm ring-1 ring-stone-200/70">
+            <form onSubmit={opprett} className="space-y-3 rounded-xl bg-white p-4 shadow-xs ring-1 ring-stone-200/70">
                 <TextField
                     label="Navn på ligaen"
                     value={navn}
@@ -173,7 +173,7 @@ function NyLigaSkjema() {
                         placeholder="F.eks. Vipps 200 kr til 123 45 678 før første kamp."
                         rows={3}
                         className={cn(
-                            'rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm outline-none transition-shadow',
+                            'rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm outline-hidden transition-shadow',
                             'placeholder:text-stone-400 focus:border-amber-500 focus:ring-2 focus:ring-amber-400',
                         )}
                     />

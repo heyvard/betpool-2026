@@ -22,7 +22,7 @@ export function TextField({ label, hideLabel, error, description, size, classNam
             <input
                 id={inputId}
                 className={cn(
-                    'rounded-lg border bg-white px-3 py-1.5 text-sm outline-none transition-shadow',
+                    'rounded-lg border bg-white px-3 py-1.5 text-sm outline-hidden transition-shadow',
                     'focus:ring-2 focus:ring-amber-400 focus:border-amber-500',
                     'disabled:bg-stone-100 disabled:text-stone-500 disabled:cursor-not-allowed',
                     error && 'border-red-500 ring-1 ring-red-400',

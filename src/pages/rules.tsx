@@ -7,7 +7,7 @@ import { Calculator, Clock, Flag, Info, Sparkles, Star, Trophy, Wallet, Zap } fr
 
 function Seksjon({ ikon, tittel, children }: { ikon: React.ReactNode; tittel: string; children: React.ReactNode }) {
     return (
-        <section className="bg-white rounded-xl shadow-sm ring-1 ring-stone-200/70 overflow-hidden">
+        <section className="bg-white rounded-xl shadow-xs ring-1 ring-stone-200/70 overflow-hidden">
             <header className="flex items-center gap-2.5 px-4 pt-4 pb-3 border-b border-stone-100">
                 <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-amber-100 text-amber-700">
                     {ikon}

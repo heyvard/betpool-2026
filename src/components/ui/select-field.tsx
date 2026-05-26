@@ -18,7 +18,7 @@ export function SelectField({ label, description, className, id, children, ...pr
                 id={selectId}
                 className={cn(
                     'h-9 rounded-lg border border-stone-300 bg-white px-3 text-sm transition-shadow',
-                    'focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-amber-500',
+                    'focus:outline-hidden focus:ring-2 focus:ring-amber-400 focus:border-amber-500',
                     'disabled:bg-stone-100 disabled:text-stone-500 disabled:cursor-not-allowed',
                     className,
                 )}

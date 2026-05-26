@@ -130,7 +130,7 @@ function TipsKort({
     children: React.ReactNode
 }) {
     return (
-        <section className="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-stone-200/70">
+        <section className="overflow-hidden rounded-2xl bg-white shadow-xs ring-1 ring-stone-200/70">
             <div className="flex items-center gap-3 border-b border-stone-100 px-4 py-3">
                 <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-amber-100 text-amber-700">
                     {ikon}
@@ -215,7 +215,7 @@ function VinnerKort({ megselv, laast }: { megselv: User; laast: boolean }) {
                             onChange={(e) => lagre(e.target.value)}
                             className={cn(
                                 'h-11 w-full appearance-none rounded-xl border border-stone-300 bg-white pl-3 pr-10 text-sm font-medium text-stone-900',
-                                'transition-shadow focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-400',
+                                'transition-shadow focus:border-amber-500 focus:outline-hidden focus:ring-2 focus:ring-amber-400',
                                 'disabled:cursor-not-allowed disabled:bg-stone-100 disabled:text-stone-500',
                             )}
                         >
@@ -310,7 +310,7 @@ function ToppscorerKort({ megselv, laast }: { megselv: User; laast: boolean }) {
                             className={cn(
                                 'h-11 min-w-0 flex-1 rounded-xl border border-stone-300 bg-white px-3 text-sm text-stone-900',
                                 'transition-shadow placeholder:text-stone-400',
-                                'focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-400',
+                                'focus:border-amber-500 focus:outline-hidden focus:ring-2 focus:ring-amber-400',
                                 'disabled:cursor-not-allowed disabled:bg-stone-100',
                             )}
                         />

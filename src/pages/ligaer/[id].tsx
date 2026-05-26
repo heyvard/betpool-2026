@@ -67,7 +67,7 @@ function TilbakeLenke() {
 /** Innsats, betalingsinfo og hvem som er vert. */
 function InnsatsKort({ liga }: { liga: LeagueDetail }) {
     return (
-        <div className="rounded-xl bg-white p-4 shadow-sm ring-1 ring-stone-200/70">
+        <div className="rounded-xl bg-white p-4 shadow-xs ring-1 ring-stone-200/70">
             <p className="text-xs text-stone-500">Ligavert: {liga.owner_name}</p>
             {liga.innsats != null && (
                 <p className="mt-2 flex items-center gap-1.5 text-sm font-medium text-stone-800">
@@ -94,7 +94,7 @@ function MedlemsSeksjon({ liga }: { liga: LeagueDetail }) {
             <h2 className="text-sm font-semibold uppercase tracking-wide text-stone-500">
                 Medlemmer ({liga.members.filter((m) => m.status === 'medlem').length})
             </h2>
-            <div className="divide-y divide-stone-100 rounded-xl bg-white shadow-sm ring-1 ring-stone-200/70">
+            <div className="divide-y divide-stone-100 rounded-xl bg-white shadow-xs ring-1 ring-stone-200/70">
                 {liga.members.map((m) => (
                     <MedlemsRad
                         key={m.user_id}
@@ -198,7 +198,7 @@ function InviterSeksjon({ liga }: { liga: LeagueDetail }) {
     return (
         <section className="space-y-2">
             <h2 className="text-sm font-semibold uppercase tracking-wide text-stone-500">Inviter medlem</h2>
-            <div className="space-y-3 rounded-xl bg-white p-4 shadow-sm ring-1 ring-stone-200/70">
+            <div className="space-y-3 rounded-xl bg-white p-4 shadow-xs ring-1 ring-stone-200/70">
                 {tilgjengelige.length === 0 ? (
                     <p className="text-sm text-stone-500">Alle aktive brukere er allerede med eller invitert.</p>
                 ) : (
@@ -213,7 +213,7 @@ function InviterSeksjon({ liga }: { liga: LeagueDetail }) {
                                 onChange={(e) => setValgt(e.target.value)}
                                 className={cn(
                                     'h-9 rounded-lg border border-stone-300 bg-white px-3 text-sm transition-shadow',
-                                    'focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-400',
+                                    'focus:border-amber-500 focus:outline-hidden focus:ring-2 focus:ring-amber-400',
                                 )}
                             >
                                 <option value="">Velg bruker …</option>
@@ -275,7 +275,7 @@ function RedigerSeksjon({ liga }: { liga: LeagueDetail }) {
     return (
         <section className="space-y-2">
             <h2 className="text-sm font-semibold uppercase tracking-wide text-stone-500">Innstillinger</h2>
-            <form onSubmit={lagre} className="space-y-3 rounded-xl bg-white p-4 shadow-sm ring-1 ring-stone-200/70">
+            <form onSubmit={lagre} className="space-y-3 rounded-xl bg-white p-4 shadow-xs ring-1 ring-stone-200/70">
                 <TextField
                     label="Navn på ligaen"
                     value={navn}
@@ -301,7 +301,7 @@ function RedigerSeksjon({ liga }: { liga: LeagueDetail }) {
                         placeholder="Hvor og hvordan medlemmene skal betale inn."
                         rows={3}
                         className={cn(
-                            'rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm outline-none transition-shadow',
+                            'rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm outline-hidden transition-shadow',
                             'placeholder:text-stone-400 focus:border-amber-500 focus:ring-2 focus:ring-amber-400',
                         )}
                     />

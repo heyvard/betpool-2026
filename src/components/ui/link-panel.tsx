@@ -11,8 +11,8 @@ export const LinkPanel = React.forwardRef<HTMLAnchorElement, LinkPanelProps>(
             <a
                 ref={ref}
                 className={cn(
-                    'group flex items-center justify-between rounded-xl bg-white px-5 py-4 shadow-sm ring-1 ring-stone-200/70',
-                    'hover:bg-stone-50 hover:ring-amber-300/60 hover:shadow active:bg-stone-100 transition-all',
+                    'group flex items-center justify-between rounded-xl bg-white px-5 py-4 shadow-xs ring-1 ring-stone-200/70',
+                    'hover:bg-stone-50 hover:ring-amber-300/60 hover:shadow-sm active:bg-stone-100 transition-all',
                     className,
                 )}
                 {...props}

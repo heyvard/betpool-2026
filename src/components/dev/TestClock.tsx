@@ -55,7 +55,7 @@ export function TestClock() {
     const label = current ? dayjs(current).format('DD.MM HH:mm') : 'ekte tid'
 
     return (
-        <div className="fixed bottom-32 right-2 z-[100] text-sm">
+        <div className="fixed bottom-32 right-2 z-100 text-sm">
             {open && (
                 <div className="mb-2 w-64 rounded-xl border border-sky-300 bg-white shadow-xl">
                     <div className="border-b border-zinc-200 px-3 py-2 font-semibold text-sky-700">
@@ -89,7 +89,7 @@ export function TestClock() {
                                 const valgt = dayjs(e.target.value)
                                 if (e.target.value && valgt.isValid()) sett(valgt.toISOString())
                             }}
-                            className="mt-1 w-full rounded border border-zinc-300 px-2 py-1"
+                            className="mt-1 w-full rounded-sm border border-zinc-300 px-2 py-1"
                         />
                     </div>
                     <button

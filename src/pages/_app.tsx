@@ -75,26 +75,26 @@ function Layout({ children }: { children: React.ReactNode }) {
                             className="z-50 mr-2 min-w-48 rounded-xl bg-white shadow-xl ring-1 ring-stone-200 py-1.5 text-sm"
                         >
                             <DropdownMenu.Item
-                                className="px-4 py-2 cursor-pointer hover:bg-amber-50 hover:text-amber-900 outline-none font-medium text-stone-900"
+                                className="px-4 py-2 cursor-pointer hover:bg-amber-50 hover:text-amber-900 outline-hidden font-medium text-stone-900"
                                 onSelect={() => router.push('/')}
                             >
                                 {user?.displayName}
                             </DropdownMenu.Item>
                             <DropdownMenu.Separator className="my-1 h-px bg-stone-200" />
                             <DropdownMenu.Item
-                                className="px-4 py-2 cursor-pointer hover:bg-stone-50 outline-none text-stone-700"
+                                className="px-4 py-2 cursor-pointer hover:bg-stone-50 outline-hidden text-stone-700"
                                 onSelect={() => router.push('/rules')}
                             >
                                 Regler
                             </DropdownMenu.Item>
                             <DropdownMenu.Item
-                                className="px-4 py-2 cursor-pointer hover:bg-stone-50 outline-none text-stone-700"
+                                className="px-4 py-2 cursor-pointer hover:bg-stone-50 outline-hidden text-stone-700"
                                 onSelect={() => router.push('/ligaer')}
                             >
                                 Mine ligaer
                             </DropdownMenu.Item>
                             <DropdownMenu.Item
-                                className="px-4 py-2 cursor-pointer hover:bg-stone-50 outline-none text-stone-700"
+                                className="px-4 py-2 cursor-pointer hover:bg-stone-50 outline-hidden text-stone-700"
                                 onSelect={() => router.push('/varsler')}
                             >
                                 Varsler
@@ -102,13 +102,13 @@ function Layout({ children }: { children: React.ReactNode }) {
                             {me?.scoreadmin && (
                                 <>
                                     <DropdownMenu.Item
-                                        className="px-4 py-2 cursor-pointer hover:bg-stone-50 outline-none text-stone-700"
+                                        className="px-4 py-2 cursor-pointer hover:bg-stone-50 outline-hidden text-stone-700"
                                         onSelect={() => router.push('/sluttspill')}
                                     >
                                         Rediger sluttspill
                                     </DropdownMenu.Item>
                                     <DropdownMenu.Item
-                                        className="px-4 py-2 cursor-pointer hover:bg-stone-50 outline-none text-stone-700"
+                                        className="px-4 py-2 cursor-pointer hover:bg-stone-50 outline-hidden text-stone-700"
                                         onSelect={() => router.push('/resultatservice')}
                                     >
                                         Rediger resultater
@@ -117,7 +117,7 @@ function Layout({ children }: { children: React.ReactNode }) {
                             )}
                             {(me?.superadmin || me?.paymentadmin) && (
                                 <DropdownMenu.Item
-                                    className="px-4 py-2 cursor-pointer hover:bg-stone-50 outline-none text-stone-700"
+                                    className="px-4 py-2 cursor-pointer hover:bg-stone-50 outline-hidden text-stone-700"
                                     onSelect={() => router.push('/brukere')}
                                 >
                                     Brukere
@@ -125,7 +125,7 @@ function Layout({ children }: { children: React.ReactNode }) {
                             )}
                             <DropdownMenu.Separator className="my-1 h-px bg-stone-200" />
                             <DropdownMenu.Item
-                                className="px-4 py-2 cursor-pointer hover:bg-red-50 outline-none text-red-600 font-medium"
+                                className="px-4 py-2 cursor-pointer hover:bg-red-50 outline-hidden text-red-600 font-medium"
                                 onSelect={logUt}
                             >
                                 Logout

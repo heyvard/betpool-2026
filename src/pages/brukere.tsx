@@ -48,12 +48,12 @@ function BrukerView({ me, user }: { user: UserForAdmin; me: User }) {
     return (
         <div
             className={cn(
-                'bg-white rounded-xl shadow-sm ring-1 ring-stone-200/70 overflow-hidden',
+                'bg-white rounded-xl shadow-xs ring-1 ring-stone-200/70 overflow-hidden',
                 !user.active && 'opacity-60',
             )}
         >
             <div className="flex items-center gap-3 px-4 pt-4 pb-3">
-                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-stone-700 to-stone-900 text-sm font-semibold text-white">
+                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-linear-to-br from-stone-700 to-stone-900 text-sm font-semibold text-white">
                     {initialer(user.name)}
                 </span>
                 <div className="min-w-0 flex-1">

@@ -44,7 +44,7 @@ export function SignInScreen() {
                 <p className="mt-1 text-stone-500">Tippekonkurranse for fotball-VM 2026</p>
             </header>
 
-            <div className="divide-y divide-stone-100 rounded-xl bg-white shadow-sm ring-1 ring-stone-200/70">
+            <div className="divide-y divide-stone-100 rounded-xl bg-white shadow-xs ring-1 ring-stone-200/70">
                 {punkter.map((p) => (
                     <div key={p.tittel} className="flex items-start gap-3 px-4 py-3.5">
                         <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-amber-100 text-amber-700">
@@ -67,7 +67,7 @@ export function SignInScreen() {
                     </p>
                 </div>
             ) : (
-                <div className="rounded-xl bg-white p-4 shadow-sm ring-1 ring-stone-200/70">
+                <div className="rounded-xl bg-white p-4 shadow-xs ring-1 ring-stone-200/70">
                     <p className="mb-3 text-center text-sm font-medium text-stone-700">Logg inn for å bli med</p>
                     <StyledFirebaseAuth uiConfig={uiConfig} className="fb-auth" />
                     <p className="mt-3 text-center text-xs text-stone-400">Bruk din vanlige nettleser på mobil.</p>

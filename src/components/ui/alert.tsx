@@ -17,7 +17,7 @@ export function Alert({ variant = 'info', className, children }: AlertProps) {
     return (
         <div
             role="alert"
-            className={cn('rounded-lg border border-l-4 px-4 py-3 text-sm shadow-sm', variants[variant], className)}
+            className={cn('rounded-lg border border-l-4 px-4 py-3 text-sm shadow-xs', variants[variant], className)}
         >
             {children}
         </div>

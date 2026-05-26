@@ -89,7 +89,7 @@ export const BetView = ({ bet, matchside, joker }: { bet: Bet; matchside: boolea
         <div
             data-testid={`bet-${bet.match_num}`}
             className={cn(
-                'my-4 bg-white rounded-xl shadow-sm overflow-hidden',
+                'my-4 bg-white rounded-xl shadow-xs overflow-hidden',
                 joker.aktiv ? 'ring-2 ring-amber-300' : 'ring-1 ring-stone-200/70',
             )}
         >
@@ -140,7 +140,7 @@ export const BetView = ({ bet, matchside, joker }: { bet: Bet; matchside: boolea
                 />
             )}
 
-            <div className="flex items-center justify-between gap-3 px-4 py-3 min-h-[3.25rem]">
+            <div className="flex items-center justify-between gap-3 px-4 py-3 min-h-13">
                 <div className="flex items-center gap-2 flex-wrap">
                     {lagreknappSynlig && (
                         <>
@@ -314,7 +314,7 @@ function TeamScoreRow({ team, value, onValueChange, disabled, pending }: TeamSco
                 >
                     <Minus className="w-4 h-4" />
                 </button>
-                <span className="h-11 min-w-[2.25rem] flex items-center justify-center text-2xl font-semibold text-stone-900 tabular-nums px-1 select-none">
+                <span className="h-11 min-w-9 flex items-center justify-center text-2xl font-semibold text-stone-900 tabular-nums px-1 select-none">
                     {numeric ?? '–'}
                 </span>
                 <button
