@@ -29,6 +29,11 @@ const handler = async function handler(opts: ApiHandlerOpts): Promise<void> {
                     [reqBody.topscorer, user.id],
                 )
             }
+            if (reqBody.onboarded === true) {
+                await client.query(`UPDATE users SET onboarded_at = NOW() WHERE id = $1 AND onboarded_at IS NULL`, [
+                    user.id,
+                ])
+            }
             res.status(200).json({ ok: 123 })
             return
         }

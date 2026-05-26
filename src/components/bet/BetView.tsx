@@ -12,6 +12,9 @@ import { Calendar, Check, ChevronRight, Flag, Lock, Minus, Plus, Save, Zap } fro
 import nb from 'dayjs/locale/nb'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
+import { brukerKanPrompttes, VIS_EVENT as VARSLER_VIS_EVENT } from '../VarslerPrompt'
+
+const FØRSTE_TIPP_NØKKEL = 'betpool:første-tipp-vist'
 
 export interface JokerContext {
     // Denne kampen har jokeren for runden.
@@ -42,6 +45,14 @@ export const BetView = ({ bet, matchside, joker }: { bet: Bet; matchside: boolea
         setTimeout(() => {
             setNyliglagret(false)
         }, 2000)
+        // Etter første vellykka tipp: prompt om varsler hvis brukeren ikke
+        // allerede har bestemt seg. Vent litt så "Lagret"-blinket vises først.
+        if (typeof window !== 'undefined' && !localStorage.getItem(FØRSTE_TIPP_NØKKEL)) {
+            localStorage.setItem(FØRSTE_TIPP_NØKKEL, '1')
+            if (brukerKanPrompttes()) {
+                setTimeout(() => window.dispatchEvent(new Event(VARSLER_VIS_EVENT)), 1200)
+            }
+        }
     }
 
     const stringTilNumber = (prop: string): number | null => {

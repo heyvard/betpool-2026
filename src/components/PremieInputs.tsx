@@ -1,10 +1,32 @@
 import { TextField } from '@/components/ui/text-field'
 import { cn } from '@/lib/utils'
+import { Medalje } from './ui/medalje'
 
 export interface ProsentState {
     forste: string
     andre: string
     tredje: string
+}
+
+function PremieFelt({ plass, value, onChange }: { plass: 1 | 2 | 3; value: string; onChange: (v: string) => void }) {
+    const tekst = `${plass}. plass`
+    return (
+        <div className="flex flex-col gap-1">
+            <span className="flex items-center gap-1.5 text-sm font-medium text-stone-700">
+                <Medalje plass={plass} size={16} />
+                {tekst}
+            </span>
+            <TextField
+                label={tekst}
+                hideLabel
+                type="number"
+                min={0}
+                max={100}
+                value={value}
+                onChange={(e) => onChange(e.target.value)}
+            />
+        </div>
+    )
 }
 
 // Tre inputs for premiefordeling i prosent (1./2./3. plass), brukt både i
@@ -27,30 +49,9 @@ export function PremieInputs({
                 Valgfritt. Hvor stor andel av potten som går til 1./2./3. plass. Resten holdes utenom.
             </p>
             <div className="grid grid-cols-3 gap-2">
-                <TextField
-                    label="🥇 1. plass"
-                    type="number"
-                    min={0}
-                    max={100}
-                    value={verdier.forste}
-                    onChange={(e) => onChange('forste', e.target.value)}
-                />
-                <TextField
-                    label="🥈 2. plass"
-                    type="number"
-                    min={0}
-                    max={100}
-                    value={verdier.andre}
-                    onChange={(e) => onChange('andre', e.target.value)}
-                />
-                <TextField
-                    label="🥉 3. plass"
-                    type="number"
-                    min={0}
-                    max={100}
-                    value={verdier.tredje}
-                    onChange={(e) => onChange('tredje', e.target.value)}
-                />
+                <PremieFelt plass={1} value={verdier.forste} onChange={(v) => onChange('forste', v)} />
+                <PremieFelt plass={2} value={verdier.andre} onChange={(v) => onChange('andre', v)} />
+                <PremieFelt plass={3} value={verdier.tredje} onChange={(v) => onChange('tredje', v)} />
             </div>
             <p className={cn('text-xs', overSum ? 'font-medium text-red-600' : 'text-stone-500')}>
                 Sum: {sum}%{overSum && ' — må være ≤ 100 %'}
