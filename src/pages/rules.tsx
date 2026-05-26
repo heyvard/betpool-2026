@@ -76,7 +76,7 @@ const Regler: NextPage = () => {
 
             <Seksjon ikon={<Trophy className="h-4 w-4" />} tittel="Premiepott">
                 <div className="rounded-lg bg-stone-50 ring-1 ring-stone-200/70 px-4 py-3 text-center">
-                    <p className="text-[10px] font-semibold uppercase tracking-wider text-stone-500">Premiepott</p>
+                    <p className="bp-overline">Premiepott</p>
                     <p className="text-2xl font-bold text-stone-900">{pot} kr</p>
                     <p className="text-xs text-stone-500">{deltakere} deltakere × 300 kr</p>
                 </div>
@@ -123,9 +123,7 @@ const Regler: NextPage = () => {
                 </p>
 
                 <div>
-                    <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-stone-500">
-                        Kampverdi per runde
-                    </p>
+                    <p className="bp-overline mb-1.5">Kampverdi per runde</p>
                     <div className="divide-y divide-stone-100 rounded-lg ring-1 ring-stone-200/70">
                         {kampverdier.map((k) => (
                             <div key={k.runde} className="flex items-center justify-between px-3 py-2">

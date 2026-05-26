@@ -3,17 +3,19 @@ import { cva, type VariantProps } from 'class-variance-authority'
 import { cn } from '@/lib/utils'
 
 const buttonVariants = cva(
-    'inline-flex items-center justify-center gap-2 rounded-lg text-sm font-medium transition-all focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2 focus-visible:ring-offset-stone-50 disabled:pointer-events-none disabled:opacity-50',
+    'inline-flex items-center justify-center gap-2 rounded-lg font-semibold transition-all disabled:pointer-events-none disabled:opacity-50',
     {
         variants: {
             variant: {
-                default: 'bg-stone-900 text-white hover:bg-stone-800 active:bg-stone-950 shadow-xs',
-                accent: 'bg-amber-500 text-stone-950 hover:bg-amber-400 active:bg-amber-600 shadow-xs font-semibold',
-                outline: 'border border-stone-300 bg-white hover:bg-stone-50 text-stone-900',
+                default:
+                    'bg-stone-900 text-white hover:bg-stone-800 active:bg-stone-950 focus-visible:outline-2 focus-visible:outline-amber-500 disabled:bg-stone-300 disabled:text-stone-500',
+                accent: 'bg-amber-500 text-stone-900 font-bold hover:bg-amber-400 active:bg-amber-600 shadow-[0_8px_24px_rgb(245_158_11_/_0.35)] focus-visible:outline-2 focus-visible:outline-stone-900',
+                outline:
+                    'bg-white text-stone-900 ring-1 ring-stone-200 hover:bg-stone-50 focus-visible:outline-2 focus-visible:outline-amber-500',
                 ghost: 'text-stone-700 hover:bg-stone-100 hover:text-stone-900',
             },
             size: {
-                default: 'h-9 px-4 py-2',
+                default: 'min-h-11 px-4 text-sm',
                 small: 'h-7 px-3 text-xs',
                 icon: 'h-9 w-9',
             },

@@ -139,7 +139,7 @@ function LigaBanner({ liga, megId }: { liga: LeagueDetail; megId?: string }) {
     const harBetalt = megSelv?.paid ?? false
 
     return (
-        <div className="rounded-xl bg-white p-4 shadow-xs ring-1 ring-stone-200/70">
+        <div className="bp-card">
             <div className="flex items-center justify-between gap-3">
                 <h1 className="text-lg font-bold text-stone-900">{liga.name}</h1>
                 <span

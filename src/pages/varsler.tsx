@@ -136,7 +136,7 @@ const Varsler: NextPage = () => {
         <div className="space-y-4">
             <h1 className="text-2xl font-semibold text-stone-900">Varsler</h1>
 
-            <div className="rounded-xl bg-white p-4 shadow-xs ring-1 ring-stone-200/70">
+            <div className="bp-card">
                 <div className="flex items-start justify-between gap-3">
                     <div className="flex min-w-0 items-start gap-3">
                         <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-amber-100 text-amber-700">

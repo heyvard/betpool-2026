@@ -17,7 +17,7 @@ export function PremieKort({
     const premier = regnUtPremier(liga.innsats, antallMedlemmer, liga)
     if (!premier) return null
     return (
-        <div className="rounded-xl bg-white p-4 shadow-xs ring-1 ring-stone-200/70">
+        <div className="bp-card">
             <div className="flex items-center justify-between">
                 <h2 className="flex items-center gap-2 text-sm font-semibold text-stone-900">
                     <Trophy className="h-4 w-4 text-amber-500" />

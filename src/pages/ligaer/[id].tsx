@@ -67,7 +67,7 @@ function TilbakeLenke() {
 /** Innsats, betalingsinfo og hvem som er vert. */
 function InnsatsKort({ liga }: { liga: LeagueDetail }) {
     return (
-        <div className="rounded-xl bg-white p-4 shadow-xs ring-1 ring-stone-200/70">
+        <div className="bp-card">
             <p className="text-xs text-stone-500">Ligavert: {liga.owner_name}</p>
             {liga.innsats != null && (
                 <p className="mt-2 flex items-center gap-1.5 text-sm font-medium text-stone-800">
@@ -91,9 +91,7 @@ function MedlemsSeksjon({ liga }: { liga: LeagueDetail }) {
 
     return (
         <section className="space-y-2">
-            <h2 className="text-sm font-semibold uppercase tracking-wide text-stone-500">
-                Medlemmer ({liga.members.filter((m) => m.status === 'medlem').length})
-            </h2>
+            <h2 className="bp-overline">Medlemmer ({liga.members.filter((m) => m.status === 'medlem').length})</h2>
             <div className="divide-y divide-stone-100 rounded-xl bg-white shadow-xs ring-1 ring-stone-200/70">
                 {liga.members.map((m) => (
                     <MedlemsRad
@@ -197,8 +195,8 @@ function InviterSeksjon({ liga }: { liga: LeagueDetail }) {
 
     return (
         <section className="space-y-2">
-            <h2 className="text-sm font-semibold uppercase tracking-wide text-stone-500">Inviter medlem</h2>
-            <div className="space-y-3 rounded-xl bg-white p-4 shadow-xs ring-1 ring-stone-200/70">
+            <h2 className="bp-overline">Inviter medlem</h2>
+            <div className="bp-card space-y-3">
                 {tilgjengelige.length === 0 ? (
                     <p className="text-sm text-stone-500">Alle aktive brukere er allerede med eller invitert.</p>
                 ) : (
@@ -274,8 +272,8 @@ function RedigerSeksjon({ liga }: { liga: LeagueDetail }) {
 
     return (
         <section className="space-y-2">
-            <h2 className="text-sm font-semibold uppercase tracking-wide text-stone-500">Innstillinger</h2>
-            <form onSubmit={lagre} className="space-y-3 rounded-xl bg-white p-4 shadow-xs ring-1 ring-stone-200/70">
+            <h2 className="bp-overline">Innstillinger</h2>
+            <form onSubmit={lagre} className="bp-card space-y-3">
                 <TextField
                     label="Navn på ligaen"
                     value={navn}

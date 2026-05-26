@@ -37,7 +37,7 @@ const Ligaer: NextPage = () => {
 
             {invitasjoner.length > 0 && (
                 <section className="space-y-2">
-                    <h2 className="text-sm font-semibold uppercase tracking-wide text-stone-500">Invitasjoner</h2>
+                    <h2 className="bp-overline">Invitasjoner</h2>
                     {invitasjoner.map((liga) => (
                         <InvitasjonsKort key={liga.id} liga={liga} megId={megselv.id} />
                     ))}
@@ -45,7 +45,7 @@ const Ligaer: NextPage = () => {
             )}
 
             <section className="space-y-2">
-                <h2 className="text-sm font-semibold uppercase tracking-wide text-stone-500">Ligaene dine</h2>
+                <h2 className="bp-overline">Ligaene dine</h2>
                 {mine.length === 0 ? (
                     <p className="rounded-xl bg-stone-50 px-4 py-6 text-center text-sm text-stone-500 ring-1 ring-stone-200/70">
                         Du er ikke med i noen private ligaer ennå.
@@ -85,7 +85,7 @@ function InvitasjonsKort({ liga, megId }: { liga: LeagueSummary; megId: string }
     }
 
     return (
-        <div className="rounded-xl bg-white p-4 shadow-xs ring-1 ring-stone-200/70">
+        <div className="bp-card">
             <div className="flex items-start gap-3">
                 <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-amber-100 text-amber-700">
                     <Mail className="h-5 w-5" />
@@ -143,8 +143,8 @@ function NyLigaSkjema() {
 
     return (
         <section className="space-y-2">
-            <h2 className="text-sm font-semibold uppercase tracking-wide text-stone-500">Lag ny liga</h2>
-            <form onSubmit={opprett} className="space-y-3 rounded-xl bg-white p-4 shadow-xs ring-1 ring-stone-200/70">
+            <h2 className="bp-overline">Lag ny liga</h2>
+            <form onSubmit={opprett} className="bp-card space-y-3">
                 <TextField
                     label="Navn på ligaen"
                     value={navn}
