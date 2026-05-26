@@ -17,12 +17,15 @@ import { TextField } from '@/components/ui/text-field'
 import { PremieKort } from '../../components/PremieKort'
 import { PremieInputs, ProsentState } from '../../components/PremieInputs'
 import { cn } from '@/lib/utils'
+import { useLanguage } from '../../i18n/LanguageContext'
+import { tx } from '../../i18n/interpolate'
 
 const LigaSide: NextPage = () => {
     const router = useRouter()
     const id = typeof router.query.id === 'string' ? router.query.id : null
     const { data: liga, isLoading, isError } = UseLeague(id)
     const { data: megselv } = UseUser()
+    const { t } = useLanguage()
 
     if (!id || isLoading || !megselv) {
         return <Spinner />
@@ -32,7 +35,7 @@ const LigaSide: NextPage = () => {
             <div className="space-y-4">
                 <TilbakeLenke />
                 <p className="rounded-xl bg-stone-50 px-4 py-6 text-center text-sm text-stone-500 ring-1 ring-stone-200/70">
-                    Fant ikke ligaen, eller du har ikke tilgang til den.
+                    {t.ligaSide.fantIkke}
                 </p>
             </div>
         )
@@ -56,42 +59,45 @@ const LigaSide: NextPage = () => {
 export default LigaSide
 
 function TilbakeLenke() {
+    const { t } = useLanguage()
     return (
         <NextLink href="/ligaer" className="inline-flex items-center gap-1 text-sm text-stone-500 hover:text-stone-800">
             <ArrowLeft className="h-4 w-4" />
-            Mine ligaer
+            {t.ligaSide.tilbake}
         </NextLink>
     )
 }
 
-/** Innsats, betalingsinfo og hvem som er vert. */
 function InnsatsKort({ liga }: { liga: LeagueDetail }) {
+    const { t } = useLanguage()
     return (
         <div className="bp-card">
-            <p className="text-xs text-stone-500">Ligavert: {liga.owner_name}</p>
+            <p className="text-xs text-stone-500">{tx(t.ligaSide.ligavert, { navn: liga.owner_name })}</p>
             {liga.innsats != null && (
                 <p className="mt-2 flex items-center gap-1.5 text-sm font-medium text-stone-800">
                     <Banknote className="h-4 w-4 text-stone-400" />
-                    Innsats: {liga.innsats} kr
+                    {tx(t.ligaSide.innsats, { kr: liga.innsats })}
                 </p>
             )}
             {liga.betalingsinfo ? (
                 <p className="mt-1 whitespace-pre-line text-sm text-stone-600">{liga.betalingsinfo}</p>
             ) : (
-                <p className="mt-1 text-sm text-stone-400">Ingen betalingsinfo lagt inn.</p>
+                <p className="mt-1 text-sm text-stone-400">{t.ligaSide.ingenBetalingsinfo}</p>
             )}
         </div>
     )
 }
 
-/** Medlemsliste. Verten kan toggle betalt-status og fjerne medlemmer. */
 function MedlemsSeksjon({ liga }: { liga: LeagueDetail }) {
     const setPaid = UseSetMemberPaid(liga.id)
     const removeMember = UseRemoveMember(liga.id)
+    const { t } = useLanguage()
 
     return (
         <section className="space-y-2">
-            <h2 className="bp-overline">Medlemmer ({liga.members.filter((m) => m.status === 'medlem').length})</h2>
+            <h2 className="bp-overline">
+                {tx(t.ligaSide.medlemmer, { antall: liga.members.filter((m) => m.status === 'medlem').length })}
+            </h2>
             <div className="divide-y divide-stone-100 rounded-xl bg-white shadow-xs ring-1 ring-stone-200/70">
                 {liga.members.map((m) => (
                     <MedlemsRad
@@ -102,7 +108,7 @@ function MedlemsSeksjon({ liga }: { liga: LeagueDetail }) {
                         onTogglePaid={() => setPaid.mutate({ userId: m.user_id, paid: !m.paid })}
                         paidPending={setPaid.isPending}
                         onRemove={() => {
-                            if (window.confirm(`Fjerne ${m.name} fra ligaen?`)) {
+                            if (window.confirm(tx(t.ligaSide.fjernMedlem, { navn: m.name }))) {
                                 removeMember.mutate(m.user_id)
                             }
                         }}
@@ -131,6 +137,7 @@ function MedlemsRad({
     onRemove: () => void
     removePending: boolean
 }) {
+    const { t } = useLanguage()
     const invitert = medlem.status === 'invitert'
     return (
         <div className="flex items-center gap-3 px-4 py-3">
@@ -139,12 +146,12 @@ function MedlemsRad({
                     <span className="truncate font-medium text-stone-900">{medlem.name}</span>
                     {erEier && (
                         <span className="shrink-0 rounded-full bg-stone-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-stone-500">
-                            Vert
+                            {t.felles.vert}
                         </span>
                     )}
                     {invitert && (
                         <span className="shrink-0 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-800">
-                            Invitert
+                            {t.felles.invitert}
                         </span>
                     )}
                 </div>
@@ -156,7 +163,7 @@ function MedlemsRad({
                         )}
                     >
                         {medlem.paid ? <Check className="h-3 w-3" /> : <Clock className="h-3 w-3" />}
-                        {medlem.paid ? 'Betalt' : 'Ikke betalt'}
+                        {medlem.paid ? t.felles.betalt : t.felles.ikkeBetalt}
                     </span>
                 )}
             </div>
@@ -169,7 +176,7 @@ function MedlemsRad({
                     type="button"
                     onClick={onRemove}
                     disabled={removePending}
-                    aria-label={`Fjern ${medlem.name}`}
+                    aria-label={tx(t.ligaSide.fjernMedlem, { navn: medlem.name })}
                     className="rounded-lg p-1.5 text-stone-400 hover:bg-red-50 hover:text-red-600 disabled:opacity-50"
                 >
                     <Trash2 className="h-4 w-4" />
@@ -179,10 +186,10 @@ function MedlemsRad({
     )
 }
 
-/** Verten inviterer en bruker som ikke allerede er medlem/invitert. */
 function InviterSeksjon({ liga }: { liga: LeagueDetail }) {
     const { data: brukere } = UseInvitableUsers()
     const invite = UseInviteMember(liga.id)
+    const { t } = useLanguage()
     const [valgt, setValgt] = useState('')
 
     const alleredeMed = new Set(liga.members.map((m) => m.user_id))
@@ -195,15 +202,15 @@ function InviterSeksjon({ liga }: { liga: LeagueDetail }) {
 
     return (
         <section className="space-y-2">
-            <h2 className="bp-overline">Inviter medlem</h2>
+            <h2 className="bp-overline">{t.ligaSide.inviterMedlem}</h2>
             <div className="bp-card space-y-3">
                 {tilgjengelige.length === 0 ? (
-                    <p className="text-sm text-stone-500">Alle aktive brukere er allerede med eller invitert.</p>
+                    <p className="text-sm text-stone-500">{t.ligaSide.alleErMed}</p>
                 ) : (
                     <>
                         <div className="flex flex-col gap-1">
                             <label htmlFor="inviter-bruker" className="sr-only">
-                                Velg bruker
+                                {t.ligaSide.velgBruker}
                             </label>
                             <select
                                 id="inviter-bruker"
@@ -214,7 +221,7 @@ function InviterSeksjon({ liga }: { liga: LeagueDetail }) {
                                     'focus:border-amber-500 focus:outline-hidden focus:ring-2 focus:ring-amber-400',
                                 )}
                             >
-                                <option value="">Velg bruker …</option>
+                                <option value="">{t.ligaSide.velgBrukerPlaceholder}</option>
                                 {tilgjengelige.map((u) => (
                                     <option key={u.id} value={u.id}>
                                         {u.name}
@@ -230,7 +237,7 @@ function InviterSeksjon({ liga }: { liga: LeagueDetail }) {
                             onClick={inviter}
                             icon={<UserPlus className="h-4 w-4" />}
                         >
-                            Send invitasjon
+                            {t.ligaSide.sendInvitasjon}
                         </Button>
                     </>
                 )}
@@ -239,9 +246,9 @@ function InviterSeksjon({ liga }: { liga: LeagueDetail }) {
     )
 }
 
-/** Verten endrer navn, innsats, betalingsinfo og premiefordeling. */
 function RedigerSeksjon({ liga }: { liga: LeagueDetail }) {
     const { mutate, isPending, error, isSuccess } = UseUpdateLeague(liga.id)
+    const { t } = useLanguage()
     const [navn, setNavn] = useState(liga.name)
     const [innsats, setInnsats] = useState(liga.innsats != null ? String(liga.innsats) : '')
     const [betalingsinfo, setBetalingsinfo] = useState(liga.betalingsinfo ?? '')
@@ -272,31 +279,31 @@ function RedigerSeksjon({ liga }: { liga: LeagueDetail }) {
 
     return (
         <section className="space-y-2">
-            <h2 className="bp-overline">Innstillinger</h2>
+            <h2 className="bp-overline">{t.ligaSide.innstillinger}</h2>
             <form onSubmit={lagre} className="bp-card space-y-3">
                 <TextField
-                    label="Navn på ligaen"
+                    label={t.ligaer.navnPaaLigaen}
                     value={navn}
                     onChange={(e) => setNavn(e.target.value)}
                     maxLength={100}
                 />
                 <TextField
-                    label="Innsats (kr)"
+                    label={t.ligaer.innsatsLabel}
                     type="number"
                     min={0}
                     value={innsats}
                     onChange={(e) => setInnsats(e.target.value)}
-                    placeholder="Ingen innsats"
+                    placeholder={t.ligaSide.ingenInnsats}
                 />
                 <div className="flex flex-col gap-1">
                     <label htmlFor="rediger-betalingsinfo" className="text-sm font-medium text-stone-700">
-                        Betalingsinfo
+                        {t.ligaSide.betalingsinfo}
                     </label>
                     <textarea
                         id="rediger-betalingsinfo"
                         value={betalingsinfo}
                         onChange={(e) => setBetalingsinfo(e.target.value)}
-                        placeholder="Hvor og hvordan medlemmene skal betale inn."
+                        placeholder={t.ligaSide.betalingsinfoBeskrivelse}
                         rows={3}
                         className={cn(
                             'rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm outline-hidden transition-shadow',
@@ -309,28 +316,28 @@ function RedigerSeksjon({ liga }: { liga: LeagueDetail }) {
                     onChange={(felt, verdi) => setProsenter((p) => ({ ...p, [felt]: verdi }))}
                 />
                 {error && <p className="text-sm text-red-600">{error.message}</p>}
-                {isSuccess && !isPending && <p className="text-sm font-medium text-emerald-700">Lagret</p>}
+                {isSuccess && !isPending && <p className="text-sm font-medium text-emerald-700">{t.felles.lagret}</p>}
                 <Button type="submit" loading={isPending} disabled={navn.trim() === '' || ugyldigSum}>
-                    Lagre endringer
+                    {t.ligaSide.lagreEndringer}
                 </Button>
             </form>
         </section>
     )
 }
 
-/** Forlat ligaen (medlem) eller slett den (vert). */
 function FarligSone({ liga, megId }: { liga: LeagueDetail; megId: string }) {
     const router = useRouter()
     const removeMember = UseRemoveMember(liga.id)
     const deleteLeague = UseDeleteLeague(liga.id)
+    const { t } = useLanguage()
 
     const forlat = () => {
-        if (window.confirm(`Forlate «${liga.name}»?`)) {
+        if (window.confirm(tx(t.ligaSide.forlatBekreft, { navn: liga.name }))) {
             removeMember.mutate(megId, { onSuccess: () => router.push('/ligaer') })
         }
     }
     const slett = () => {
-        if (window.confirm(`Slette «${liga.name}»? Dette kan ikke angres.`)) {
+        if (window.confirm(tx(t.ligaSide.slettBekreft, { navn: liga.name }))) {
             deleteLeague.mutate(undefined, { onSuccess: () => router.push('/ligaer') })
         }
     }
@@ -345,7 +352,7 @@ function FarligSone({ liga, megId }: { liga: LeagueDetail; megId: string }) {
                     className="border-red-300 text-red-600 hover:bg-red-50"
                     icon={<Trash2 className="h-4 w-4" />}
                 >
-                    Slett ligaen
+                    {t.ligaSide.slettLiga}
                 </Button>
             ) : (
                 <Button
@@ -355,7 +362,7 @@ function FarligSone({ liga, megId }: { liga: LeagueDetail; megId: string }) {
                     className="border-red-300 text-red-600 hover:bg-red-50"
                     icon={<LogOut className="h-4 w-4" />}
                 >
-                    Forlat ligaen
+                    {t.ligaSide.forlatLiga}
                 </Button>
             )}
         </section>

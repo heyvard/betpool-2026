@@ -16,14 +16,14 @@ import { LeagueDetail } from '../types/league'
 import { Banknote, Check, Clock } from 'lucide-react'
 import { KopierNummerKnapp } from '../components/KopierNummerKnapp'
 import { Medalje } from '../components/ui/medalje'
+import { useLanguage } from '../i18n/LanguageContext'
+import { tx } from '../i18n/interpolate'
 
 function plassVisning(plass: number): React.ReactNode {
     if (plass === 1 || plass === 2 || plass === 3) return <Medalje plass={plass} size={28} />
     return <span className="bp-tabular text-sm font-semibold text-stone-600">{plass}</span>
 }
 
-// users.name er normalt Firebase displayName. Hvis det fortsatt er en
-// e-post (eldre brukere / providere uten navn), vis bare delen før @.
 function visningsnavn(navn: string): string {
     return navn.includes('@') ? navn.split('@')[0] : navn
 }
@@ -33,10 +33,9 @@ const Leaderboard: NextPage = () => {
     const { data: ligaer } = UseLeagues()
     const { data: megselv } = UseUser()
     const [valgtLiga, setValgtLiga] = useValgtLiga()
+    const { t } = useLanguage()
 
     const mineLigaer = (ligaer ?? []).filter((l) => l.my_status === 'medlem')
-    // Et lagret valg kan peke på en liga brukeren ikke lenger er med i — fall
-    // tilbake til hovedligaen til velgeren får et gyldig valg.
     const effektivLiga = valgtLiga && mineLigaer.some((l) => l.id === valgtLiga) ? valgtLiga : null
     const { data: ligaDetalj } = UseLeague(effektivLiga)
 
@@ -49,9 +48,6 @@ const Leaderboard: NextPage = () => {
 
     const full = calculateLeaderboard(data.bets, data.users)
 
-    // I en privat liga bygger vi tabellen fra medlemslista, slik at også
-    // medlemmer uten tipp vises (på 0 poeng). Poengene er de samme som i
-    // hovedligaen — `paid` er derimot ligaens egen betalt-status.
     let lista: LeaderBoard[]
     if (effektivLiga && ligaDetalj) {
         lista = ligaDetalj.members
@@ -99,10 +95,10 @@ const Leaderboard: NextPage = () => {
             <Table>
                 <Table.Header>
                     <Table.Row>
-                        <Table.HeaderCell align="center">Plass</Table.HeaderCell>
+                        <Table.HeaderCell align="center">{t.ledertavle.plass}</Table.HeaderCell>
                         <Table.HeaderCell></Table.HeaderCell>
-                        <Table.HeaderCell>Navn</Table.HeaderCell>
-                        <Table.HeaderCell align="right">Poeng</Table.HeaderCell>
+                        <Table.HeaderCell>{t.ledertavle.navn}</Table.HeaderCell>
+                        <Table.HeaderCell align="right">{t.ledertavle.poeng}</Table.HeaderCell>
                     </Table.Row>
                 </Table.Header>
                 <Table.Body>
@@ -120,7 +116,7 @@ const Leaderboard: NextPage = () => {
                                 </NextLink>
                                 {!row.paid && (
                                     <span className="ml-2 inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-amber-800 ring-1 ring-amber-200">
-                                        Ikke betalt
+                                        {t.ledertavle.ikkeBetalt}
                                     </span>
                                 )}
                             </Table.DataCell>
@@ -135,10 +131,9 @@ const Leaderboard: NextPage = () => {
     )
 }
 
-/** Banner over tabellen når en privat liga er valgt — innsats, betalingsinfo og
- *  egen betalt-status. */
 function LigaBanner({ liga, megId }: { liga: LeagueDetail; megId?: string }) {
     const { data: megselv } = UseUser()
+    const { t } = useLanguage()
     const megSelv = liga.members.find((m) => m.user_id === megId)
     const harBetalt = megSelv?.paid ?? false
 
@@ -148,15 +143,15 @@ function LigaBanner({ liga, megId }: { liga: LeagueDetail; megId?: string }) {
                 <h1 className="text-lg font-bold text-stone-900">{liga.name}</h1>
                 <span className={classNames('shrink-0', harBetalt ? 'bp-chip-green' : 'bp-chip-gold')}>
                     {harBetalt ? <Check className="h-3.5 w-3.5" /> : <Clock className="h-3.5 w-3.5" />}
-                    {harBetalt ? 'Du har betalt' : 'Innbetaling mangler'}
+                    {harBetalt ? t.ledertavle.harBetalt : t.ledertavle.innbetalingMangler}
                 </span>
             </div>
-            <p className="mt-0.5 text-xs text-stone-500">Ligavert: {liga.owner_name}</p>
+            <p className="mt-0.5 text-xs text-stone-500">{tx(t.ledertavle.ligavert, { navn: liga.owner_name })}</p>
 
             {liga.innsats != null && (
                 <p className="mt-2 flex items-center gap-1.5 text-sm font-medium text-stone-800">
                     <Banknote className="h-4 w-4 text-stone-400" />
-                    Innsats: {liga.innsats} kr
+                    {tx(t.ledertavle.innsats, { kr: liga.innsats })}
                 </p>
             )}
             {liga.betalingsinfo && (

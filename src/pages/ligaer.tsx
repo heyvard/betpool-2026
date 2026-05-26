@@ -15,10 +15,13 @@ import { Button } from '@/components/ui/button'
 import { TextField } from '@/components/ui/text-field'
 import { PremieInputs, ProsentState } from '../components/PremieInputs'
 import { cn } from '@/lib/utils'
+import { useLanguage } from '../i18n/LanguageContext'
+import { tx } from '../i18n/interpolate'
 
 const Ligaer: NextPage = () => {
     const { data: ligaer } = UseLeagues()
     const { data: megselv } = UseUser()
+    const { t } = useLanguage()
 
     if (!ligaer || !megselv) {
         return <Spinner />
@@ -29,15 +32,12 @@ const Ligaer: NextPage = () => {
 
     return (
         <div className="space-y-6">
-            <h1 className="text-2xl font-bold text-stone-900">Mine ligaer</h1>
-            <p className="-mt-4 text-sm text-stone-500">
-                Private ligaer bruker de samme poengene som hovedligaen — du konkurrerer bare i en mindre gjeng med egen
-                innsats.
-            </p>
+            <h1 className="text-2xl font-bold text-stone-900">{t.ligaer.tittel}</h1>
+            <p className="-mt-4 text-sm text-stone-500">{t.ligaer.beskrivelse}</p>
 
             {invitasjoner.length > 0 && (
                 <section className="space-y-2">
-                    <h2 className="bp-overline">Invitasjoner</h2>
+                    <h2 className="bp-overline">{t.ligaer.invitasjoner}</h2>
                     {invitasjoner.map((liga) => (
                         <InvitasjonsKort key={liga.id} liga={liga} megId={megselv.id} />
                     ))}
@@ -45,10 +45,10 @@ const Ligaer: NextPage = () => {
             )}
 
             <section className="space-y-2">
-                <h2 className="bp-overline">Ligaene dine</h2>
+                <h2 className="bp-overline">{t.ligaer.ligaeneDine}</h2>
                 {mine.length === 0 ? (
                     <p className="rounded-xl bg-stone-50 px-4 py-6 text-center text-sm text-stone-500 ring-1 ring-stone-200/70">
-                        Du er ikke med i noen private ligaer ennå.
+                        {t.ligaer.ingenLigaer}
                     </p>
                 ) : (
                     mine.map((liga) => (
@@ -58,9 +58,9 @@ const Ligaer: NextPage = () => {
                                     <span className="text-base font-semibold text-stone-900">{liga.name}</span>
                                     <span className="flex items-center gap-1 text-xs text-stone-500">
                                         <Users className="h-3.5 w-3.5" />
-                                        {liga.member_count} medlemmer
-                                        {liga.innsats != null && ` · ${liga.innsats} kr i innsats`}
-                                        {liga.is_owner && ' · du er vert'}
+                                        {tx(t.ligaer.antallMedlemmer, { antall: liga.member_count })}
+                                        {liga.innsats != null && ` · ${liga.innsats} ${t.felles.kr} i innsats`}
+                                        {liga.is_owner && ` ${t.ligaer.duErVert}`}
                                     </span>
                                 </span>
                             </LinkPanel>
@@ -76,9 +76,9 @@ const Ligaer: NextPage = () => {
 
 export default Ligaer
 
-/** Én ventende invitasjon med takk ja / takk nei. */
 function InvitasjonsKort({ liga, megId }: { liga: LeagueSummary; megId: string }) {
     const { mutate, isPending } = UseRespondInvitation()
+    const { t } = useLanguage()
 
     const svar = (accept: boolean) => {
         mutate({ leagueId: liga.id, userId: megId, accept })
@@ -93,27 +93,27 @@ function InvitasjonsKort({ liga, megId }: { liga: LeagueSummary; megId: string }
                 <div className="min-w-0 flex-1">
                     <p className="font-semibold text-stone-900">{liga.name}</p>
                     <p className="text-xs text-stone-500">
-                        Invitert av {liga.owner_name}
-                        {liga.innsats != null && ` · ${liga.innsats} kr i innsats`}
+                        {tx(t.ligaer.invitasjonsKortInvitert, { navn: liga.owner_name })}
+                        {liga.innsats != null && ` · ${liga.innsats} ${t.felles.kr} i innsats`}
                     </p>
                 </div>
             </div>
             <div className="mt-3 flex gap-2">
                 <Button variant="accent" size="small" loading={isPending} onClick={() => svar(true)}>
-                    Takk ja
+                    {t.ligaer.takkJa}
                 </Button>
                 <Button variant="ghost" size="small" disabled={isPending} onClick={() => svar(false)}>
-                    Takk nei
+                    {t.ligaer.takkNei}
                 </Button>
             </div>
         </div>
     )
 }
 
-/** Skjema for å opprette en ny privat liga. Oppretteren blir vert og medlem. */
 function NyLigaSkjema() {
     const router = useRouter()
     const { mutate, isPending, error } = UseCreateLeague()
+    const { t } = useLanguage()
     const [navn, setNavn] = useState('')
     const [innsats, setInnsats] = useState('')
     const [betalingsinfo, setBetalingsinfo] = useState('')
@@ -143,34 +143,34 @@ function NyLigaSkjema() {
 
     return (
         <section className="space-y-2">
-            <h2 className="bp-overline">Lag ny liga</h2>
+            <h2 className="bp-overline">{t.ligaer.lagNyLiga}</h2>
             <form onSubmit={opprett} className="bp-card space-y-3">
                 <TextField
-                    label="Navn på ligaen"
+                    label={t.ligaer.navnPaaLigaen}
                     value={navn}
                     onChange={(e) => setNavn(e.target.value)}
-                    placeholder="F.eks. Gutta på jobben"
+                    placeholder={t.ligaer.navnPlaceholder}
                     maxLength={100}
                 />
                 <TextField
-                    label="Innsats (kr)"
-                    description="Valgfritt. Du holder selv styr på innbetalingene."
+                    label={t.ligaer.innsatsLabel}
+                    description={t.ligaer.innsatsBeskrivelse}
                     type="number"
                     min={0}
                     value={innsats}
                     onChange={(e) => setInnsats(e.target.value)}
-                    placeholder="F.eks. 200"
+                    placeholder={t.ligaer.innsatsPlaceholder}
                 />
                 <div className="flex flex-col gap-1">
                     <label htmlFor="betalingsinfo" className="text-sm font-medium text-stone-700">
-                        Betalingsinfo
+                        {t.ligaer.betalingsinfoLabel}
                     </label>
-                    <p className="text-xs text-stone-500">Valgfritt. Hvor og hvordan medlemmene skal betale inn.</p>
+                    <p className="text-xs text-stone-500">{t.ligaer.betalingsinfoBeskrivelse}</p>
                     <textarea
                         id="betalingsinfo"
                         value={betalingsinfo}
                         onChange={(e) => setBetalingsinfo(e.target.value)}
-                        placeholder="F.eks. Vipps 200 kr til 123 45 678 før første kamp."
+                        placeholder={t.ligaer.betalingsinfoPlaceholder}
                         rows={3}
                         className={cn(
                             'rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm outline-hidden transition-shadow',
@@ -190,7 +190,7 @@ function NyLigaSkjema() {
                     disabled={navn.trim() === '' || ugyldigSum}
                     icon={<Plus className="h-4 w-4" />}
                 >
-                    Opprett liga
+                    {t.ligaer.opprettLiga}
                 </Button>
             </form>
         </section>

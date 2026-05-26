@@ -3,17 +3,17 @@ import type { NextPage } from 'next'
 import { UseUser } from '../queries/useUser'
 
 import React, { useState } from 'react'
-import { alleLagSortert, hentFlag, hentNorsk } from '../utils/lag'
+import { getLagSortert, hentFlag, hentNavn } from '../utils/lag'
 import { UseMatches } from '../queries/useMatches'
 import { UseMyBets } from '../queries/useMyBets'
 import dayjs from 'dayjs'
 import NextLink from 'next/link'
-import { fixLand } from '../components/bet/BetView'
 import { useAuthedFetch } from '../auth/authedFetch'
 import { Check, ChevronRight, Clock, Goal, Lock, Trophy, TriangleAlert } from 'lucide-react'
 import { useQueryClient } from '@tanstack/react-query'
 import { useDebouncedCallback } from 'use-debounce'
 import nb from 'dayjs/locale/nb'
+import fr from 'dayjs/locale/fr'
 import { erEtterFørsteRunde, førsteRunde } from '../utils/isInFirstRound'
 import { nå } from '../utils/testClock'
 import { LoadingScreen } from '../components/loading/LoadingScreen'
@@ -23,12 +23,19 @@ import { KopierNummerKnapp } from '../components/KopierNummerKnapp'
 import { LinkPanel } from '@/components/ui/link-panel'
 import { cn } from '@/lib/utils'
 import { User } from '../types/user'
+import { useLanguage } from '../i18n/LanguageContext'
+import { tx } from '../i18n/interpolate'
 
-dayjs.locale(nb)
+function fixLandMedLocale(s: string, locale: 'no' | 'fr') {
+    if (s === 'To be announced') return 'TBA'
+    return hentFlag(s) + ' ' + hentNavn(s, locale)
+}
 
 const Home: NextPage = () => {
     const { data: megselv } = UseUser()
     const { data: matches, isLoading } = UseMatches()
+    const { t, locale } = useLanguage()
+    const dayjsLocale = locale === 'fr' ? fr : nb
 
     if (!matches || isLoading || !megselv) {
         return <LoadingScreen />
@@ -53,7 +60,10 @@ const Home: NextPage = () => {
                 >
                     <span className="inline-flex items-center gap-2 text-sm font-semibold text-red-800">
                         <span className="h-2 w-2 animate-pulse rounded-full bg-red-600" />
-                        Nå pågår {fixLand(k.home_team)} vs {fixLand(k.away_team)}
+                        {tx(t.hjem.naPagarKamp, {
+                            home: fixLandMedLocale(k.home_team, locale),
+                            away: fixLandMedLocale(k.away_team, locale),
+                        })}
                     </span>
                 </NextLink>
             ))}
@@ -65,8 +75,11 @@ const Home: NextPage = () => {
                 >
                     <span className="inline-flex items-center gap-2 text-sm font-semibold text-amber-800">
                         <Clock className="h-3.5 w-3.5" />
-                        {fixLand(k.home_team)} vs {fixLand(k.away_team)} starter kl{' '}
-                        {dayjs(k.game_start).format('HH:mm')}
+                        {tx(t.hjem.kampStarterKl, {
+                            home: fixLandMedLocale(k.home_team, locale),
+                            away: fixLandMedLocale(k.away_team, locale),
+                            tid: dayjs(k.game_start).format('HH:mm'),
+                        })}
                     </span>
                 </NextLink>
             ))}
@@ -77,13 +90,15 @@ const Home: NextPage = () => {
 
             <div className="pt-2">
                 <div className="flex items-center justify-between gap-3">
-                    <h2 className="text-base font-bold text-stone-900">Dine VM-tips</h2>
+                    <h2 className="text-base font-bold text-stone-900">{t.hjem.dineVmTips}</h2>
                     <FristMerke laast={laast} />
                 </div>
                 <p className="mt-0.5 text-xs text-stone-500">
                     {laast
-                        ? 'VM er i gang — vinner og toppscorer er låst.'
-                        : `Kan endres frem til ${førsteRunde.locale(nb).format('dddd D. MMM [kl] HH:mm')}.`}
+                        ? t.hjem.vmIGangLaast
+                        : tx(t.hjem.kanEndresFremTil, {
+                              dato: førsteRunde.locale(dayjsLocale).format('dddd D. MMM [kl] HH:mm'),
+                          })}
                 </p>
             </div>
 
@@ -95,9 +110,11 @@ const Home: NextPage = () => {
 
 function NesteKampSeksjon() {
     const { data: bets } = UseMyBets()
+    const { t, locale } = useLanguage()
+    const dayjsLocale = locale === 'fr' ? fr : nb
+
     if (!bets) return null
 
-    // Alle kamper som starter etter nå, sortert kronologisk
     const kommende = bets
         .filter((b) => dayjs(b.game_start).isAfter(nå()))
         .sort((a, b) => dayjs(a.game_start).valueOf() - dayjs(b.game_start).valueOf())
@@ -107,15 +124,14 @@ function NesteKampSeksjon() {
             <NextLink passHref legacyBehavior href="/my-bets">
                 <LinkPanel>
                     <span className="flex flex-col">
-                        <span className="text-base font-semibold text-stone-900">Ingen flere kamper</span>
-                        <span className="text-xs text-stone-500">VM er snart over</span>
+                        <span className="text-base font-semibold text-stone-900">{t.hjem.ingenFlereKamper}</span>
+                        <span className="text-xs text-stone-500">{t.hjem.vmSnartOver}</span>
                     </span>
                 </LinkPanel>
             </NextLink>
         )
     }
 
-    // Neste kampdag = kalenderdagen til den tidligste kommende kampen
     const nesteKampDag = dayjs(kommende[0].game_start).startOf('day')
     const kampene = kommende.filter((b) => dayjs(b.game_start).startOf('day').isSame(nesteKampDag, 'day'))
 
@@ -124,27 +140,35 @@ function NesteKampSeksjon() {
 
     const erIDag = nesteKampDag.isSame(nå(), 'day')
     const erIMorgen = nesteKampDag.isSame(nå().add(1, 'day'), 'day')
-    const datoEtikett = erIDag ? 'I dag' : erIMorgen ? 'I morgen' : nesteKampDag.locale(nb).format('dddd D. MMM')
+    const datoEtikett = erIDag
+        ? locale === 'fr'
+            ? "Aujourd'hui"
+            : 'I dag'
+        : erIMorgen
+          ? locale === 'fr'
+              ? 'Demain'
+              : 'I morgen'
+          : nesteKampDag.locale(dayjsLocale).format('dddd D. MMM')
 
     return (
         <div className="space-y-2">
             <div className="flex items-center justify-between px-1">
-                <h2 className="text-sm font-bold text-stone-900">Neste kampdag</h2>
+                <h2 className="text-sm font-bold text-stone-900">{t.hjem.nesteKampdag}</h2>
                 <span className="text-xs capitalize text-stone-500">{datoEtikett}</span>
             </div>
 
             <div className="overflow-hidden rounded-xl bg-white shadow-xs ring-1 ring-stone-200/70">
                 <div className="flex items-center justify-between border-b border-stone-100 px-4 py-2.5">
                     <span className="text-[10px] font-bold uppercase tracking-wider text-stone-500">
-                        {nesteKampDag.locale(nb).format('dddd D. MMMM')}
+                        {nesteKampDag.locale(dayjsLocale).format('dddd D. MMMM')}
                     </span>
                     {altTippet ? (
                         <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-0.5 text-[10px] font-bold text-emerald-700 ring-1 ring-emerald-200">
-                            <Check className="h-2.5 w-2.5" /> Alt tippet
+                            <Check className="h-2.5 w-2.5" /> {t.hjem.altTippet}
                         </span>
                     ) : (
                         <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-0.5 text-[10px] font-bold text-amber-800 ring-1 ring-amber-200">
-                            {manglerTips} mangler tips
+                            {tx(t.hjem.manglerTips, { n: manglerTips })}
                         </span>
                     )}
                 </div>
@@ -161,7 +185,8 @@ function NesteKampSeksjon() {
                                 {dayjs(b.game_start).format('HH:mm')}
                             </span>
                             <span className="min-w-0 flex-1 truncate text-xs font-semibold text-stone-900">
-                                {fixLand(b.home_team)} – {fixLand(b.away_team)}
+                                {hentFlag(b.home_team)} {hentNavn(b.home_team, locale)} – {hentFlag(b.away_team)}{' '}
+                                {hentNavn(b.away_team, locale)}
                             </span>
                             {tippet ? (
                                 <span className="shrink-0 rounded-md bg-emerald-50 px-1.5 py-0.5 text-[11px] font-bold tabular-nums text-emerald-700">
@@ -179,7 +204,7 @@ function NesteKampSeksjon() {
                 href="/my-bets"
                 className="block text-center text-sm font-semibold text-amber-700 hover:text-amber-800"
             >
-                {altTippet ? 'Se alle dine tips →' : `Tippe ${manglerTips === 1 ? 'kampen' : 'kampene'} →`}
+                {altTippet ? t.hjem.seAlleTips : manglerTips === 1 ? t.hjem.tippeKampen : t.hjem.tippeKampene}
             </NextLink>
         </div>
     )
@@ -188,11 +213,13 @@ function NesteKampSeksjon() {
 export default Home
 
 function InnbetalingsAlert() {
+    const { t, locale } = useLanguage()
     return (
         <Alert variant="warning">
             <div className="space-y-2">
                 <p>
-                    Vipps 300 kr til <span className="font-semibold">918 65 052</span> før første kamp starter.
+                    {t.hjem.vippsInnskudd} <span className="font-semibold">918 65 052</span>
+                    {locale === 'fr' ? ' avant le début du premier match.' : ' før første kamp starter.'}
                 </p>
                 <KopierNummerKnapp nummer="91865052" />
             </div>
@@ -200,29 +227,24 @@ function InnbetalingsAlert() {
     )
 }
 
-/** Liten statusmarkør ved siden av overskriften — åpent for endring, eller låst. */
 function FristMerke({ laast }: { laast: boolean }) {
+    const { t } = useLanguage()
     if (laast) {
         return (
             <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-stone-100 px-2.5 py-1 text-xs font-semibold text-stone-600 ring-1 ring-stone-200">
                 <Lock className="h-3 w-3" />
-                Låst
+                {t.hjem.laast}
             </span>
         )
     }
     return (
         <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-800 ring-1 ring-amber-200">
             <Clock className="h-3 w-3" />
-            Åpent
+            {t.hjem.aapent}
         </span>
     )
 }
 
-/**
- * Trykkbar rad-kort: ikon-badge + tittel/undertittel til venstre, valgt verdi
- * + chevron til høyre. Selve "klikket" leveres av barnet (et `<label>` rundt
- * en skjult `<select>` for Vinner, et inline input for Toppscorer).
- */
 function RadKort({
     ikon,
     tittel,
@@ -253,12 +275,14 @@ function RadKort({
 function VinnerKort({ megselv, laast }: { megselv: User; laast: boolean }) {
     const authedFetch = useAuthedFetch()
     const queryClient = useQueryClient()
+    const { t, locale } = useLanguage()
     const lagretWinner = megselv.winner ?? ''
     const [winner, setWinner] = useState(lagretWinner)
     const [forrigeLagret, setForrigeLagret] = useState(lagretWinner)
     const [lagrer, setLagrer] = useState(false)
     const [nyligLagret, setNyligLagret] = useState(false)
     const [feil, setFeil] = useState<string | null>(null)
+    const lagSortert = getLagSortert(locale)
 
     if (lagretWinner !== forrigeLagret) {
         setForrigeLagret(lagretWinner)
@@ -276,7 +300,7 @@ function VinnerKort({ megselv, laast }: { megselv: User; laast: boolean }) {
                 body: JSON.stringify({ winner: ny }),
             })
             if (!response.ok) {
-                setFeil('Kunne ikke lagre — prøv igjen.')
+                setFeil(t.felles.feil)
                 setWinner(forrige)
                 return
             }
@@ -290,28 +314,32 @@ function VinnerKort({ megselv, laast }: { megselv: User; laast: boolean }) {
 
     return (
         <div className="space-y-1">
-            <RadKort ikon={<Trophy className="h-5 w-5" />} tittel="Verdensmester" undertittel="Hvem løfter pokalen?">
+            <RadKort
+                ikon={<Trophy className="h-5 w-5" />}
+                tittel={t.hjem.verdensmester}
+                undertittel={t.hjem.hvemLofterPokalen}
+            >
                 {laast ? (
                     <ValgtVerdi
                         venstre={<span className="text-xl leading-none">{hentFlag(winner)}</span>}
-                        tekst={hentNorsk(winner)}
+                        tekst={hentNavn(winner, locale)}
                         ikon={<Lock className="h-4 w-4 text-stone-400" />}
                     />
                 ) : (
                     <label className="relative -mr-2 flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1 hover:bg-stone-50">
-                        <span className="sr-only">Velg verdensmester</span>
+                        <span className="sr-only">{t.hjem.velgVerdensmester}</span>
                         {winner ? (
                             <>
                                 <span className="text-xl leading-none" aria-hidden>
                                     {hentFlag(winner)}
                                 </span>
                                 <span className="max-w-[8rem] truncate text-sm font-bold text-stone-900">
-                                    {hentNorsk(winner)}
+                                    {hentNavn(winner, locale)}
                                 </span>
                             </>
                         ) : (
                             <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-bold text-amber-800">
-                                Velg lag
+                                {t.hjem.velgLag}
                             </span>
                         )}
                         <ChevronRight className="h-4 w-4 text-stone-400" />
@@ -319,15 +347,15 @@ function VinnerKort({ megselv, laast }: { megselv: User; laast: boolean }) {
                             value={winner}
                             disabled={lagrer}
                             onChange={(e) => lagre(e.target.value)}
-                            aria-label="Velg verdensmester"
+                            aria-label={t.hjem.velgVerdensmester}
                             className="absolute inset-0 cursor-pointer opacity-0 disabled:cursor-not-allowed"
                         >
                             <option value="" disabled>
-                                Velg lag …
+                                {t.hjem.velgLagPlaceholder}
                             </option>
-                            {alleLagSortert.map((l) => (
+                            {lagSortert.map((l) => (
                                 <option key={l.engelsk} value={l.engelsk}>
-                                    {l.flagg + ' ' + l.norsk}
+                                    {l.flagg + ' ' + l.visningsnavn}
                                 </option>
                             ))}
                         </select>
@@ -342,6 +370,7 @@ function VinnerKort({ megselv, laast }: { megselv: User; laast: boolean }) {
 function ToppscorerKort({ megselv, laast }: { megselv: User; laast: boolean }) {
     const authedFetch = useAuthedFetch()
     const queryClient = useQueryClient()
+    const { t } = useLanguage()
     const lagretTopscorer = megselv.topscorer ?? ''
     const [topscorer, setTopscorer] = useState(lagretTopscorer)
     const [forrigeLagret, setForrigeLagret] = useState(lagretTopscorer)
@@ -363,7 +392,7 @@ function ToppscorerKort({ megselv, laast }: { megselv: User; laast: boolean }) {
                 body: JSON.stringify({ topscorer: ny.trim() }),
             })
             if (!response.ok) {
-                setFeil('Kunne ikke lagre — prøv igjen.')
+                setFeil(t.felles.feil)
                 return
             }
             queryClient.invalidateQueries({ queryKey: ['user-me'] }).then()
@@ -382,7 +411,11 @@ function ToppscorerKort({ megselv, laast }: { megselv: User; laast: boolean }) {
 
     return (
         <div className="space-y-1">
-            <RadKort ikon={<Goal className="h-5 w-5" />} tittel="Toppscorer" undertittel="Hvem scorer flest mål?">
+            <RadKort
+                ikon={<Goal className="h-5 w-5" />}
+                tittel={t.hjem.toppscorer}
+                undertittel={t.hjem.hvemScorerFlest}
+            >
                 {laast ? (
                     <ValgtVerdi
                         venstre={
@@ -392,7 +425,7 @@ function ToppscorerKort({ megselv, laast }: { megselv: User; laast: boolean }) {
                                 </span>
                             ) : null
                         }
-                        tekst={lagret || 'Ikke valgt'}
+                        tekst={lagret || t.hjem.ikkeValgt}
                         ikon={<Lock className="h-4 w-4 text-stone-400" />}
                     />
                 ) : (
@@ -403,14 +436,14 @@ function ToppscorerKort({ megselv, laast }: { megselv: User; laast: boolean }) {
                             </span>
                         )}
                         <label htmlFor="topscorer-input" className="sr-only">
-                            Hvilken spiller scorer flest mål?
+                            {t.hjem.hvilkenSpiller}
                         </label>
                         <input
                             id="topscorer-input"
                             type="text"
                             value={topscorer}
                             disabled={lagrer}
-                            placeholder="Skriv navn"
+                            placeholder={t.hjem.skrivNavn}
                             onChange={onChange}
                             className={cn(
                                 'w-32 min-w-0 rounded-md bg-transparent px-1 py-1 text-right text-sm font-bold text-stone-900',
@@ -427,7 +460,6 @@ function ToppscorerKort({ megselv, laast }: { megselv: User; laast: boolean }) {
     )
 }
 
-/** Valgt verdi til høyre i en rad — brukes når VM er i gang og tipset er låst. */
 function ValgtVerdi({ venstre, tekst, ikon }: { venstre?: React.ReactNode; tekst: string; ikon: React.ReactNode }) {
     return (
         <div className="flex min-w-0 items-center gap-2">
@@ -447,6 +479,7 @@ function StatusLinjeKompakt({
     nyligLagret: boolean
     feil?: string | null
 }) {
+    const { t } = useLanguage()
     if (feil) {
         return (
             <p className="flex items-center gap-1.5 px-4 text-xs text-red-600" role="alert">
@@ -458,27 +491,25 @@ function StatusLinjeKompakt({
         return (
             <p className="flex items-center gap-1.5 px-4 text-xs text-stone-500">
                 <span className="h-2.5 w-2.5 animate-spin rounded-full border-2 border-stone-300 border-t-stone-500" />
-                Lagrer …
+                {t.felles.lagrer}
             </p>
         )
     }
     if (nyligLagret) {
         return (
             <p className="flex items-center gap-1.5 px-4 text-xs font-medium text-emerald-700">
-                <Check className="h-3 w-3" /> Lagret
+                <Check className="h-3 w-3" /> {t.felles.lagret}
             </p>
         )
     }
     return null
 }
 
-/** Vis-så-borte-flagg: settes på i 2,5 sek etter en vellykket lagring. */
 function blink(setter: (v: boolean) => void) {
     setter(true)
     setTimeout(() => setter(false), 2500)
 }
 
-/** Inntil to forbokstaver fra et navn, til avatar-badgen for toppscorer. */
 function initialer(navn: string): string {
     return navn
         .split(/\s+/)

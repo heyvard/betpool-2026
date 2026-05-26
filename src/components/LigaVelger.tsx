@@ -1,6 +1,7 @@
 import { ChevronDown } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { LeagueSummary } from '../types/league'
+import { useLanguage } from '../i18n/LanguageContext'
 
 // Bytter mellom hovedligaen og en privat liga i resultattabellen. Lister bare
 // ligaer der brukeren faktisk er medlem (ikke åpne invitasjoner).
@@ -13,12 +14,13 @@ export function LigaVelger({
     valgt: string | null
     onVelg: (id: string | null) => void
 }) {
+    const { t } = useLanguage()
     const mine = ligaer.filter((l) => l.my_status === 'medlem')
 
     return (
         <div className="relative">
             <label htmlFor="liga-velger" className="sr-only">
-                Velg liga
+                {t.ledertavle.velgLiga}
             </label>
             <select
                 id="liga-velger"
@@ -29,7 +31,7 @@ export function LigaVelger({
                     'transition-shadow focus:border-amber-500 focus:outline-hidden focus:ring-2 focus:ring-amber-400',
                 )}
             >
-                <option value="">🏆 Hovedligaen</option>
+                <option value="">{t.ledertavle.hovedligaen}</option>
                 {mine.map((l) => (
                     <option key={l.id} value={l.id}>
                         {l.name}

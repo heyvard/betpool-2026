@@ -5,6 +5,7 @@ import { useAuthedFetch } from '../auth/authedFetch'
 import { useQueryClient } from '@tanstack/react-query'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
+import { useLanguage } from '../i18n/LanguageContext'
 
 /**
  * 3-slide overlay som vises for nye brukere før forsiden. Lukkes via "Hopp
@@ -14,26 +15,15 @@ import { cn } from '@/lib/utils'
 export function Onboarding({ onFerdig }: { onFerdig: () => void }) {
     const authedFetch = useAuthedFetch()
     const queryClient = useQueryClient()
+    const { t } = useLanguage()
     const [steg, setSteg] = useState(0)
     const [lagrer, setLagrer] = useState(false)
 
     const SLIDES = [
-        {
-            tittel: 'Tipp alle kampene',
-            tekst: 'Sett score for hver kamp i VM. Bli mer presis enn vennene dine.',
-            visual: <TipsVisual />,
-        },
-        {
-            tittel: 'Bruk jokeren',
-            tekst: 'Én joker per runde dobler poengene på din magefølelse-kamp.',
-            visual: <JokerVisual />,
-        },
-        {
-            tittel: 'Sjeldne tips teller mer',
-            tekst: 'Treffer du en score ingen andre har, gir det ekstra poeng.',
-            visual: <ScoreVisual />,
-        },
-    ] as const
+        { ...t.onboarding.slides[0], visual: <TipsVisual /> },
+        { ...t.onboarding.slides[1], visual: <JokerVisual jokerAktiv={t.onboarding.jokerAktiv} /> },
+        { ...t.onboarding.slides[2], visual: <ScoreVisual sjeldenhetMer={t.onboarding.sjeldenhetMer} /> },
+    ]
 
     const aktiv = SLIDES[steg]
     const erSiste = steg === SLIDES.length - 1
@@ -69,7 +59,7 @@ export function Onboarding({ onFerdig }: { onFerdig: () => void }) {
                     disabled={lagrer}
                     className="text-sm text-stone-400 hover:text-stone-200 disabled:opacity-50"
                 >
-                    Hopp over
+                    {t.onboarding.hoppOver}
                 </button>
                 <div className="flex gap-2" aria-hidden>
                     {SLIDES.map((_, i) => (
@@ -84,7 +74,7 @@ export function Onboarding({ onFerdig }: { onFerdig: () => void }) {
                     onClick={() => (erSiste ? fullfør() : setSteg(steg + 1))}
                     loading={erSiste && lagrer}
                 >
-                    {erSiste ? 'Kom i gang' : 'Neste'}
+                    {erSiste ? t.onboarding.komIGang : t.onboarding.neste}
                 </Button>
             </div>
         </div>
@@ -99,18 +89,18 @@ function TipsVisual() {
     )
 }
 
-function JokerVisual() {
+function JokerVisual({ jokerAktiv }: { jokerAktiv: string }) {
     return (
         <div className="flex h-40 w-40 flex-col items-center justify-center gap-3 rounded-3xl bg-stone-800 ring-1 ring-stone-700">
             <Zap className="h-16 w-16 fill-amber-400 text-amber-400" strokeWidth={1.5} />
             <span className="inline-flex items-center gap-1 rounded-full bg-amber-500 px-3 py-1 text-xs font-bold uppercase tracking-wide text-stone-900">
-                <Zap className="h-3 w-3 fill-current" /> Joker aktiv
+                <Zap className="h-3 w-3 fill-current" /> {jokerAktiv}
             </span>
         </div>
     )
 }
 
-function ScoreVisual() {
+function ScoreVisual({ sjeldenhetMer }: { sjeldenhetMer: string }) {
     return (
         <div className="flex h-40 w-40 flex-col items-center justify-center gap-2 rounded-3xl bg-stone-800 ring-1 ring-stone-700">
             <div className="flex items-center gap-2 text-xl font-bold">
@@ -119,7 +109,7 @@ function ScoreVisual() {
                 <Goal className="h-6 w-6 text-amber-400" />
             </div>
             <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/20 px-3 py-1 text-xs font-bold text-amber-300 ring-1 ring-amber-500/40">
-                <Sparkles className="h-3 w-3" /> Sjeldent = mer
+                <Sparkles className="h-3 w-3" /> {sjeldenhetMer}
             </span>
         </div>
     )

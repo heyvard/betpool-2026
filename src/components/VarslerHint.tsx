@@ -3,6 +3,7 @@ import NextLink from 'next/link'
 import { useEffect, useState } from 'react'
 
 import { hentAbonnement, pushStøttes } from '../utils/push'
+import { useLanguage } from '../i18n/LanguageContext'
 
 const DISMISS_NØKKEL = 'betpool:varsler-hint-dismissed'
 
@@ -11,6 +12,7 @@ const DISMISS_NØKKEL = 'betpool:varsler-hint-dismissed'
 //  - brukeren allerede har et abonnement
 //  - brukeren har trykket X tidligere (lagret i localStorage)
 export function VarslerHint() {
+    const { t } = useLanguage()
     const [synlig, setSynlig] = useState(false)
 
     useEffect(() => {
@@ -42,21 +44,19 @@ export function VarslerHint() {
                 <Bell className="h-4 w-4" />
             </span>
             <div className="min-w-0 flex-1">
-                <p className="text-sm font-semibold text-stone-900">Slå på varsler?</p>
-                <p className="text-xs text-stone-600">
-                    Få påminnelse om kamper du ikke har tippet, og en oppsummering dagen etter.
-                </p>
+                <p className="text-sm font-semibold text-stone-900">{t.varslerHint.tittel}</p>
+                <p className="text-xs text-stone-600">{t.varslerHint.tekst}</p>
                 <NextLink
                     href="/varsler"
                     className="mt-2 inline-flex items-center text-sm font-semibold text-amber-700 hover:text-amber-800"
                 >
-                    Sett opp →
+                    {t.varslerHint.settOpp}
                 </NextLink>
             </div>
             <button
                 type="button"
                 onClick={lukk}
-                aria-label="Lukk"
+                aria-label={t.felles.lukk}
                 className="shrink-0 rounded-md p-1 text-stone-400 hover:bg-stone-100 hover:text-stone-600"
             >
                 <X className="h-4 w-4" />

@@ -13,7 +13,7 @@ import { erTestAuth } from '../utils/erTestAuth'
 import { TestUserSwitcher } from '../components/dev/TestUserSwitcher'
 import { TestClock } from '../components/dev/TestClock'
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu'
-import { BookOpen, House, ListChecks, ListOrdered, Menu } from 'lucide-react'
+import { BookOpen, Check, House, ListChecks, ListOrdered, Menu } from 'lucide-react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { LoadingScreen } from '../components/loading/LoadingScreen'
 import { PullToRefresh } from '../components/PullToRefresh'
@@ -21,6 +21,7 @@ import { VarslerPrompt } from '../components/VarslerPrompt'
 import { Onboarding } from '../components/Onboarding'
 import { useQueryClient } from '@tanstack/react-query'
 import { cn } from '@/lib/utils'
+import { LanguageProvider, useLanguage } from '../i18n/LanguageContext'
 
 // firebaseui er tungt og brukes bare i utlogga-tilstand — last det først når vi
 // faktisk trenger det.
@@ -44,6 +45,7 @@ function Layout({ children }: { children: React.ReactNode }) {
     const router = useRouter()
     const queryClient = useQueryClient()
     const trengerOnboarding = !!me && me.onboarded_at == null
+    const { t, locale, setLocale } = useLanguage()
 
     return (
         <>
@@ -54,7 +56,7 @@ function Layout({ children }: { children: React.ReactNode }) {
                 {loading && <LoadingScreen />}
                 {!loading && !user && !erTestAuth() && <SignInScreen />}
                 {!loading && !user && erTestAuth() && (
-                    <p className="mt-8 text-center text-stone-600">Velg en test-bruker nederst til høyre.</p>
+                    <p className="mt-8 text-center text-stone-600">{t.testBruker.velg}</p>
                 )}
                 {user && <PullToRefresh>{children}</PullToRefresh>}
                 {user && <VarslerPrompt />}
@@ -64,16 +66,16 @@ function Layout({ children }: { children: React.ReactNode }) {
             )}
 
             <nav className="fixed bottom-0 left-0 z-50 w-full h-16 flex bg-stone-900 text-stone-300 border-t border-stone-800 shadow-[0_-2px_12px_rgba(0,0,0,0.08)]">
-                <NavKnapp url="/" text="Hjem" icon={<House className="w-5 h-5" />} />
-                <NavKnapp url="/my-bets" text="Tipp" icon={<ListChecks className="w-5 h-5" />} />
-                <NavKnapp url="/leaderboard" text="Resultater" icon={<ListOrdered className="w-5 h-5" />} />
-                <NavKnapp url="/rules" text="Regler" icon={<BookOpen className="w-5 h-5" />} />
+                <NavKnapp url="/" text={t.nav.hjem} icon={<House className="w-5 h-5" />} />
+                <NavKnapp url="/my-bets" text={t.nav.tipp} icon={<ListChecks className="w-5 h-5" />} />
+                <NavKnapp url="/leaderboard" text={t.nav.resultater} icon={<ListOrdered className="w-5 h-5" />} />
+                <NavKnapp url="/rules" text={t.nav.regler} icon={<BookOpen className="w-5 h-5" />} />
 
                 <DropdownMenu.Root>
                     <DropdownMenu.Trigger asChild>
                         <button className="flex flex-col items-center justify-center w-full gap-0.5 text-stone-300 hover:text-white hover:bg-stone-800/60 active:bg-stone-800 transition-colors">
                             <Menu className="w-5 h-5" />
-                            <span className="text-[10px] font-medium tracking-wide uppercase">Meny</span>
+                            <span className="text-[10px] font-medium tracking-wide uppercase">{t.nav.meny}</span>
                         </button>
                     </DropdownMenu.Trigger>
                     <DropdownMenu.Portal>
@@ -91,19 +93,19 @@ function Layout({ children }: { children: React.ReactNode }) {
                                 className="px-4 py-2 cursor-pointer hover:bg-stone-50 outline-hidden text-stone-700"
                                 onSelect={() => router.push('/rules')}
                             >
-                                Regler
+                                {t.nav.regler}
                             </DropdownMenu.Item>
                             <DropdownMenu.Item
                                 className="px-4 py-2 cursor-pointer hover:bg-stone-50 outline-hidden text-stone-700"
                                 onSelect={() => router.push('/ligaer')}
                             >
-                                Mine ligaer
+                                {t.nav.ligaer}
                             </DropdownMenu.Item>
                             <DropdownMenu.Item
                                 className="px-4 py-2 cursor-pointer hover:bg-stone-50 outline-hidden text-stone-700"
                                 onSelect={() => router.push('/varsler')}
                             >
-                                Varsler
+                                {t.nav.varsler}
                             </DropdownMenu.Item>
                             {me?.scoreadmin && (
                                 <>
@@ -111,13 +113,13 @@ function Layout({ children }: { children: React.ReactNode }) {
                                         className="px-4 py-2 cursor-pointer hover:bg-stone-50 outline-hidden text-stone-700"
                                         onSelect={() => router.push('/sluttspill')}
                                     >
-                                        Rediger sluttspill
+                                        {t.nav.redigerSluttspill}
                                     </DropdownMenu.Item>
                                     <DropdownMenu.Item
                                         className="px-4 py-2 cursor-pointer hover:bg-stone-50 outline-hidden text-stone-700"
                                         onSelect={() => router.push('/resultatservice')}
                                     >
-                                        Rediger resultater
+                                        {t.nav.redigerResultater}
                                     </DropdownMenu.Item>
                                 </>
                             )}
@@ -126,15 +128,39 @@ function Layout({ children }: { children: React.ReactNode }) {
                                     className="px-4 py-2 cursor-pointer hover:bg-stone-50 outline-hidden text-stone-700"
                                     onSelect={() => router.push('/brukere')}
                                 >
-                                    Brukere
+                                    {t.nav.brukere}
                                 </DropdownMenu.Item>
                             )}
+                            <DropdownMenu.Separator className="my-1 h-px bg-stone-200" />
+                            <DropdownMenu.Label className="px-4 py-1 text-xs font-medium text-stone-400">
+                                {t.nav.sprak}
+                            </DropdownMenu.Label>
+                            <DropdownMenu.Item
+                                className={cn(
+                                    'flex items-center justify-between px-4 py-2 cursor-pointer hover:bg-stone-50 outline-hidden',
+                                    locale === 'no' ? 'font-semibold text-stone-900' : 'text-stone-600',
+                                )}
+                                onSelect={() => setLocale('no')}
+                            >
+                                <span>🇳🇴 Norsk</span>
+                                {locale === 'no' && <Check className="h-3.5 w-3.5 text-amber-600" />}
+                            </DropdownMenu.Item>
+                            <DropdownMenu.Item
+                                className={cn(
+                                    'flex items-center justify-between px-4 py-2 cursor-pointer hover:bg-stone-50 outline-hidden',
+                                    locale === 'fr' ? 'font-semibold text-stone-900' : 'text-stone-600',
+                                )}
+                                onSelect={() => setLocale('fr')}
+                            >
+                                <span>🇫🇷 Français</span>
+                                {locale === 'fr' && <Check className="h-3.5 w-3.5 text-amber-600" />}
+                            </DropdownMenu.Item>
                             <DropdownMenu.Separator className="my-1 h-px bg-stone-200" />
                             <DropdownMenu.Item
                                 className="px-4 py-2 cursor-pointer hover:bg-red-50 outline-hidden text-red-600 font-medium"
                                 onSelect={logUt}
                             >
-                                Logg ut
+                                {t.nav.loggUt}
                             </DropdownMenu.Item>
                         </DropdownMenu.Content>
                     </DropdownMenu.Portal>
@@ -169,9 +195,11 @@ function MyApp({ Component, pageProps }: AppProps) {
                 <link rel="manifest" href="/manifest.json" />
             </Head>
             <QueryClientProvider client={queryClient}>
-                <Layout>
-                    <Component {...pageProps} />
-                </Layout>
+                <LanguageProvider>
+                    <Layout>
+                        <Component {...pageProps} />
+                    </Layout>
+                </LanguageProvider>
             </QueryClientProvider>
         </>
     )

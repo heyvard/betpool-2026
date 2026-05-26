@@ -3,29 +3,39 @@ import dayjs from 'dayjs'
 import React, { useEffect, useState } from 'react'
 import { UseMutateBet } from '../../queries/mutateBet'
 import { UseMutateJoker } from '../../queries/mutateJoker'
-import { hentFlag, hentNorsk } from '../../utils/lag'
+import { hentFlag, hentNavn } from '../../utils/lag'
 import { erNorgeKamp, kanHaJoker } from '../../data/matches'
 import NextLink from 'next/link'
 import { rundeTilTekst } from '../../utils/rundeTilTekst'
 import { nå } from '../../utils/testClock'
 import { Calendar, Check, ChevronRight, Flag, Lock, Minus, Plus, Save, Zap } from 'lucide-react'
 import nb from 'dayjs/locale/nb'
+import fr from 'dayjs/locale/fr'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { brukerKanPrompttes, VIS_EVENT as VARSLER_VIS_EVENT } from '../VarslerPrompt'
+import { useLanguage } from '../../i18n/LanguageContext'
+import { tx } from '../../i18n/interpolate'
 
 const FØRSTE_TIPP_NØKKEL = 'betpool:første-tipp-vist'
 
 export interface JokerContext {
-    // Denne kampen har jokeren for runden.
     aktiv: boolean
-    // Navn på en annen kamp i samme runde som har jokeren, ellers null.
     bruktPå: string | null
-    // Jokeren for runden ligger på en kamp som alt har startet — den kan ikke flyttes.
     låst: boolean
 }
 
+export function fixLand(s: string, locale: 'no' | 'fr' = 'no'): string {
+    if (s === 'To be announced') {
+        return 'TBA'
+    }
+    return hentFlag(s) + ' ' + hentNavn(s, locale)
+}
+
 export const BetView = ({ bet, matchside, joker }: { bet: Bet; matchside: boolean; joker: JokerContext }) => {
+    const { t, locale } = useLanguage()
+    const dayjsLocale = locale === 'fr' ? fr : nb
+
     const numberPropTilString = (prop: number | null) => {
         if (prop == null) {
             return ''
@@ -45,8 +55,6 @@ export const BetView = ({ bet, matchside, joker }: { bet: Bet; matchside: boolea
         setTimeout(() => {
             setNyliglagret(false)
         }, 2000)
-        // Etter første vellykka tipp: prompt om varsler hvis brukeren ikke
-        // allerede har bestemt seg. Vent litt så "Lagret"-blinket vises først.
         if (typeof window !== 'undefined' && !localStorage.getItem(FØRSTE_TIPP_NØKKEL)) {
             localStorage.setItem(FØRSTE_TIPP_NØKKEL, '1')
             if (brukerKanPrompttes()) {
@@ -70,7 +78,6 @@ export const BetView = ({ bet, matchside, joker }: { bet: Bet; matchside: boolea
     )
 
     const jokerMutation = UseMutateJoker()
-    // Jokeren kan bare settes på et tips som er lagret i databasen.
     const harLagretTips = bet.home_score != null && bet.away_score != null
 
     const disabled = kampstart.isBefore(nå())
@@ -108,18 +115,18 @@ export const BetView = ({ bet, matchside, joker }: { bet: Bet; matchside: boolea
                 <div className="flex items-center gap-2 min-w-0">
                     <span className="inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-stone-500">
                         <span className="h-1.5 w-1.5 rounded-full bg-amber-500" aria-hidden />
-                        {rundeTilTekst(bet.round)}
+                        {rundeTilTekst(bet.round, locale)}
                     </span>
                     {erNorgeKamp(bet.home_team, bet.away_team) && (
                         <span className="inline-flex items-center gap-1 rounded-full bg-red-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-red-800 ring-1 ring-red-200">
                             <Flag className="w-3 h-3" />
-                            Norge ×2
+                            {t.mineTips.norgeDobbel}
                         </span>
                     )}
                 </div>
                 <span className="inline-flex items-center gap-1.5 text-xs text-stone-500 shrink-0">
                     <Calendar className="w-3.5 h-3.5" />
-                    {kampstart.locale(nb).format('ddd D. MMM HH:mm')}
+                    {kampstart.locale(dayjsLocale).format('ddd D. MMM HH:mm')}
                 </span>
             </div>
 
@@ -163,7 +170,7 @@ export const BetView = ({ bet, matchside, joker }: { bet: Bet; matchside: boolea
                                 disabled={!beggeFylt}
                                 icon={<Save className="w-3.5 h-3.5" />}
                             >
-                                Lagre
+                                {t.mineTips.lagre}
                             </Button>
                             <span
                                 className={cn(
@@ -180,21 +187,21 @@ export const BetView = ({ bet, matchside, joker }: { bet: Bet; matchside: boolea
                                     )}
                                 />
                                 {!beggeFylt
-                                    ? 'Fyll inn score for begge lag'
+                                    ? t.mineTips.fyllInnScore
                                     : visSterktHint
-                                      ? 'Husk å lagre endringen'
-                                      : 'Endring ikke lagret'}
+                                      ? t.mineTips.huskaLagre
+                                      : t.mineTips.endringIkkeLagret}
                             </span>
                         </>
                     )}
                     {nyligLagret && (
                         <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-700">
-                            <Check className="w-3.5 h-3.5" /> Lagret
+                            <Check className="w-3.5 h-3.5" /> {t.felles.lagret}
                         </span>
                     )}
                     {disabled && !lagreknappSynlig && !nyligLagret && (
                         <span className="inline-flex items-center gap-1 text-xs text-stone-500">
-                            <Lock className="w-3 h-3" /> Kampen har startet
+                            <Lock className="w-3 h-3" /> {t.mineTips.kampHarStartet}
                         </span>
                     )}
                 </div>
@@ -204,7 +211,7 @@ export const BetView = ({ bet, matchside, joker }: { bet: Bet; matchside: boolea
                         href={'/match/' + bet.match_num}
                         className="inline-flex items-center gap-0.5 text-xs font-medium text-amber-700 hover:text-amber-800 transition-colors"
                     >
-                        Se alles bets
+                        {t.mineTips.seAllesBets}
                         <ChevronRight className="w-3.5 h-3.5" />
                     </NextLink>
                 )}
@@ -223,8 +230,8 @@ interface JokerSeksjonProps {
 }
 
 function JokerSeksjon({ joker, harLagretTips, disabled, isPending, feil, onToggle }: JokerSeksjonProps) {
-    // Joker-seksjonen dukker først opp når tipset er lagret — før det er den ikke
-    // brukbar, og en forklarende tekst ville bare vært støy.
+    const { t } = useLanguage()
+
     if (disabled || !harLagretTips) {
         return null
     }
@@ -235,10 +242,10 @@ function JokerSeksjon({ joker, harLagretTips, disabled, isPending, feil, onToggl
             <div className="flex items-center justify-between gap-3">
                 <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-amber-700">
                     <Zap className="w-4 h-4 fill-amber-500 text-amber-500" />
-                    Joker aktiv — kampen teller dobbelt
+                    {t.mineTips.jokerAktiv}
                 </span>
                 <Button size="small" variant="ghost" onClick={() => onToggle(false)} loading={isPending}>
-                    Fjern
+                    {t.mineTips.fjernJoker}
                 </Button>
             </div>
         )
@@ -246,7 +253,7 @@ function JokerSeksjon({ joker, harLagretTips, disabled, isPending, feil, onToggl
         innhold = (
             <span className="inline-flex items-center gap-1.5 text-xs text-stone-500">
                 <Lock className="w-3.5 h-3.5 shrink-0" />
-                <span className="truncate">Joker brukt på {joker.bruktPå} denne runden</span>
+                <span className="truncate">{tx(t.mineTips.jokerBruktPa, { kamp: joker.bruktPå ?? '' })}</span>
             </span>
         )
     } else {
@@ -255,7 +262,7 @@ function JokerSeksjon({ joker, harLagretTips, disabled, isPending, feil, onToggl
                 <span className="inline-flex items-center gap-1.5 text-xs text-stone-500 min-w-0">
                     <Zap className="w-3.5 h-3.5 shrink-0" />
                     <span className="truncate">
-                        {joker.bruktPå ? `Joker står på ${joker.bruktPå}` : 'Doble poengene på én kamp i runden'}
+                        {joker.bruktPå ? tx(t.mineTips.jokerStarPa, { kamp: joker.bruktPå }) : t.mineTips.doblePoengene}
                     </span>
                 </span>
                 <Button
@@ -266,7 +273,7 @@ function JokerSeksjon({ joker, harLagretTips, disabled, isPending, feil, onToggl
                     icon={<Zap className="w-3.5 h-3.5" />}
                     className="shrink-0"
                 >
-                    {joker.bruktPå ? 'Flytt hit' : 'Bruk joker'}
+                    {joker.bruktPå ? t.mineTips.flyttHit : t.mineTips.brukJoker}
                 </Button>
             </div>
         )
@@ -296,6 +303,7 @@ interface TeamScoreRowProps {
 }
 
 function TeamScoreRow({ team, value, onValueChange, disabled, pending }: TeamScoreRowProps) {
+    const { t, locale } = useLanguage()
     const numeric = value === '' ? null : Number(value)
     const canDec = !disabled && numeric !== null && numeric > 0
     const canInc = !disabled && (numeric === null || numeric < 20)
@@ -310,7 +318,7 @@ function TeamScoreRow({ team, value, onValueChange, disabled, pending }: TeamSco
 
     return (
         <div className="flex items-center justify-between gap-3 px-4 py-3">
-            <span className="text-lg font-semibold text-stone-900 truncate">{fixLand(team)}</span>
+            <span className="text-lg font-semibold text-stone-900 truncate">{fixLand(team, locale)}</span>
             <div
                 className={cn(
                     'inline-flex items-center rounded-lg border bg-white transition-shadow',
@@ -320,7 +328,7 @@ function TeamScoreRow({ team, value, onValueChange, disabled, pending }: TeamSco
             >
                 <button
                     type="button"
-                    aria-label={`Reduser ${team}`}
+                    aria-label={tx(t.mineTips.reduserLag, { lag: team })}
                     disabled={!canDec}
                     onClick={handleDec}
                     className="flex h-11 w-11 items-center justify-center rounded-l-lg text-stone-700 hover:bg-stone-50 active:bg-stone-100 disabled:cursor-not-allowed disabled:text-stone-300 disabled:hover:bg-transparent"
@@ -339,12 +347,12 @@ function TeamScoreRow({ team, value, onValueChange, disabled, pending }: TeamSco
                         if (v === '' || /^\d{1,2}$/.test(v)) onValueChange(v)
                     }}
                     onFocus={(e) => e.currentTarget.select()}
-                    aria-label={`Score for ${team}`}
+                    aria-label={tx(t.mineTips.scoreFor, { lag: team })}
                     className="bp-tabular h-11 w-12 select-none bg-transparent text-center text-2xl font-semibold text-stone-900 focus:outline-none"
                 />
                 <button
                     type="button"
-                    aria-label={`Øk ${team}`}
+                    aria-label={tx(t.mineTips.okLag, { lag: team })}
                     disabled={!canInc}
                     onClick={handleInc}
                     className="flex h-11 w-11 items-center justify-center rounded-r-lg text-stone-700 hover:bg-stone-50 active:bg-stone-100 disabled:cursor-not-allowed disabled:text-stone-300 disabled:hover:bg-transparent"
@@ -354,11 +362,4 @@ function TeamScoreRow({ team, value, onValueChange, disabled, pending }: TeamSco
             </div>
         </div>
     )
-}
-
-export function fixLand(s: string): string {
-    if (s === 'To be announced') {
-        return 'TBA'
-    }
-    return hentFlag(s) + ' ' + hentNorsk(s)
 }
