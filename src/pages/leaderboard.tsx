@@ -22,6 +22,12 @@ function plassVisning(plass: number): React.ReactNode {
     return <span className="bp-tabular text-sm font-semibold text-stone-600">{plass}</span>
 }
 
+// users.name er normalt Firebase displayName. Hvis det fortsatt er en
+// e-post (eldre brukere / providere uten navn), vis bare delen før @.
+function visningsnavn(navn: string): string {
+    return navn.includes('@') ? navn.split('@')[0] : navn
+}
+
 const Leaderboard: NextPage = () => {
     const { data, isLoading } = UseAllBets()
     const { data: ligaer } = UseLeagues()
@@ -110,9 +116,13 @@ const Leaderboard: NextPage = () => {
                             </Table.DataCell>
                             <Table.DataCell>
                                 <NextLink href={'/user/' + row.userid} className="text-blue-600 hover:underline">
-                                    {row.userName.split('@')[0]}
+                                    {visningsnavn(row.userName)}
                                 </NextLink>
-                                {!row.paid && '⚠️'}
+                                {!row.paid && (
+                                    <span className="ml-2 inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-amber-800 ring-1 ring-amber-200">
+                                        Ikke betalt
+                                    </span>
+                                )}
                             </Table.DataCell>
                             <Table.DataCell align="right" className="pr-4 font-bold">
                                 {row.poeng.toFixed(0)}
