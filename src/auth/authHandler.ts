@@ -43,6 +43,9 @@ export function auth(fn: { (_opts: ApiHandlerOpts): Promise<void> }) {
                     athlete_id: '1',
                     active: true,
                     done: true,
+                    notif_general: true,
+                    notif_reminders: true,
+                    notif_summary: true,
                 } as User,
             })
         }

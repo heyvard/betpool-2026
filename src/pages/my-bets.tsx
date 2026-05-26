@@ -10,7 +10,6 @@ import { UseUser } from '../queries/useUser'
 import { nå } from '../utils/testClock'
 import { LinkPanel } from '@/components/ui/link-panel'
 import { Bet } from '../types/types'
-import { PushVarsler } from '../components/PushVarsler'
 import { erNorgeKamp } from '../data/matches'
 
 const Home: NextPage = () => {
@@ -52,8 +51,6 @@ const Home: NextPage = () => {
                     <LinkPanel className="text-xl">Tidligere kamper</LinkPanel>
                 </NextLink>
             </div>
-
-            <PushVarsler />
 
             {myBets
                 .filter((b) => dayjs(b.game_start).isAfter(nå()))

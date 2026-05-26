@@ -86,6 +86,12 @@ function Layout({ children }: { children: React.ReactNode }) {
                             >
                                 Mine ligaer
                             </DropdownMenu.Item>
+                            <DropdownMenu.Item
+                                className="px-4 py-2 cursor-pointer hover:bg-stone-50 outline-none text-stone-700"
+                                onSelect={() => router.push('/varsler')}
+                            >
+                                Varsler
+                            </DropdownMenu.Item>
                             {me?.scoreadmin && (
                                 <>
                                     <DropdownMenu.Item

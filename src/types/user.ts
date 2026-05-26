@@ -13,4 +13,7 @@ export interface User {
     updated_at: string
     winner: string
     topscorer: string | undefined
+    notif_general: boolean
+    notif_reminders: boolean
+    notif_summary: boolean
 }

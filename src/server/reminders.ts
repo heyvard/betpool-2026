@@ -34,7 +34,9 @@ export async function sendPåminnelser(client: PoolClient): Promise<PåminnelseR
 
     const matchNums = morgendagensKamper.map((m) => m.match_num)
 
-    const brukere = (await client.query<{ id: string }>(`SELECT id FROM users WHERE active = true`)).rows
+    const brukere = (
+        await client.query<{ id: string }>(`SELECT id FROM users WHERE active = true AND notif_reminders = true`)
+    ).rows
 
     const tippet = (
         await client.query<{ user_id: string; match_num: number }>(

@@ -15,6 +15,7 @@ import nb from 'dayjs/locale/nb'
 import { erEtterFørsteRunde, førsteRunde } from '../utils/isInFirstRound'
 import { nå } from '../utils/testClock'
 import { LoadingScreen } from '../components/loading/LoadingScreen'
+import { VarslerHint } from '../components/VarslerHint'
 import { Alert } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { LinkPanel } from '@/components/ui/link-panel'
@@ -41,6 +42,7 @@ const Home: NextPage = () => {
 
     return (
         <div className="space-y-4">
+            <VarslerHint />
             {kamper.map((k) => (
                 <div key={k.match_num}>
                     <NextLink passHref legacyBehavior href={'/match/' + k.match_num}>
