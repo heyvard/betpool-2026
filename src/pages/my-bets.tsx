@@ -1,7 +1,7 @@
 import type { NextPage } from 'next'
 
 import { UseMyBets } from '../queries/useMyBets'
-import { BetView, fixLand, JokerContext } from '../components/bet/BetView'
+import { BetView } from '../components/bet/BetView'
 import { Spinner } from '../components/loading/Spinner'
 import dayjs from 'dayjs'
 import NextLink from 'next/link'
@@ -10,8 +10,9 @@ import { UseUser } from '../queries/useUser'
 import { nå } from '../utils/testClock'
 import { LinkPanel } from '@/components/ui/link-panel'
 import { Bet } from '../types/types'
-import { erNorgeKamp, kanHaJoker } from '../data/matches'
+import { kanHaJoker } from '../data/matches'
 import { rundeTilTekst } from '../utils/rundeTilTekst'
+import { byggJokerPerRunde, jokerContextFor } from '../utils/jokerContext'
 import { Zap } from 'lucide-react'
 
 const Home: NextPage = () => {
@@ -22,29 +23,7 @@ const Home: NextPage = () => {
         return <Spinner />
     }
 
-    // Hvilken kamp jokeren ligger på i hver runde. Norge-kamper kan ikke jokres,
-    // så en evt. gammel joker der ignoreres.
-    const jokerPerRunde = new Map<number, Bet>()
-    myBets.forEach((b) => {
-        if (b.joker && !erNorgeKamp(b.home_team, b.away_team)) jokerPerRunde.set(b.round, b)
-    })
-
-    const kampnavn = (b: Bet) => `${fixLand(b.home_team)} – ${fixLand(b.away_team)}`
-
-    const lagJokerContext = (bet: Bet): JokerContext => {
-        const jokerKamp = jokerPerRunde.get(bet.round)
-        if (!jokerKamp) {
-            return { aktiv: false, bruktPå: null, låst: false }
-        }
-        if (jokerKamp.match_num === bet.match_num) {
-            return { aktiv: true, bruktPå: null, låst: false }
-        }
-        return {
-            aktiv: false,
-            bruktPå: kampnavn(jokerKamp),
-            låst: dayjs(jokerKamp.game_start).isBefore(nå()),
-        }
-    }
+    const jokerPerRunde = byggJokerPerRunde(myBets)
 
     const kommende = myBets.filter((b) => dayjs(b.game_start).isAfter(nå()))
 
@@ -83,7 +62,12 @@ const Home: NextPage = () => {
                                 </div>
                             )}
                         {kamperIRunde.map((b) => (
-                            <BetView key={b.match_num} bet={b} matchside={false} joker={lagJokerContext(b)} />
+                            <BetView
+                                key={b.match_num}
+                                bet={b}
+                                matchside={false}
+                                joker={jokerContextFor(b, jokerPerRunde)}
+                            />
                         ))}
                     </section>
                 )
