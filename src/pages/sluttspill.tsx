@@ -13,14 +13,14 @@ const Home: NextPage = () => {
     if (!matches) {
         return <Spinner />
     }
-    matches.sort((b, a) => dayjs(b.game_start).unix() - dayjs(a.game_start).unix())
 
     return (
         <>
             <Heading size="medium" align="center">
                 Rediger sluttspill
             </Heading>
-            {matches
+            {[...matches]
+                .sort((b, a) => dayjs(b.game_start).unix() - dayjs(a.game_start).unix())
                 .filter((b) => dayjs(b.game_start).isAfter(nå()))
                 .filter((b) => b.round > 3)
                 .map((a) => (

@@ -11,7 +11,7 @@ const Leaderboard: NextPage = () => {
     if (!data || isLoading) {
         return <Spinner />
     }
-    data.users.sort((a, b) => a.winner?.localeCompare(b.winner || '') || 0)
+    const sortertePerVinner = [...data.users].sort((a, b) => a.winner?.localeCompare(b.winner || '') || 0)
 
     return (
         <Table size="small">
@@ -23,7 +23,7 @@ const Leaderboard: NextPage = () => {
                 </Table.Row>
             </Table.Header>
             <Table.Body>
-                {data.users.map((user, i) => (
+                {sortertePerVinner.map((user, i) => (
                     <Table.Row key={i}>
                         <Table.DataCell>
                             <NextLink href={'/user/' + user?.id}>

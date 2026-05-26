@@ -3,6 +3,7 @@ import React, { FC, useState } from 'react'
 import { UseUser } from '../queries/useUser'
 import { useRouter } from 'next/router'
 import Head from 'next/head'
+import dynamic from 'next/dynamic'
 
 import '../styles/global.css'
 import { getFirebaseAuth } from '../auth/clientApp'
@@ -14,10 +15,16 @@ import { TestClock } from '../components/dev/TestClock'
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu'
 import { Banknote, BookOpen, House, ListOrdered, Menu } from 'lucide-react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { SignInScreen } from '../components/SignIn'
 import { LoadingScreen } from '../components/loading/LoadingScreen'
 import { PullToRefresh } from '../components/PullToRefresh'
 import { cn } from '@/lib/utils'
+
+// firebaseui er tungt og brukes bare i utlogga-tilstand — last det først når vi
+// faktisk trenger det.
+const SignInScreen = dynamic(() => import('../components/SignIn').then((m) => m.SignInScreen), {
+    ssr: false,
+    loading: () => <LoadingScreen />,
+})
 
 function logUt() {
     if (erTestAuth()) {

@@ -2,7 +2,7 @@ import type { NextPage } from 'next'
 
 import { UseUser } from '../queries/useUser'
 
-import React, { useEffect, useState } from 'react'
+import React, { useState } from 'react'
 import { alleLagSortert, hentFlag, hentNorsk } from '../utils/lag'
 import { UseMatches } from '../queries/useMatches'
 import dayjs from 'dayjs'
@@ -148,14 +148,18 @@ function TipsKort({
 function VinnerKort({ megselv, laast }: { megselv: User; laast: boolean }) {
     const authedFetch = useAuthedFetch()
     const queryClient = useQueryClient()
-    const [winner, setWinner] = useState(megselv.winner ?? '')
+    const lagretWinner = megselv.winner ?? ''
+    const [winner, setWinner] = useState(lagretWinner)
+    const [forrigeLagret, setForrigeLagret] = useState(lagretWinner)
     const [lagrer, setLagrer] = useState(false)
     const [nyligLagret, setNyligLagret] = useState(false)
 
-    useEffect(() => {
-        // eslint-disable-next-line react-hooks/set-state-in-effect
-        setWinner(megselv.winner ?? '')
-    }, [megselv.winner])
+    // Synk lokal optimistisk verdi med ny serververdi når denne endrer seg
+    // (egen lagring eller eksternt). Avledet state i render, ikke effect.
+    if (lagretWinner !== forrigeLagret) {
+        setForrigeLagret(lagretWinner)
+        setWinner(lagretWinner)
+    }
 
     const lagre = async (ny: string) => {
         const forrige = winner
@@ -238,16 +242,20 @@ function VinnerKort({ megselv, laast }: { megselv: User; laast: boolean }) {
 function ToppscorerKort({ megselv, laast }: { megselv: User; laast: boolean }) {
     const authedFetch = useAuthedFetch()
     const queryClient = useQueryClient()
-    const [topscorer, setTopscorer] = useState(megselv.topscorer ?? '')
+    const lagretTopscorer = megselv.topscorer ?? ''
+    const [topscorer, setTopscorer] = useState(lagretTopscorer)
+    const [forrigeLagret, setForrigeLagret] = useState(lagretTopscorer)
     const [lagrer, setLagrer] = useState(false)
     const [nyligLagret, setNyligLagret] = useState(false)
 
-    useEffect(() => {
-        // eslint-disable-next-line react-hooks/set-state-in-effect
-        setTopscorer(megselv.topscorer ?? '')
-    }, [megselv.topscorer])
+    // Avledet state: ny serververdi overskriver lokal redigering. OK her — det
+    // er enten brukerens egen lagring eller en sync fra annen fane.
+    if (lagretTopscorer !== forrigeLagret) {
+        setForrigeLagret(lagretTopscorer)
+        setTopscorer(lagretTopscorer)
+    }
 
-    const lagret = (megselv.topscorer ?? '').trim()
+    const lagret = lagretTopscorer.trim()
     const endret = topscorer.trim() !== lagret
 
     const lagre = async (e: React.FormEvent) => {
