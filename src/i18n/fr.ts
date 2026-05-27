@@ -181,6 +181,8 @@ const fr: Translations = {
             'En plus des paris sur les matchs, vous pariez sur le vainqueur de la CM et sur le meilleur buteur du tournoi.',
         vinnerToppscorerTekst2:
             'Les deux peuvent être modifiés pendant le premier tour de poules. Ils sont verrouillés au début du deuxième tour.',
+        vinnerToppscorerTekst2AndreRunde:
+            "Après le premier tour de poules, vous pouvez tout de même modifier une fois — jusqu'aux huitièmes de finale inclus. Le prix : les points pour ce pari modifié sont divisés par deux. La modification est immédiatement verrouillée.",
         vinnerToppscorerTekst3:
             "Pour chacune des deux questions, un bon pari rapporte des points bonus qui dépendent du nombre d'autres joueurs ayant également trouvé :",
         vinnerToppscorerTips: "Moins il y a de gagnants, plus chaque pari vaut — jusqu'à 25 points.",
@@ -192,6 +194,8 @@ const fr: Translations = {
             "peuvent être modifiés jusqu'au coup de sifflet. Les paris soumis après le coup d'envoi ne sont pas enregistrés.",
         fristerVinnerTopps: 'Vainqueur et meilleur buteur',
         fristerVinnerToppsTekst: 'sont verrouillés au début du deuxième tour de poules.',
+        fristerVinnerToppsAndresjanse:
+            "Deuxième chance : une modification autorisée jusqu'au début des quarts de finale (points divisés par deux).",
         bonustrapper: [
             { terskel: 'Vous seul avez trouvé', poeng: 25 },
             { terskel: 'Moins de 5 % ont trouvé', poeng: 18 },

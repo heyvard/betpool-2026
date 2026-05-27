@@ -176,6 +176,8 @@ const no = {
             'I tillegg til kamptipsene tipper du på hvem som vinner VM, og hvem som blir turneringens toppscorer.',
         vinnerToppscorerTekst2:
             'Begge kan endres så lenge den første gruppespillsrunden pågår. Når andre runde starter, låses de.',
+        vinnerToppscorerTekst2AndreRunde:
+            'Etter gruppespill runde 1 kan du likevel endre én gang — frem til og med 16-delsfinalen. Prisen er at poengene for det endrede tipset halveres. Endringen låses umiddelbart.',
         vinnerToppscorerTekst3:
             'For hvert av de to spørsmålene gir en riktig gjetning et antall bonuspoeng som avhenger av hvor mange andre som også traff:',
         vinnerToppscorerTips: 'Gjetter få riktig, blir hvert tips mye verdt — opp til 25 poeng.',
@@ -187,6 +189,8 @@ const no = {
             'kan endres helt frem til kampstart. Tips som sendes inn etter avspark, blir ikke lagret.',
         fristerVinnerTopps: 'Vinner og toppscorer',
         fristerVinnerToppsTekst: 'låses når den andre gruppespillsrunden starter.',
+        fristerVinnerToppsAndresjanse:
+            'André sjanse: én endring er tillatt frem til kvartfinalen starter (poengene halveres).',
         bonustrapper: [
             { terskel: 'Du alene traff', poeng: 25 },
             { terskel: 'Under 5 % traff', poeng: 18 },
