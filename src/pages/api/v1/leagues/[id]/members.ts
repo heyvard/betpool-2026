@@ -20,7 +20,7 @@ const handler = async function handler(opts: ApiHandlerOpts): Promise<void> {
     const ligaId = String(req.query.id)
 
     const liga = (
-        await client.query<{ owner_user_id: string }>(`SELECT owner_user_id FROM leagues WHERE id = $1`, [ligaId])
+        await client.query<{ owner_user_id: string }>(`SELECT owner_user_id FROM leagues WHERE id = $1 AND deleted_at IS NULL`, [ligaId])
     ).rows[0]
     if (!liga) {
         res.status(404).json({ error: 'liga finnes ikke' })

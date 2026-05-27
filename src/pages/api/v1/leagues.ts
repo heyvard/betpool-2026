@@ -121,7 +121,7 @@ const handler = async function handler(opts: ApiHandlerOpts): Promise<void> {
              FROM league_members lm
              JOIN leagues l ON l.id = lm.league_id
              JOIN users ou ON ou.id = l.owner_user_id
-             WHERE lm.user_id = $1
+             WHERE lm.user_id = $1 AND l.deleted_at IS NULL
              ORDER BY l.name`,
             [user.id],
         )

@@ -34,7 +34,7 @@ const handler = async function handler(opts: ApiHandlerOpts): Promise<void> {
                     ou.name AS owner_name
              FROM leagues l
              JOIN users ou ON ou.id = l.owner_user_id
-             WHERE l.id = $1`,
+             WHERE l.id = $1 AND l.deleted_at IS NULL`,
             [ligaId],
         )
     ).rows[0]
@@ -147,7 +147,10 @@ const handler = async function handler(opts: ApiHandlerOpts): Promise<void> {
             res.status(403).end()
             return
         }
-        await client.query(`DELETE FROM leagues WHERE id = $1`, [ligaId])
+        await client.query(
+            `UPDATE leagues SET deleted_at = NOW() WHERE id = $1`,
+            [ligaId],
+        )
         await loggEndring(client, {
             actorUserId: user.id,
             entitet: 'league',
