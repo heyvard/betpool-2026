@@ -44,6 +44,7 @@ export function InnloggingKnapper() {
         const conflict = sessionStorage.getItem('betpool_email_conflict')
         if (conflict) {
             sessionStorage.removeItem('betpool_email_conflict')
+            // eslint-disable-next-line react-hooks/set-state-in-effect
             setFeil('Denne e-postadressen er allerede registrert med en annen innloggingsmetode.')
         }
     }, [])
