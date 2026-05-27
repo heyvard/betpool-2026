@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import {
     signInWithPopup,
     GoogleAuthProvider,
@@ -10,7 +10,7 @@ import { getFirebaseAuth } from './clientApp'
 import { Button } from '@/components/ui/button'
 import { TextField } from '@/components/ui/text-field'
 
-function oversettFeil(kode: string): string {
+function oversettFeil(kode: string, metode: 'google' | 'epost' = 'epost'): string {
     switch (kode) {
         case 'auth/user-not-found':
         case 'auth/invalid-credential':
@@ -22,6 +22,11 @@ function oversettFeil(kode: string): string {
             return 'For mange forsøk — prøv igjen senere.'
         case 'auth/popup-blocked':
             return 'Popup-vinduet ble blokkert. Tillat popups for denne siden.'
+        case 'auth/account-exists-with-different-credential':
+        case 'auth/email-already-in-use':
+            return metode === 'google'
+                ? 'Denne e-postadressen er allerede registrert med e-post og passord. Logg inn med e-post i stedet.'
+                : 'Denne e-postadressen er allerede registrert med Google. Logg inn med Google i stedet.'
         default:
             return 'Kunne ikke lagre — prøv igjen.'
     }
@@ -35,6 +40,15 @@ export function InnloggingKnapper() {
     const [laster, setLaster] = useState(false)
     const [tilbakestiltSendt, setTilbakestiltSendt] = useState(false)
 
+    useEffect(() => {
+        const conflict = sessionStorage.getItem('betpool_email_conflict')
+        if (conflict) {
+            sessionStorage.removeItem('betpool_email_conflict')
+            // eslint-disable-next-line react-hooks/set-state-in-effect
+            setFeil('Denne e-postadressen er allerede registrert med en annen innloggingsmetode.')
+        }
+    }, [])
+
     const loggInnMedGoogle = async () => {
         setFeil(null)
         try {
@@ -42,7 +56,7 @@ export function InnloggingKnapper() {
         } catch (e) {
             const kode = (e as AuthError).code
             if (kode !== 'auth/popup-closed-by-user' && kode !== 'auth/cancelled-popup-request') {
-                setFeil(oversettFeil(kode))
+                setFeil(oversettFeil(kode, 'google'))
             }
         }
     }
@@ -54,7 +68,7 @@ export function InnloggingKnapper() {
         try {
             await signInWithEmailAndPassword(getFirebaseAuth(), epost, passord)
         } catch (err) {
-            setFeil(oversettFeil((err as AuthError).code))
+            setFeil(oversettFeil((err as AuthError).code, 'epost'))
         } finally {
             setLaster(false)
         }
