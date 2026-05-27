@@ -308,11 +308,12 @@ interface TeamScoreRowProps {
 function TeamScoreRow({ team, value, onValueChange, disabled, pending }: TeamScoreRowProps) {
     const { t, locale } = useLanguage()
     const numeric = value === '' ? null : Number(value)
-    const canDec = !disabled && numeric !== null && numeric > 0
+    const canDec = !disabled && (numeric === null || numeric > 0)
     const canInc = !disabled && (numeric === null || numeric < 20)
 
     const handleDec = () => {
-        if (numeric !== null && numeric > 0) onValueChange(String(numeric - 1))
+        if (numeric === null) onValueChange('0')
+        else if (numeric > 0) onValueChange(String(numeric - 1))
     }
     const handleInc = () => {
         if (numeric === null) onValueChange('1')
