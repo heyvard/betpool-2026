@@ -19,13 +19,14 @@ export interface PåminnelseResultat {
 // Sender én daglig digest til hver bruker som har kamper de ikke har tippet i morgen
 // (norsk kalenderdøgn). Brukere uten push-abonnement hoppes naturlig over.
 export async function sendPåminnelser(client: PoolClient): Promise<PåminnelseResultat> {
-    const iMorgen = dayjs().tz(OSLO).add(1, 'day')
-    const start = iMorgen.startOf('day')
-    const slutt = iMorgen.endOf('day')
+    // Kampdag-vindu kl. 12:00 i morgen → kl. 12:00 overimorgen Oslo-tid,
+    // slik at natt-kamper (01:00–06:00 Oslo) inkluderes i riktig kampdag.
+    const iMorgenKampDagStart = dayjs().tz(OSLO).add(1, 'day').startOf('day').add(12, 'hour')
+    const iMorgenKampDagSlutt = iMorgenKampDagStart.add(1, 'day')
 
     const morgendagensKamper = getMatches().filter((m) => {
         const kampstart = dayjs(m.game_start)
-        return kampstart.isAfter(start) && kampstart.isBefore(slutt)
+        return !kampstart.isBefore(iMorgenKampDagStart) && kampstart.isBefore(iMorgenKampDagSlutt)
     })
 
     if (morgendagensKamper.length === 0) {

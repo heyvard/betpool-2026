@@ -137,14 +137,18 @@ function NesteKampSeksjon() {
         )
     }
 
-    const nesteKampDag = dayjs(kommende[0].game_start).startOf('day')
-    const kampene = kommende.filter((b) => dayjs(b.game_start).startOf('day').isSame(nesteKampDag, 'day'))
+    // Kamper starter 18:00–06:00 Oslo-tid. Skift 12 timer bakover slik at
+    // grensen mellom kampdag og neste kampdag blir kl. 12:00 (middag) i stedet
+    // for midnatt – ellers havner natt-kamper (01:00–06:00 Oslo) på feil dag.
+    const kampDag = (t: dayjs.Dayjs) => t.subtract(12, 'hour').startOf('day')
+    const nesteKampDag = kampDag(dayjs(kommende[0].game_start))
+    const kampene = kommende.filter((b) => kampDag(dayjs(b.game_start)).isSame(nesteKampDag, 'day'))
 
     const manglerTips = kampene.filter((b) => b.home_score == null || b.away_score == null).length
     const altTippet = manglerTips === 0
 
-    const erIDag = nesteKampDag.isSame(nå(), 'day')
-    const erIMorgen = nesteKampDag.isSame(nå().add(1, 'day'), 'day')
+    const erIDag = nesteKampDag.isSame(kampDag(nå()), 'day')
+    const erIMorgen = nesteKampDag.isSame(kampDag(nå()).add(1, 'day'), 'day')
     const datoEtikett = erIDag
         ? locale === 'fr'
             ? "Aujourd'hui"
