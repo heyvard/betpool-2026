@@ -170,6 +170,10 @@ const Regler: NextPage = () => {
             <Seksjon ikon={<Star className="h-4 w-4" />} tittel={r.vinnerToppscorerTittel}>
                 <p>{r.vinnerToppscorerTekst1}</p>
                 <p>{r.vinnerToppscorerTekst2}</p>
+                <p className="flex items-start gap-2 rounded-lg bg-amber-50 px-3 py-2 text-amber-900">
+                    <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
+                    <span>{r.vinnerToppscorerTekst2AndreRunde}</span>
+                </p>
                 <p>{r.vinnerToppscorerTekst3}</p>
                 <div className="divide-y divide-stone-100 rounded-lg ring-1 ring-stone-200/70">
                     {r.bonustrapper.map((rad) => (
@@ -198,6 +202,7 @@ const Regler: NextPage = () => {
                     <span className="font-medium text-stone-900">{r.fristerVinnerTopps}</span>{' '}
                     {r.fristerVinnerToppsTekst}
                 </p>
+                <p>{r.fristerVinnerToppsAndresjanse}</p>
             </Seksjon>
         </div>
     )
