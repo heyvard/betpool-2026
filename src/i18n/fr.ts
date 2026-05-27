@@ -56,6 +56,14 @@ const fr: Translations = {
         ikkeValgt: 'Non sélectionné',
         hvilkenSpiller: 'Quel joueur marque le plus de buts ?',
         skrivNavn: 'Écrire le nom',
+        endrevinduInfo: 'Vous pouvez modifier une fois — les points seront divisés par deux.',
+        endrevinduFrist: "Modifiable jusqu'au début des quarts de finale ({{dato}}).",
+        endrevinduLaastMedHalv: 'Modifié — points divisés par deux',
+        bekreftEndringVinner:
+            "Êtes-vous sûr(e) ? Vous ne pouvez modifier qu'une seule fois, et les points pour le pronostic champion seront divisés par deux.",
+        bekreftEndringTopps:
+            "Êtes-vous sûr(e) ? Vous ne pouvez modifier qu'une seule fois, et les points pour le pronostic meilleur buteur seront divisés par deux.",
+        lagreEndring: 'Enregistrer la modification',
     },
     mineTips: {
         spilteKamper: 'Matchs joués',

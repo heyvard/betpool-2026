@@ -54,6 +54,12 @@ const no = {
         ikkeValgt: 'Ikke valgt',
         hvilkenSpiller: 'Hvilken spiller scorer flest mål?',
         skrivNavn: 'Skriv navn',
+        endrevinduInfo: 'Du kan endre én gang — poengene halveres ved endring.',
+        endrevinduFrist: 'Kan endres frem til kvartfinalen starter ({{dato}}).',
+        endrevinduLaastMedHalv: 'Endret — halverte poeng',
+        bekreftEndringVinner: 'Er du sikker? Du kan bare endre én gang, og poengene for vinner-tipset halveres.',
+        bekreftEndringTopps: 'Er du sikker? Du kan bare endre én gang, og poengene for toppscorer-tipset halveres.',
+        lagreEndring: 'Lagre endring',
     },
     mineTips: {
         spilteKamper: 'Spilte kamper',

@@ -14,7 +14,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import { useDebouncedCallback } from 'use-debounce'
 import nb from 'dayjs/locale/nb'
 import fr from 'dayjs/locale/fr'
-import { erEtterFørsteRunde, førsteRunde } from '../utils/isInFirstRound'
+import { erEtterFørsteRunde, erIEndrevindu, førsteRunde, endrevinduSlutt } from '../utils/isInFirstRound'
 import { nå } from '../utils/testClock'
 import { LoadingScreen } from '../components/loading/LoadingScreen'
 import { VarslerHint } from '../components/VarslerHint'
@@ -48,6 +48,7 @@ const Home: NextPage = () => {
         return dayjs(a.game_start).isAfter(nå()) && dayjs(a.game_start).isBefore(nå().add(2, 'hours'))
     })
     const laast = erEtterFørsteRunde()
+    const endrevindu = erIEndrevindu()
 
     return (
         <div className="space-y-4">
@@ -94,16 +95,20 @@ const Home: NextPage = () => {
                     <FristMerke laast={laast} />
                 </div>
                 <p className="mt-0.5 text-xs text-stone-500">
-                    {laast
-                        ? t.hjem.vmIGangLaast
-                        : tx(t.hjem.kanEndresFremTil, {
+                    {!laast
+                        ? tx(t.hjem.kanEndresFremTil, {
                               dato: førsteRunde.locale(dayjsLocale).format('dddd D. MMM [kl] HH:mm'),
-                          })}
+                          })
+                        : endrevindu
+                          ? tx(t.hjem.endrevinduFrist, {
+                                dato: endrevinduSlutt.locale(dayjsLocale).format('dddd D. MMM [kl] HH:mm'),
+                            })
+                          : t.hjem.vmIGangLaast}
                 </p>
             </div>
 
-            <VinnerKort megselv={megselv} laast={laast} />
-            <ToppscorerKort megselv={megselv} laast={laast} />
+            <VinnerKort megselv={megselv} laast={laast} endrevindu={endrevindu} />
+            <ToppscorerKort megselv={megselv} laast={laast} endrevindu={endrevindu} />
         </div>
     )
 }
@@ -272,7 +277,7 @@ function RadKort({
     )
 }
 
-function VinnerKort({ megselv, laast }: { megselv: User; laast: boolean }) {
+function VinnerKort({ megselv, laast, endrevindu }: { megselv: User; laast: boolean; endrevindu: boolean }) {
     const authedFetch = useAuthedFetch()
     const queryClient = useQueryClient()
     const { t, locale } = useLanguage()
@@ -289,7 +294,13 @@ function VinnerKort({ megselv, laast }: { megselv: User; laast: boolean }) {
         setWinner(lagretWinner)
     }
 
+    const kanEndreMedHalvering = endrevindu && laast && !megselv.winner_endret && !!megselv.winner
+    const visLaast = laast && !kanEndreMedHalvering
+
     const lagre = async (ny: string) => {
+        if (kanEndreMedHalvering) {
+            if (!window.confirm(t.hjem.bekreftEndringVinner)) return
+        }
         setFeil(null)
         const forrige = winner
         setWinner(ny)
@@ -319,47 +330,62 @@ function VinnerKort({ megselv, laast }: { megselv: User; laast: boolean }) {
                 tittel={t.hjem.verdensmester}
                 undertittel={t.hjem.hvemLofterPokalen}
             >
-                {laast ? (
+                {visLaast ? (
                     <ValgtVerdi
                         venstre={<span className="text-xl leading-none">{hentFlag(winner)}</span>}
                         tekst={hentNavn(winner, locale)}
-                        ikon={<Lock className="h-4 w-4 text-stone-400" />}
+                        ikon={
+                            megselv.winner_endret ? (
+                                <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-800">
+                                    ½
+                                </span>
+                            ) : (
+                                <Lock className="h-4 w-4 text-stone-400" />
+                            )
+                        }
                     />
                 ) : (
-                    <label className="relative -mr-2 flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1 hover:bg-stone-50">
-                        <span className="sr-only">{t.hjem.velgVerdensmester}</span>
-                        {winner ? (
-                            <>
-                                <span className="text-xl leading-none" aria-hidden>
-                                    {hentFlag(winner)}
-                                </span>
-                                <span className="max-w-[8rem] truncate text-sm font-bold text-stone-900">
-                                    {hentNavn(winner, locale)}
-                                </span>
-                            </>
-                        ) : (
-                            <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-bold text-amber-800">
-                                {t.hjem.velgLag}
+                    <>
+                        {kanEndreMedHalvering && (
+                            <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-800 ring-1 ring-amber-200">
+                                {t.hjem.endrevinduInfo}
                             </span>
                         )}
-                        <ChevronRight className="h-4 w-4 text-stone-400" />
-                        <select
-                            value={winner}
-                            disabled={lagrer}
-                            onChange={(e) => lagre(e.target.value)}
-                            aria-label={t.hjem.velgVerdensmester}
-                            className="absolute inset-0 cursor-pointer opacity-0 disabled:cursor-not-allowed"
-                        >
-                            <option value="" disabled>
-                                {t.hjem.velgLagPlaceholder}
-                            </option>
-                            {lagSortert.map((l) => (
-                                <option key={l.engelsk} value={l.engelsk}>
-                                    {l.flagg + ' ' + l.visningsnavn}
+                        <label className="relative -mr-2 flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1 hover:bg-stone-50">
+                            <span className="sr-only">{t.hjem.velgVerdensmester}</span>
+                            {winner ? (
+                                <>
+                                    <span className="text-xl leading-none" aria-hidden>
+                                        {hentFlag(winner)}
+                                    </span>
+                                    <span className="max-w-[8rem] truncate text-sm font-bold text-stone-900">
+                                        {hentNavn(winner, locale)}
+                                    </span>
+                                </>
+                            ) : (
+                                <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-bold text-amber-800">
+                                    {t.hjem.velgLag}
+                                </span>
+                            )}
+                            <ChevronRight className="h-4 w-4 text-stone-400" />
+                            <select
+                                value={winner}
+                                disabled={lagrer}
+                                onChange={(e) => lagre(e.target.value)}
+                                aria-label={t.hjem.velgVerdensmester}
+                                className="absolute inset-0 cursor-pointer opacity-0 disabled:cursor-not-allowed"
+                            >
+                                <option value="" disabled>
+                                    {t.hjem.velgLagPlaceholder}
                                 </option>
-                            ))}
-                        </select>
-                    </label>
+                                {lagSortert.map((l) => (
+                                    <option key={l.engelsk} value={l.engelsk}>
+                                        {l.flagg + ' ' + l.visningsnavn}
+                                    </option>
+                                ))}
+                            </select>
+                        </label>
+                    </>
                 )}
             </RadKort>
             <StatusLinjeKompakt lagrer={lagrer} nyligLagret={nyligLagret} feil={feil} />
@@ -367,7 +393,7 @@ function VinnerKort({ megselv, laast }: { megselv: User; laast: boolean }) {
     )
 }
 
-function ToppscorerKort({ megselv, laast }: { megselv: User; laast: boolean }) {
+function ToppscorerKort({ megselv, laast, endrevindu }: { megselv: User; laast: boolean; endrevindu: boolean }) {
     const authedFetch = useAuthedFetch()
     const queryClient = useQueryClient()
     const { t } = useLanguage()
@@ -382,6 +408,9 @@ function ToppscorerKort({ megselv, laast }: { megselv: User; laast: boolean }) {
         setForrigeLagret(lagretTopscorer)
         setTopscorer(lagretTopscorer)
     }
+
+    const kanEndreMedHalvering = endrevindu && laast && !megselv.topscorer_endret && !!megselv.topscorer
+    const visLaast = laast && !kanEndreMedHalvering
 
     const lagreDebounced = useDebouncedCallback(async (ny: string) => {
         setFeil(null)
@@ -402,9 +431,31 @@ function ToppscorerKort({ megselv, laast }: { megselv: User; laast: boolean }) {
         }
     }, 600)
 
+    const lagreEndring = async () => {
+        if (!window.confirm(t.hjem.bekreftEndringTopps)) return
+        setFeil(null)
+        setLagrer(true)
+        try {
+            const response = await authedFetch('/api/v1/me/', {
+                method: 'PUT',
+                body: JSON.stringify({ topscorer: topscorer.trim() }),
+            })
+            if (!response.ok) {
+                setFeil(t.felles.feil)
+                return
+            }
+            queryClient.invalidateQueries({ queryKey: ['user-me'] }).then()
+            blink(setNyligLagret)
+        } finally {
+            setLagrer(false)
+        }
+    }
+
     const onChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setTopscorer(e.target.value)
-        lagreDebounced(e.target.value)
+        if (!kanEndreMedHalvering) {
+            lagreDebounced(e.target.value)
+        }
     }
 
     const lagret = topscorer.trim()
@@ -416,7 +467,7 @@ function ToppscorerKort({ megselv, laast }: { megselv: User; laast: boolean }) {
                 tittel={t.hjem.toppscorer}
                 undertittel={t.hjem.hvemScorerFlest}
             >
-                {laast ? (
+                {visLaast ? (
                     <ValgtVerdi
                         venstre={
                             lagret ? (
@@ -426,32 +477,59 @@ function ToppscorerKort({ megselv, laast }: { megselv: User; laast: boolean }) {
                             ) : null
                         }
                         tekst={lagret || t.hjem.ikkeValgt}
-                        ikon={<Lock className="h-4 w-4 text-stone-400" />}
+                        ikon={
+                            megselv.topscorer_endret ? (
+                                <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-800">
+                                    ½
+                                </span>
+                            ) : (
+                                <Lock className="h-4 w-4 text-stone-400" />
+                            )
+                        }
                     />
                 ) : (
-                    <div className="flex min-w-0 items-center gap-2">
-                        {lagret && (
-                            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-amber-100 text-xs font-bold text-amber-700">
-                                {initialer(lagret)}
+                    <div className="flex min-w-0 flex-col items-end gap-1">
+                        {kanEndreMedHalvering && (
+                            <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-800 ring-1 ring-amber-200">
+                                {t.hjem.endrevinduInfo}
                             </span>
                         )}
-                        <label htmlFor="topscorer-input" className="sr-only">
-                            {t.hjem.hvilkenSpiller}
-                        </label>
-                        <input
-                            id="topscorer-input"
-                            type="text"
-                            value={topscorer}
-                            disabled={lagrer}
-                            placeholder={t.hjem.skrivNavn}
-                            onChange={onChange}
-                            className={cn(
-                                'w-32 min-w-0 rounded-md bg-transparent px-1 py-1 text-right text-sm font-bold text-stone-900',
-                                'placeholder:font-normal placeholder:text-stone-400',
-                                'focus:bg-stone-50 focus:outline-hidden focus:ring-2 focus:ring-amber-400',
-                                'disabled:cursor-not-allowed',
+                        <div className="flex min-w-0 items-center gap-2">
+                            {lagret && (
+                                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-amber-100 text-xs font-bold text-amber-700">
+                                    {initialer(lagret)}
+                                </span>
                             )}
-                        />
+                            <label htmlFor="topscorer-input" className="sr-only">
+                                {t.hjem.hvilkenSpiller}
+                            </label>
+                            <input
+                                id="topscorer-input"
+                                type="text"
+                                value={topscorer}
+                                disabled={lagrer}
+                                placeholder={t.hjem.skrivNavn}
+                                onChange={onChange}
+                                className={cn(
+                                    'w-32 min-w-0 rounded-md bg-transparent px-1 py-1 text-right text-sm font-bold text-stone-900',
+                                    'placeholder:font-normal placeholder:text-stone-400',
+                                    'focus:bg-stone-50 focus:outline-hidden focus:ring-2 focus:ring-amber-400',
+                                    'disabled:cursor-not-allowed',
+                                )}
+                            />
+                            {kanEndreMedHalvering && (
+                                <button
+                                    onClick={lagreEndring}
+                                    disabled={lagrer || !lagret || lagret === (megselv.topscorer ?? '').trim()}
+                                    className={cn(
+                                        'shrink-0 rounded-md bg-amber-500 px-2 py-1 text-xs font-bold text-white',
+                                        'hover:bg-amber-600 disabled:cursor-not-allowed disabled:opacity-40',
+                                    )}
+                                >
+                                    {t.hjem.lagreEndring}
+                                </button>
+                            )}
+                        </div>
                     </div>
                 )}
             </RadKort>

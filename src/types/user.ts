@@ -19,6 +19,8 @@ export interface User {
      * koordinert deploy uten gevinst.
      */
     topscorer: string | undefined
+    winner_endret: boolean
+    topscorer_endret: boolean
     notif_general: boolean
     notif_reminders: boolean
     notif_summary: boolean
