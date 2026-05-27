@@ -10,55 +10,65 @@ import nb from 'dayjs/locale/nb'
 import { SelectField } from '@/components/ui/select-field'
 import { BodyShort } from '@/components/ui/typography'
 
+const LAG_OPTIONS = (
+    <>
+        {alleLagSortert.map((l) => (
+            <option key={l.engelsk} value={l.engelsk}>
+                {l.flagg + ' ' + l.norsk}
+            </option>
+        ))}
+        <option value="To be announced">TBA</option>
+    </>
+)
+
+const ALLE_LAG_ENGELSK = new Set(alleLagSortert.map((l) => l.engelsk))
+
+function TeamSelect({
+    match,
+    side,
+    lagrer,
+    onChange,
+}: {
+    match: Match
+    side: 'home_team' | 'away_team'
+    lagrer: boolean
+    onChange: (team: string) => void
+}) {
+    const current = ALLE_LAG_ENGELSK.has(match[side]) ? match[side] : 'To be announced'
+    return (
+        <SelectField
+            disabled={lagrer}
+            id={String(match.match_num) + side}
+            label={side === 'home_team' ? 'Hjemmelag' : 'Bortelag'}
+            value={current}
+            onChange={(e) => onChange(e.target.value)}
+        >
+            {LAG_OPTIONS}
+        </SelectField>
+    )
+}
+
 export const SluttspillView = ({ match }: { match: Match }) => {
     const kampstart = dayjs(match.game_start)
-
     const [lagrer, setLagrer] = useState(false)
     const authedFetch = useAuthedFetch()
     const queryClient = useQueryClient()
 
-    function endreHjemmelag(lag: 'home_team' | 'away_team') {
-        function value() {
-            if (alleLagSortert.map((l) => l.engelsk).includes(match[lag])) {
-                return match[lag]
-            } else {
-                return 'To be announced'
+    const lagre = async (side: 'home_team' | 'away_team', team: string) => {
+        try {
+            setLagrer(true)
+            const body = { [side]: team }
+            const response = await authedFetch(`/api/v1/matches/${match.match_num}`, {
+                method: 'PUT',
+                body: JSON.stringify(body),
+            })
+            if (!response.ok) {
+                window.alert('oops, feil ved lagring')
             }
+            queryClient.invalidateQueries({ queryKey: ['matches'] }).then()
+        } finally {
+            setLagrer(false)
         }
-
-        return (
-            <SelectField
-                disabled={lagrer}
-                id={String(match.match_num) + lag}
-                label={lag === 'home_team' ? 'Hjemmelag' : 'Bortelag'}
-                value={value()}
-                onChange={async (e) => {
-                    let team = e.target.value
-                    try {
-                        setLagrer(true)
-                        const val = {} as Record<string, string>
-                        val[lag] = team
-                        const response = await authedFetch(`/api/v1/matches/${match.match_num}`, {
-                            method: 'PUT',
-                            body: JSON.stringify(val),
-                        })
-                        if (!response.ok) {
-                            window.alert('oops, feil ved lagring')
-                        }
-                        queryClient.invalidateQueries({ queryKey: ['matches'] }).then()
-                    } finally {
-                        setLagrer(false)
-                    }
-                }}
-            >
-                {alleLagSortert.map((l) => (
-                    <option key={l.engelsk} value={l.engelsk}>
-                        {l.flagg + ' ' + l.norsk}
-                    </option>
-                ))}
-                <option value="To be announced">TBA</option>
-            </SelectField>
-        )
     }
 
     return (
@@ -67,8 +77,8 @@ export const SluttspillView = ({ match }: { match: Match }) => {
             <BodyShort className="italic text-sm" spacing>
                 {kampstart.locale(nb).format('dddd D MMM  HH:mm')}
             </BodyShort>
-            {endreHjemmelag('home_team')}
-            {endreHjemmelag('away_team')}
+            <TeamSelect match={match} side="home_team" lagrer={lagrer} onChange={(team) => lagre('home_team', team)} />
+            <TeamSelect match={match} side="away_team" lagrer={lagrer} onChange={(team) => lagre('away_team', team)} />
         </BpCard>
     )
 }

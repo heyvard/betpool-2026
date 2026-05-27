@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useMemo, useState } from 'react'
 import { Goal, ListChecks, Sparkles, Trophy, Zap } from 'lucide-react'
 
 import { useAuthedFetch } from '../auth/authedFetch'
@@ -19,14 +19,17 @@ export function Onboarding({ onFerdig }: { onFerdig: () => void }) {
     const [steg, setSteg] = useState(0)
     const [lagrer, setLagrer] = useState(false)
 
-    const SLIDES = [
-        { ...t.onboarding.slides[0], visual: <TipsVisual /> },
-        { ...t.onboarding.slides[1], visual: <JokerVisual jokerAktiv={t.onboarding.jokerAktiv} /> },
-        { ...t.onboarding.slides[2], visual: <ScoreVisual sjeldenhetMer={t.onboarding.sjeldenhetMer} /> },
-    ]
+    const slides = useMemo(
+        () => [
+            { ...t.onboarding.slides[0], visual: <TipsVisual /> },
+            { ...t.onboarding.slides[1], visual: <JokerVisual jokerAktiv={t.onboarding.jokerAktiv} /> },
+            { ...t.onboarding.slides[2], visual: <ScoreVisual sjeldenhetMer={t.onboarding.sjeldenhetMer} /> },
+        ],
+        [t],
+    )
 
-    const aktiv = SLIDES[steg]
-    const erSiste = steg === SLIDES.length - 1
+    const aktiv = slides[steg]
+    const erSiste = steg === slides.length - 1
 
     const fullfør = async () => {
         if (lagrer) return
@@ -62,7 +65,7 @@ export function Onboarding({ onFerdig }: { onFerdig: () => void }) {
                     {t.onboarding.hoppOver}
                 </button>
                 <div className="flex gap-2" aria-hidden>
-                    {SLIDES.map((_, i) => (
+                    {slides.map((_, i) => (
                         <span
                             key={i}
                             className={cn('h-1.5 w-6 rounded-full', i === steg ? 'bg-amber-500' : 'bg-stone-700')}

@@ -1,6 +1,6 @@
 import { Match } from '../../types/types'
 import dayjs from 'dayjs'
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { hentFlag, hentNorsk } from '../../utils/lag'
 import NextLink from 'next/link'
 import { UseMutateMatch } from '../../queries/mutateMatch'
@@ -27,11 +27,14 @@ export const MatchView = ({ match }: { match: Match }) => {
     const [nyligLagret, setNyliglagret] = useState(false)
     const kampstart = dayjs(match.game_start)
 
+    useEffect(() => {
+        if (!nyligLagret) return
+        const t = setTimeout(() => setNyliglagret(false), 2000)
+        return () => clearTimeout(t)
+    }, [nyligLagret])
+
     const lagreCb = () => {
         setNyliglagret(true)
-        setTimeout(() => {
-            setNyliglagret(false)
-        }, 2000)
     }
 
     const stringTilNumber = (prop: string): number | null => {

@@ -19,32 +19,34 @@ interface StatusStyle {
     poengTone: string
 }
 
-function statusStyle(bet: MatchBetMedScore): StatusStyle {
-    if (bet.riktigResultat) {
-        return {
-            stripe: 'bg-emerald-500',
-            badge: 'bg-emerald-100 text-emerald-800',
-            badgeIcon: <CheckCheck className="w-3 h-3" />,
-            bg: 'bg-emerald-50/40',
-            poengTone: 'bg-amber-100 text-amber-900 ring-amber-200',
-        }
-    }
-    if (bet.riktigUtfall) {
-        return {
-            stripe: 'bg-amber-500',
-            badge: 'bg-amber-100 text-amber-800',
-            badgeIcon: <Target className="w-3 h-3" />,
-            bg: 'bg-amber-50/30',
-            poengTone: 'bg-amber-100 text-amber-900 ring-amber-200',
-        }
-    }
-    return {
+const STATUS: Record<'riktigResultat' | 'riktigUtfall' | 'bom', StatusStyle> = {
+    riktigResultat: {
+        stripe: 'bg-emerald-500',
+        badge: 'bg-emerald-100 text-emerald-800',
+        badgeIcon: <CheckCheck className="w-3 h-3" />,
+        bg: 'bg-emerald-50/40',
+        poengTone: 'bg-amber-100 text-amber-900 ring-amber-200',
+    },
+    riktigUtfall: {
+        stripe: 'bg-amber-500',
+        badge: 'bg-amber-100 text-amber-800',
+        badgeIcon: <Target className="w-3 h-3" />,
+        bg: 'bg-amber-50/30',
+        poengTone: 'bg-amber-100 text-amber-900 ring-amber-200',
+    },
+    bom: {
         stripe: 'bg-stone-300',
         badge: 'bg-stone-100 text-stone-600',
         badgeIcon: <X className="w-3 h-3" />,
         bg: 'bg-white',
         poengTone: 'bg-stone-100 text-stone-600 ring-stone-200',
-    }
+    },
+}
+
+function statusStyle(bet: MatchBetMedScore): StatusStyle {
+    if (bet.riktigResultat) return STATUS.riktigResultat
+    if (bet.riktigUtfall) return STATUS.riktigUtfall
+    return STATUS.bom
 }
 
 export const PastBetView = ({ bet, matchside, navn }: { bet: MatchBetMedScore; matchside: boolean; navn: string }) => {

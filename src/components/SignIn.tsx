@@ -12,8 +12,7 @@ const PUNKT_IKONER = [
 export function SignInScreen() {
     const { t } = useLanguage()
 
-    const isFacebookInAppBrowser =
-        /FB_IAB/.test(navigator.userAgent) || /FBAN/.test(navigator.userAgent) || /FBAV/.test(navigator.userAgent)
+    const isFacebookInAppBrowser = typeof navigator !== 'undefined' && /FB_IAB|FBAN|FBAV/.test(navigator.userAgent)
 
     return (
         <div className="space-y-4">

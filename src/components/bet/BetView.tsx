@@ -50,11 +50,14 @@ export const BetView = ({ bet, matchside, joker }: { bet: Bet; matchside: boolea
     const [nyligLagret, setNyliglagret] = useState(false)
     const kampstart = dayjs(bet.game_start)
 
+    useEffect(() => {
+        if (!nyligLagret) return
+        const t = setTimeout(() => setNyliglagret(false), 2000)
+        return () => clearTimeout(t)
+    }, [nyligLagret])
+
     const lagreCb = () => {
         setNyliglagret(true)
-        setTimeout(() => {
-            setNyliglagret(false)
-        }, 2000)
         if (typeof window !== 'undefined' && !localStorage.getItem(FØRSTE_TIPP_NØKKEL)) {
             localStorage.setItem(FØRSTE_TIPP_NØKKEL, '1')
             if (brukerKanPrompttes()) {
