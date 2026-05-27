@@ -147,10 +147,7 @@ const handler = async function handler(opts: ApiHandlerOpts): Promise<void> {
             res.status(403).end()
             return
         }
-        await client.query(
-            `UPDATE leagues SET deleted_at = NOW() WHERE id = $1`,
-            [ligaId],
-        )
+        await client.query(`UPDATE leagues SET deleted_at = NOW() WHERE id = $1`, [ligaId])
         await loggEndring(client, {
             actorUserId: user.id,
             entitet: 'league',

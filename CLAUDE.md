@@ -14,6 +14,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `pnpm migrate` — `knex migrate:latest` against `PG_URI` (CockroachDB).
 - CI (`.github/workflows/workflow.yaml`) runs lint, `test:ci`, and `prettier:check`; a separate `integration-test` job runs `test:integration` + `test:e2e`; pushes to `master` deploy to Vercel.
 
+## Before every commit
+
+Always run `pnpm format` (prettier write + lint fix) followed by `pnpm test:ci` before committing. This prevents CI failures on formatting and lint.
+
 ## Language and naming
 
 UI strings and many identifiers are Norwegian (e.g., `erIFørsteRunde`, `rundeTilTekst`, `brukere`, `sluttspill`, `regnUtScoreForKamp`). Match the existing language when adding code in a file — don't translate to English.
