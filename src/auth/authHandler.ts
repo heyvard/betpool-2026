@@ -47,6 +47,10 @@ export function auth(fn: { (_opts: ApiHandlerOpts): Promise<void> }) {
                     notif_reminders: true,
                     notif_summary: true,
                     onboarded_at: new Date().toISOString(),
+                    winner: '',
+                    topscorer: undefined,
+                    winner_endret: false,
+                    topscorer_endret: false,
                 } as User,
             })
         }
