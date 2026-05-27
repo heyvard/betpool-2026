@@ -16,7 +16,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Before every commit
 
-Always run `pnpm format` (prettier write + lint fix) followed by `pnpm test:ci` before committing. This prevents CI failures on formatting and lint.
+Always run `pnpm format` (prettier write + lint fix) before committing. This prevents CI failures on formatting and lint.
 
 ## Language and naming
 
