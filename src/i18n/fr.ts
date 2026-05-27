@@ -179,10 +179,9 @@ const fr: Translations = {
         vinnerToppscorerTittel: 'Vainqueur et meilleur buteur',
         vinnerToppscorerTekst1:
             'En plus des paris sur les matchs, vous pariez sur le vainqueur de la CM et sur le meilleur buteur du tournoi.',
-        vinnerToppscorerTekst2:
-            'Les deux peuvent être modifiés pendant le premier tour de poules. Ils sont verrouillés au début du deuxième tour.',
+        vinnerToppscorerTekst2: 'Les deux peuvent être modifiés librement pendant le premier tour de poules.',
         vinnerToppscorerTekst2AndreRunde:
-            "Après le premier tour de poules, vous pouvez tout de même modifier une fois — jusqu'aux huitièmes de finale inclus. Le prix : les points pour ce pari modifié sont divisés par deux. La modification est immédiatement verrouillée.",
+            "Une chance supplémentaire après le tour 1 : vous pouvez modifier chaque pari une dernière fois jusqu'au début des quarts de finale — mais les points de ce pari modifié sont divisés par deux. Après modification, le pari est verrouillé pour le reste du tournoi.",
         vinnerToppscorerTekst3:
             "Pour chacune des deux questions, un bon pari rapporte des points bonus qui dépendent du nombre d'autres joueurs ayant également trouvé :",
         vinnerToppscorerTips: "Moins il y a de gagnants, plus chaque pari vaut — jusqu'à 25 points.",
@@ -193,9 +192,9 @@ const fr: Translations = {
         fristerKamptipsTekst:
             "peuvent être modifiés jusqu'au coup de sifflet. Les paris soumis après le coup d'envoi ne sont pas enregistrés.",
         fristerVinnerTopps: 'Vainqueur et meilleur buteur',
-        fristerVinnerToppsTekst: 'sont verrouillés au début du deuxième tour de poules.',
+        fristerVinnerToppsTekst: 'peuvent être modifiés librement pendant le tour 1 des poules, puis sont verrouillés.',
         fristerVinnerToppsAndresjanse:
-            "Deuxième chance : une modification autorisée jusqu'au début des quarts de finale (points divisés par deux).",
+            "Une chance supplémentaire : jusqu'au début des quarts de finale, vous pouvez modifier chaque pari une dernière fois — les points de ce pari sont divisés par deux, et il est immédiatement verrouillé définitivement.",
         bonustrapper: [
             { terskel: 'Vous seul avez trouvé', poeng: 25 },
             { terskel: 'Moins de 5 % ont trouvé', poeng: 18 },
