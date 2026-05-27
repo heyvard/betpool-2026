@@ -33,7 +33,7 @@ export function erEtterFørsteRunde(req?: CookieReq): boolean {
 }
 
 // Endrevinduet: brukere kan endre vinner/toppscorer én gang etter gruppespill
-// runde 1, frem til og med 16-delsfinalen (dvs. vinduet lukkes når kvartfinalen starter).
+// runde 1, frem til kvartfinalen starter (åpent gjennom sekstendels- og åttendedelsfinalene).
 function finnStartenPåKvartfinale(): dayjs.Dayjs {
     const kvartfinale = getMatches()
         .filter((m) => m.round === 6)
