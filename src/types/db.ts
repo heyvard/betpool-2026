@@ -9,4 +9,8 @@ export interface User {
     scoreadmin: boolean
     active: boolean
     id: string
+    winner: string
+    topscorer: string | undefined
+    winner_endret: boolean
+    topscorer_endret: boolean
 }
