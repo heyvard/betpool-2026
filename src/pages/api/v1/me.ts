@@ -42,25 +42,32 @@ const handler = async function handler(opts: ApiHandlerOpts): Promise<void> {
         return
     }
 
-    const nyBruker = await client.query(
-        `
+    try {
+        const nyBruker = await client.query(
+            `
         INSERT INTO users (firebase_user_id, picture, active, email, name, scoreadmin, paymentadmin, superadmin, paid, winner)
         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING *`,
-        [
-            jwtPayload.sub,
-            jwtPayload.picture,
-            true,
-            jwtPayload.email,
-            jwtPayload.name || jwtPayload.email,
-            false,
-            false,
-            false,
-            false,
-            '',
-        ],
-    )
-
-    res.status(200).json(nyBruker.rows[0])
+            [
+                jwtPayload.sub,
+                jwtPayload.picture,
+                true,
+                jwtPayload.email,
+                jwtPayload.name || jwtPayload.email,
+                false,
+                false,
+                false,
+                false,
+                '',
+            ],
+        )
+        res.status(200).json(nyBruker.rows[0])
+    } catch (err: any) {
+        if (err.code === '23505') {
+            res.status(409).json({ error: 'email_conflict' })
+            return
+        }
+        throw err
+    }
 }
 
 export default auth(handler)
