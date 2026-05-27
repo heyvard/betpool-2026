@@ -18,6 +18,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Always run `pnpm format` (prettier write + lint fix) before committing. This prevents CI failures on formatting and lint.
 
+Always run `pnpm exec tsc --noEmit` to check TypeScript compilation before committing. The integration-test CI job runs `next build` which includes a full type-check — TypeScript errors that slip through will break that job even if unit tests pass.
+
 ## Language and naming
 
 UI strings and many identifiers are Norwegian (e.g., `erIFørsteRunde`, `rundeTilTekst`, `brukere`, `sluttspill`, `regnUtScoreForKamp`). Match the existing language when adding code in a file — don't translate to English.
