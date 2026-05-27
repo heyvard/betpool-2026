@@ -103,10 +103,10 @@ export function calculateAllBetsExtended(allBets: AllBets): AllBetsExtended {
             let winnerPoints = 0
             let topscorerPoints = 0
             if (u.winner == winner) {
-                winnerPoints = poengPerVinner
+                winnerPoints = u.winner_endret ? Math.floor(poengPerVinner / 2) : poengPerVinner
             }
             if (riktigTopscorer(u.topscorer)) {
-                topscorerPoints = poengPerTopscorer
+                topscorerPoints = u.topscorer_endret ? Math.floor(poengPerTopscorer / 2) : poengPerTopscorer
             }
             return {
                 ...u,

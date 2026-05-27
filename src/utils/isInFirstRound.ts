@@ -31,3 +31,23 @@ export const førsteRunde = finnStartenPåAndreRunde()
 export function erEtterFørsteRunde(req?: CookieReq): boolean {
     return !erIFørsteRunde(req)
 }
+
+// Endrevinduet: brukere kan endre vinner/toppscorer én gang etter gruppespill
+// runde 1, frem til og med 16-delsfinalen (dvs. vinduet lukkes når kvartfinalen starter).
+function finnStartenPåKvartfinale(): dayjs.Dayjs {
+    const kvartfinale = getMatches()
+        .filter((m) => m.round === 6)
+        .map((m) => dayjs(m.game_start))
+        .sort((a, b) => a.valueOf() - b.valueOf())
+    if (kvartfinale.length === 0) {
+        throw new Error('Fant ingen kamper i kvartfinalen')
+    }
+    return kvartfinale[0]
+}
+
+export const endrevinduSlutt = finnStartenPåKvartfinale()
+
+export function erIEndrevindu(req?: CookieReq): boolean {
+    const tidspunkt = req ? dayjs(serverNå(req)) : nå()
+    return erEtterFørsteRunde(req) && endrevinduSlutt.isAfter(tidspunkt)
+}
