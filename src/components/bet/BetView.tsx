@@ -116,25 +116,25 @@ export const BetView = ({ bet, matchside, joker }: { bet: Bet; matchside: boolea
                 joker.aktiv ? 'ring-2 ring-amber-300' : 'ring-1 ring-stone-200/70',
             )}
         >
-            <div className="flex items-center justify-between gap-2 px-4 pt-3 pb-2">
-                <div className="flex items-center gap-2 min-w-0">
-                    <span className="inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-stone-500">
+            <div className="flex items-start justify-between gap-2 px-4 pt-3 pb-2">
+                <div className="flex flex-wrap items-center gap-1.5 min-w-0">
+                    <span className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap text-[10px] font-semibold uppercase tracking-wider text-stone-500">
                         <span className="h-1.5 w-1.5 rounded-full bg-amber-500" aria-hidden />
                         {rundeTilTekst(bet.round, locale)}
                     </span>
                     {bet.group && (
-                        <span className="inline-flex items-center rounded-full bg-stone-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-stone-600 ring-1 ring-stone-200">
+                        <span className="inline-flex shrink-0 items-center whitespace-nowrap rounded-full bg-stone-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-stone-600 ring-1 ring-stone-200">
                             {gruppeTilVisning(bet.group, locale)}
                         </span>
                     )}
                     {erNorgeKamp(bet.home_team, bet.away_team) && (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-red-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-red-800 ring-1 ring-red-200">
+                        <span className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full bg-red-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-red-800 ring-1 ring-red-200">
                             <Flag className="w-3 h-3" />
                             {t.mineTips.norgeDobbel}
                         </span>
                     )}
                 </div>
-                <span className="inline-flex items-center gap-1.5 text-xs text-stone-500 shrink-0">
+                <span className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap text-xs text-stone-500">
                     <Calendar className="w-3.5 h-3.5" />
                     {kampstart.locale(dayjsLocale).format('ddd D. MMM HH:mm')}
                 </span>
