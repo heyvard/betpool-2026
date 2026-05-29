@@ -23,11 +23,12 @@ const handler = async function handler(opts: ApiHandlerOpts): Promise<void> {
 
     const reqBody = JSON.parse(req.body)
 
-    const updates: Record<string, number | string | null> = {}
+    const updates: Record<string, number | string | boolean | null> = {}
     if (typeof reqBody.home_score !== 'undefined') updates.home_score = reqBody.home_score
     if (typeof reqBody.away_score !== 'undefined') updates.away_score = reqBody.away_score
     if (typeof reqBody.home_team !== 'undefined') updates.home_team_override = reqBody.home_team
     if (typeof reqBody.away_team !== 'undefined') updates.away_team_override = reqBody.away_team
+    if (typeof reqBody.use_manual === 'boolean') updates.use_manual = reqBody.use_manual
 
     if (Object.keys(updates).length === 0) {
         res.status(200).json({ ok: true })
@@ -41,7 +42,7 @@ const handler = async function handler(opts: ApiHandlerOpts): Promise<void> {
     const values = [matchNum, ...Object.values(updates)]
 
     const før = await client.query(
-        `SELECT home_score, away_score, home_team_override, away_team_override
+        `SELECT home_score, away_score, home_team_override, away_team_override, use_manual
          FROM match_scores WHERE match_num = $1`,
         [matchNum],
     )

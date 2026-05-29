@@ -1,5 +1,19 @@
 import { Match, MatchStatus } from '../types/types'
 
+interface ScoreValue {
+    home: number | null
+    away: number | null
+}
+
+export interface FootballDataScore {
+    winner: string | null
+    duration: string | null
+    fullTime: ScoreValue
+    halfTime: ScoreValue
+    extraTime: ScoreValue | null
+    penalties: ScoreValue | null
+}
+
 // Rå kamp slik football-data.org v4 leverer den (feltene vi bruker).
 export interface FootballDataMatch {
     id: number
@@ -10,6 +24,7 @@ export interface FootballDataMatch {
     matchday: number | null
     homeTeam: { tla: string | null }
     awayTeam: { tla: string | null }
+    score: FootballDataScore
 }
 
 // football-data bruker URY for Uruguay; resten av appen (landNorsk/landFransk/

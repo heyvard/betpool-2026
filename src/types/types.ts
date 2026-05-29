@@ -38,6 +38,20 @@ export type MatchStatus =
     | 'CANCELLED'
     | 'AWARDED'
 
+export interface MatchAdminData {
+    manual_home_score: number | null
+    manual_away_score: number | null
+    synced_home_ft: number | null
+    synced_away_ft: number | null
+    synced_home_et: number | null
+    synced_away_et: number | null
+    synced_home_pen: number | null
+    synced_away_pen: number | null
+    synced_duration: string | null
+    score_synced_at: string | null
+    use_manual: boolean
+}
+
 export interface Match {
     game_start: string
     away_team: string
@@ -48,6 +62,7 @@ export interface Match {
     round: number
     group?: string
     status: MatchStatus
+    adminData?: MatchAdminData
 }
 
 export interface UserForAdmin {
