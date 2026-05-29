@@ -75,6 +75,7 @@ const fr: Translations = {
         huskaLagre: "N'oubliez pas d'enregistrer",
         endringIkkeLagret: 'Modification non enregistrée',
         kampHarStartet: 'Le match a commencé',
+        lageneIkkeKjent: 'Les équipes ne sont pas encore connues',
         seAllesBets: 'Voir les paris de tous',
         norgeDobbel: 'Norvège ×2',
         jokerAktiv: 'Joker actif — le match compte double',

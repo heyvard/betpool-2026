@@ -71,6 +71,7 @@ const no = {
         huskaLagre: 'Husk å lagre endringen',
         endringIkkeLagret: 'Endring ikke lagret',
         kampHarStartet: 'Kampen har startet',
+        lageneIkkeKjent: 'Lagene er ikke klare ennå',
         seAllesBets: 'Se alles bets',
         norgeDobbel: 'Norge ×2',
         jokerAktiv: 'Joker aktiv — kampen teller dobbelt',
