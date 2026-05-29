@@ -1,88 +1,60 @@
-import worldcupData from './worldcup2026.json'
+import { PoolClient } from 'pg'
 
-export interface Match {
+import { Match } from '../types/types'
+
+// Kampene bor i `matches`-tabellen (seedet fra football-data og holdt oppdatert
+// av sync-cronen, se src/server/syncMatches.ts). Lesing skjer server-side med en
+// PoolClient; klienten henter kamper via /api/v1/matches.
+
+interface MatchRow {
     match_num: number
     round: number
-    home_team: string
-    away_team: string
-    game_start: string
-    home_score: number | null
-    away_score: number | null
-    group?: string
+    home_team: string | null
+    away_team: string | null
+    game_start: Date
+    group: string | null
 }
 
-interface JsonMatch {
-    round: string
-    date: string
-    time: string
-    team1: string
-    team2: string
-    group?: string
-    ground?: string
-    num?: number
-}
-
-function roundStringToInt(roundStr: string): number {
-    if (roundStr.startsWith('Matchday ')) {
-        const n = parseInt(roundStr.substring('Matchday '.length), 10)
-        if (n <= 7) return 1
-        if (n <= 13) return 2
-        return 3
-    }
-    switch (roundStr) {
-        case 'Round of 32':
-            return 4
-        case 'Round of 16':
-            return 5
-        case 'Quarter-final':
-            return 6
-        case 'Semi-final':
-            return 7
-        case 'Match for third place':
-            return 8
-        case 'Final':
-            return 9
-        default:
-            return 1
+function radTilMatch(r: MatchRow): Match {
+    return {
+        match_num: r.match_num,
+        round: r.round,
+        home_team: r.home_team ?? '',
+        away_team: r.away_team ?? '',
+        game_start: r.game_start.toISOString(),
+        home_score: null,
+        away_score: null,
+        group: r.group ?? undefined,
     }
 }
 
-function parseGameStart(date: string, time: string): string {
-    const m = time.match(/^(\d+):(\d+) UTC([+-]\d+(?:\.\d+)?)$/)
-    if (!m) throw new Error(`Ugyldig tidsformat: ${time}`)
-    const hours = parseInt(m[1], 10)
-    const minutes = parseInt(m[2], 10)
-    const utcOffset = parseFloat(m[3])
-    const localMinutes = hours * 60 + minutes
-    const utcMinutes = localMinutes - utcOffset * 60
-    const base = new Date(date + 'T00:00:00Z')
-    base.setUTCMinutes(base.getUTCMinutes() + utcMinutes)
-    return base.toISOString()
+export async function hentKamper(client: PoolClient): Promise<Match[]> {
+    const rows = (
+        await client.query<MatchRow>(
+            `SELECT match_num, round, home_team, away_team, game_start, "group"
+             FROM matches
+             ORDER BY game_start ASC`,
+        )
+    ).rows
+    return rows.map(radTilMatch)
 }
 
-const _matches: Match[] = (worldcupData.matches as JsonMatch[]).map((m, i) => ({
-    match_num: i + 1,
-    round: roundStringToInt(m.round),
-    home_team: m.team1,
-    away_team: m.team2,
-    game_start: parseGameStart(m.date, m.time),
-    home_score: null,
-    away_score: null,
-    group: m.group,
-}))
-
-const _matchMap = new Map<number, Match>(_matches.map((m) => [m.match_num, m]))
-
-export function getMatches(): Match[] {
-    return _matches
+export async function hentKamp(client: PoolClient, num: number): Promise<Match | undefined> {
+    const rows = (
+        await client.query<MatchRow>(
+            `SELECT match_num, round, home_team, away_team, game_start, "group"
+             FROM matches
+             WHERE match_num = $1`,
+            [num],
+        )
+    ).rows
+    return rows.length ? radTilMatch(rows[0]) : undefined
 }
 
-export function getMatchByNum(num: number): Match | undefined {
-    return _matchMap.get(num)
-}
-
-export function getMatchMap(): Map<number, Match> {
-    return _matchMap
+export async function hentKampnumreIRunde(client: PoolClient, round: number): Promise<number[]> {
+    const rows = (await client.query<{ match_num: number }>(`SELECT match_num FROM matches WHERE round = $1`, [round]))
+        .rows
+    return rows.map((r) => r.match_num)
 }
 
 // Joker finnes til og med åttendedelsfinalene (Round of 16 = runde 5). Fra
@@ -91,12 +63,8 @@ export function kanHaJoker(round: number): boolean {
     return round >= 1 && round <= 5
 }
 
-export function getMatchNumsInRound(round: number): number[] {
-    return _matches.filter((m) => m.round === round).map((m) => m.match_num)
-}
-
 // Kamper der Norge spiller teller dobbelt — alle får doblet kamppoengene sine.
-const NORGE_NAVN = ['norway', 'norge']
+// Lag identifiseres med tre-bokstavskoden (tla).
 export function erNorgeKamp(homeTeam: string, awayTeam: string): boolean {
-    return [homeTeam, awayTeam].some((t) => NORGE_NAVN.includes(t.trim().toLowerCase()))
+    return [homeTeam, awayTeam].some((t) => t.trim().toUpperCase() === 'NOR')
 }

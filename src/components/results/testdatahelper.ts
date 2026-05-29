@@ -14,8 +14,8 @@ export function skapMatchBetArray(opts: {
         away_result: '2',
         round: opts.runde,
         game_start: 'whatever',
-        home_team: 'Danmkark',
-        away_team: 'Norge',
+        home_team: 'DEN',
+        away_team: 'NOR',
     }
     for (let i = 0; i < opts.antallHeltRiktig; i++) {
         bets.push({

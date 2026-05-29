@@ -17,6 +17,15 @@ export async function truncateAll(): Promise<void> {
     await withDb((c) => c.query('TRUNCATE users, bets, chat, match_scores, leagues, league_members CASCADE'))
 }
 
+// Et reelt match_num fra `matches`-tabellen (football-data sin id). `match_num`
+// er ikke lenger 1..N, så testene må slå opp en faktisk id.
+export async function førsteMatchNum(): Promise<number> {
+    return withDb(async (c) => {
+        const r = await c.query<{ match_num: number }>(`SELECT match_num FROM matches ORDER BY game_start ASC LIMIT 1`)
+        return r.rows[0].match_num
+    })
+}
+
 export interface SeedUser {
     firebase_user_id: string
     name: string

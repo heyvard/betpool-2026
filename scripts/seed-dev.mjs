@@ -28,7 +28,7 @@ const BETTERE = [
         name: 'Anne Bettelin',
         email: 'anne@test.local',
         paid: true,
-        winner: 'Brazil',
+        winner: 'BRA',
         topscorer: 'Vinicius Junior',
     },
     {
@@ -36,7 +36,7 @@ const BETTERE = [
         name: 'Bjørn Tipster',
         email: 'bjorn@test.local',
         paid: true,
-        winner: 'France',
+        winner: 'FRA',
         topscorer: 'Kylian Mbappé',
     },
     {
@@ -44,7 +44,7 @@ const BETTERE = [
         name: 'Carl Odds',
         email: 'carl@test.local',
         paid: false,
-        winner: 'Argentina',
+        winner: 'ARG',
         topscorer: 'Lionel Messi',
     },
     {
@@ -52,7 +52,7 @@ const BETTERE = [
         name: 'Dina Spår',
         email: 'dina@test.local',
         paid: true,
-        winner: 'Brazil',
+        winner: 'BRA',
         topscorer: 'Kylian Mbappé',
     },
     {
@@ -60,12 +60,14 @@ const BETTERE = [
         name: 'Even Lykke',
         email: 'even@test.local',
         paid: true,
-        winner: 'Spain',
+        winner: 'ESP',
         topscorer: 'Lamine Yamal',
     },
 ]
 
-// Bets på kamp 1–5 for hver betterne: [match_num, home_score, away_score].
+// Bets på de fem første kampene (kronologisk) for hver betterne, angitt ved
+// kamp-indeks 1–5: [kampIndeks, home_score, away_score]. Indeksen mappes til
+// faktiske match_num fra `matches`-tabellen ved seeding.
 // Bevisst varierte — noen treffer eksakt, noen kun utfall, noen bommer.
 const BETS = {
     'test-user-1': [
@@ -105,7 +107,7 @@ const BETS = {
     ],
 }
 
-// Ferdige resultater for kamp 1–5: [match_num, home_score, away_score].
+// Ferdige resultater for de fem første kampene: [kampIndeks, home_score, away_score].
 const RESULTATER = [
     [1, 2, 1],
     [2, 0, 0],
@@ -146,8 +148,14 @@ async function main() {
             await seedBruker(client, u)
         }
 
+        // Kamp-indeks (1–5) → faktisk match_num for de fem første kampene.
+        const kampRader = (await client.query('SELECT match_num FROM matches ORDER BY game_start ASC LIMIT 5')).rows
+        const matchNumFor = (indeks) => kampRader[indeks - 1]?.match_num
+
         for (const [fid, bets] of Object.entries(BETS)) {
-            for (const [matchNum, home, away] of bets) {
+            for (const [kampIndeks, home, away] of bets) {
+                const matchNum = matchNumFor(kampIndeks)
+                if (matchNum == null) continue
                 await client.query(
                     `INSERT INTO bets (user_id, match_num, home_score, away_score)
                      SELECT id, $2, $3, $4 FROM users WHERE firebase_user_id = $1
@@ -157,7 +165,9 @@ async function main() {
             }
         }
 
-        for (const [matchNum, home, away] of RESULTATER) {
+        for (const [kampIndeks, home, away] of RESULTATER) {
+            const matchNum = matchNumFor(kampIndeks)
+            if (matchNum == null) continue
             await client.query(
                 `INSERT INTO match_scores (match_num, home_score, away_score)
                  VALUES ($1, $2, $3)

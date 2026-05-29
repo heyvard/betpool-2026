@@ -1,7 +1,7 @@
 import { ApiHandlerOpts } from '../../../../../../types/apiHandlerOpts'
 import { serverNå } from '../../../../../../utils/testClock'
 import { auth } from '../../../../../../auth/authHandler'
-import { erNorgeKamp, getMatchByNum, getMatchNumsInRound, kanHaJoker } from '../../../../../../data/matches'
+import { erNorgeKamp, hentKamp, hentKampnumreIRunde, kanHaJoker } from '../../../../../../data/matches'
 import { loggEndring } from '../../../../../../data/auditLog'
 
 // Setter eller fjerner jokeren på en kamp. Jokeren dobler kamppoengene, og hver
@@ -28,7 +28,7 @@ const handler = async function handler(opts: ApiHandlerOpts): Promise<void> {
         return
     }
 
-    const match = getMatchByNum(matchNum)
+    const match = await hentKamp(client, matchNum)
     if (!match) {
         res.status(404).json({ error: 'match not found' })
         return
@@ -76,20 +76,19 @@ const handler = async function handler(opts: ApiHandlerOpts): Promise<void> {
         return
     }
 
-    // Håndhev «én joker per runde». Finn en evt. eksisterende joker i runden.
-    const rundensKamper = getMatchNumsInRound(match.round)
-    const eksisterende = await client.query<{ match_num: number }>(
-        `SELECT match_num FROM bets
-         WHERE user_id = $1 AND joker = true AND match_num = ANY($2::int[])`,
+    // Håndhev «én joker per runde». Finn en evt. eksisterende joker i runden
+    // sammen med kampstart i ett spørsmål.
+    const rundensKamper = await hentKampnumreIRunde(client, match.round)
+    const eksisterende = await client.query<{ match_num: number; game_start: Date }>(
+        `SELECT b.match_num, m.game_start
+         FROM bets b
+         JOIN matches m ON m.match_num = b.match_num
+         WHERE b.user_id = $1 AND b.joker = true AND b.match_num = ANY($2::int[])`,
         [user.id, rundensKamper],
     )
 
-    // En joker som ligger på en kamp som alt har startet er låst og kan ikke flyttes.
-    const låst = eksisterende.rows.some((rad) => {
-        if (rad.match_num === matchNum) return false
-        const annen = getMatchByNum(rad.match_num)
-        return annen != null && new Date(annen.game_start) <= now
-    })
+    // En joker som ligger på en annen kamp som alt har startet er låst og kan ikke flyttes.
+    const låst = eksisterende.rows.some((rad) => rad.match_num !== matchNum && new Date(rad.game_start) <= now)
     if (låst) {
         res.status(409).json({ error: 'jokeren er allerede låst for denne runden' })
         return

@@ -1,25 +1,32 @@
-import { api, seedUser, truncateAll, withDb } from './helpers'
+import { api, førsteMatchNum, seedUser, truncateAll, withDb } from './helpers'
 
 beforeEach(truncateAll)
 
 describe('tipping', () => {
     it('PUT /api/v1/me/bets/[id] lagrer og upserter tips', async () => {
         await seedUser({ firebase_user_id: 'alice' })
+        const matchNum = await førsteMatchNum()
 
-        const first = await api('/api/v1/me/bets/1', {
+        const first = await api(`/api/v1/me/bets/${matchNum}`, {
             user: 'alice',
             method: 'PUT',
             body: { home_score: 2, away_score: 1 },
         })
         expect(first.status).toBe(200)
 
-        let rows = await withDb((c) => c.query('SELECT home_score, away_score FROM bets WHERE match_num = 1'))
+        let rows = await withDb((c) =>
+            c.query('SELECT home_score, away_score FROM bets WHERE match_num = $1', [matchNum]),
+        )
         expect(rows.rows).toHaveLength(1)
         expect(rows.rows[0]).toMatchObject({ home_score: 2, away_score: 1 })
 
         // upsert — samme kamp igjen skal oppdatere, ikke lage ny rad
-        await api('/api/v1/me/bets/1', { user: 'alice', method: 'PUT', body: { home_score: 3, away_score: 3 } })
-        rows = await withDb((c) => c.query('SELECT home_score, away_score FROM bets WHERE match_num = 1'))
+        await api(`/api/v1/me/bets/${matchNum}`, {
+            user: 'alice',
+            method: 'PUT',
+            body: { home_score: 3, away_score: 3 },
+        })
+        rows = await withDb((c) => c.query('SELECT home_score, away_score FROM bets WHERE match_num = $1', [matchNum]))
         expect(rows.rows).toHaveLength(1)
         expect(rows.rows[0]).toMatchObject({ home_score: 3, away_score: 3 })
     })
@@ -46,25 +53,31 @@ describe('tipping', () => {
 
     it('PUT /api/v1/me/bets/[id] gir 400 når en score mangler', async () => {
         await seedUser({ firebase_user_id: 'alice' })
-        const res = await api('/api/v1/me/bets/1', {
+        const matchNum = await førsteMatchNum()
+        const res = await api(`/api/v1/me/bets/${matchNum}`, {
             user: 'alice',
             method: 'PUT',
             body: { home_score: 2, away_score: null },
         })
         expect(res.status).toBe(400)
 
-        const rows = await withDb((c) => c.query('SELECT * FROM bets WHERE match_num = 1'))
+        const rows = await withDb((c) => c.query('SELECT * FROM bets WHERE match_num = $1', [matchNum]))
         expect(rows.rows).toHaveLength(0)
     })
 
     it('GET /api/v1/me/bets returnerer egne tip per kamp', async () => {
         await seedUser({ firebase_user_id: 'alice' })
-        await api('/api/v1/me/bets/1', { user: 'alice', method: 'PUT', body: { home_score: 2, away_score: 1 } })
+        const matchNum = await førsteMatchNum()
+        await api(`/api/v1/me/bets/${matchNum}`, {
+            user: 'alice',
+            method: 'PUT',
+            body: { home_score: 2, away_score: 1 },
+        })
 
         const res = await api('/api/v1/me/bets', { user: 'alice' })
         expect(res.status).toBe(200)
         const bets = await res.json()
-        const kamp1 = bets.find((b: { match_num: number }) => b.match_num === 1)
+        const kamp1 = bets.find((b: { match_num: number }) => b.match_num === matchNum)
         expect(kamp1).toMatchObject({ home_score: 2, away_score: 1 })
     })
 

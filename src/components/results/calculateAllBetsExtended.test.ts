@@ -113,9 +113,9 @@ describe('Norge-kamper teller dobbelt', () => {
         const allBets: AllBets = {
             users: [bruker('A'), bruker('B'), bruker('C')],
             bets: [
-                bet({ user: 'A', home: '2', away: '1', homeTeam: 'Norway' }),
-                bet({ user: 'B', home: '2', away: '1', homeTeam: 'Norway' }),
-                bet({ user: 'C', home: '0', away: '0', homeTeam: 'Norway' }),
+                bet({ user: 'A', home: '2', away: '1', homeTeam: 'NOR' }),
+                bet({ user: 'B', home: '2', away: '1', homeTeam: 'NOR' }),
+                bet({ user: 'C', home: '0', away: '0', homeTeam: 'NOR' }),
             ],
         }
 
@@ -132,8 +132,8 @@ describe('Norge-kamper teller dobbelt', () => {
         const allBets: AllBets = {
             users: [bruker('A'), bruker('B')],
             bets: [
-                bet({ user: 'A', home: '2', away: '1', awayTeam: 'Norge' }),
-                bet({ user: 'B', home: '2', away: '1', awayTeam: 'Norge', joker: true }),
+                bet({ user: 'A', home: '2', away: '1', awayTeam: 'NOR' }),
+                bet({ user: 'B', home: '2', away: '1', awayTeam: 'NOR', joker: true }),
             ],
         }
 

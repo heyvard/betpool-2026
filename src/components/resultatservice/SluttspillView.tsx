@@ -13,7 +13,7 @@ import { BodyShort } from '@/components/ui/typography'
 const LAG_OPTIONS = (
     <>
         {alleLagSortert.map((l) => (
-            <option key={l.engelsk} value={l.engelsk}>
+            <option key={l.tla} value={l.tla}>
                 {l.flagg + ' ' + l.norsk}
             </option>
         ))}
@@ -21,7 +21,7 @@ const LAG_OPTIONS = (
     </>
 )
 
-const ALLE_LAG_ENGELSK = new Set(alleLagSortert.map((l) => l.engelsk))
+const ALLE_LAG_TLA = new Set(alleLagSortert.map((l) => l.tla))
 
 function TeamSelect({
     match,
@@ -34,7 +34,7 @@ function TeamSelect({
     lagrer: boolean
     onChange: (team: string) => void
 }) {
-    const current = ALLE_LAG_ENGELSK.has(match[side]) ? match[side] : 'To be announced'
+    const current = ALLE_LAG_TLA.has(match[side]) ? match[side] : 'To be announced'
     return (
         <SelectField
             disabled={lagrer}

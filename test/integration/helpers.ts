@@ -1,6 +1,6 @@
 // API-hjelpere for integrasjonstestene. DB-hjelperne (withDb/seedUser/truncateAll)
 // ligger i ../support/db og re-eksporteres her for å holde testfilene ryddige.
-export { withDb, truncateAll, seedUser } from '../support/db'
+export { withDb, truncateAll, seedUser, førsteMatchNum } from '../support/db'
 
 const baseUrl = () => {
     const url = process.env.TEST_BASE_URL

@@ -1,5 +1,5 @@
 import { ApiHandlerOpts } from '../../../types/apiHandlerOpts'
-import { erIFørsteRunde, erIEndrevindu } from '../../../utils/isInFirstRound'
+import { erIEndrevinduMed, erIFørsteRundeMed, hentFrister } from '../../../utils/isInFirstRound'
 import { auth } from '../../../auth/authHandler'
 
 const handler = async function handler(opts: ApiHandlerOpts): Promise<void> {
@@ -8,24 +8,33 @@ const handler = async function handler(opts: ApiHandlerOpts): Promise<void> {
         if (req.method == 'PUT') {
             const reqBody = JSON.parse(req.body)
 
-            if (reqBody.winner) {
-                if (erIFørsteRunde(req)) {
-                    await client.query(`UPDATE users SET winner = $1 WHERE id = $2`, [reqBody.winner, user.id])
-                } else if (erIEndrevindu(req) && !user.winner_endret && user.winner) {
-                    await client.query(`UPDATE users SET winner = $1, winner_endret = true WHERE id = $2`, [
-                        reqBody.winner,
-                        user.id,
-                    ])
+            if (reqBody.winner || reqBody.topscorer !== undefined) {
+                const frister = await hentFrister(client)
+                const iFørsteRunde = erIFørsteRundeMed(frister, req)
+                const iEndrevindu = erIEndrevinduMed(frister, req)
+
+                if (reqBody.winner) {
+                    if (iFørsteRunde) {
+                        await client.query(`UPDATE users SET winner = $1 WHERE id = $2`, [reqBody.winner, user.id])
+                    } else if (iEndrevindu && !user.winner_endret && user.winner) {
+                        await client.query(`UPDATE users SET winner = $1, winner_endret = true WHERE id = $2`, [
+                            reqBody.winner,
+                            user.id,
+                        ])
+                    }
                 }
-            }
-            if (reqBody.topscorer !== undefined) {
-                if (erIFørsteRunde(req)) {
-                    await client.query(`UPDATE users SET topscorer = $1 WHERE id = $2`, [reqBody.topscorer, user.id])
-                } else if (erIEndrevindu(req) && !user.topscorer_endret && user.topscorer) {
-                    await client.query(`UPDATE users SET topscorer = $1, topscorer_endret = true WHERE id = $2`, [
-                        reqBody.topscorer,
-                        user.id,
-                    ])
+                if (reqBody.topscorer !== undefined) {
+                    if (iFørsteRunde) {
+                        await client.query(`UPDATE users SET topscorer = $1 WHERE id = $2`, [
+                            reqBody.topscorer,
+                            user.id,
+                        ])
+                    } else if (iEndrevindu && !user.topscorer_endret && user.topscorer) {
+                        await client.query(`UPDATE users SET topscorer = $1, topscorer_endret = true WHERE id = $2`, [
+                            reqBody.topscorer,
+                            user.id,
+                        ])
+                    }
                 }
             }
             if (reqBody.onboarded === true) {

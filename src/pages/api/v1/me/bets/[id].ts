@@ -1,7 +1,7 @@
 import { ApiHandlerOpts } from '../../../../../types/apiHandlerOpts'
 import { serverNå } from '../../../../../utils/testClock'
 import { auth } from '../../../../../auth/authHandler'
-import { getMatchByNum } from '../../../../../data/matches'
+import { hentKamp } from '../../../../../data/matches'
 import { loggEndring } from '../../../../../data/auditLog'
 
 const handler = async function handler(opts: ApiHandlerOpts): Promise<void> {
@@ -34,7 +34,7 @@ const handler = async function handler(opts: ApiHandlerOpts): Promise<void> {
         return
     }
 
-    const match = getMatchByNum(matchNum)
+    const match = await hentKamp(client, matchNum)
     if (!match) {
         res.status(404).json({ error: 'match not found' })
         return
