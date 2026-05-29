@@ -26,7 +26,7 @@ export interface JokerContext {
 }
 
 export function fixLand(s: string, locale: 'no' | 'fr' = 'no'): string {
-    if (s === 'To be announced') {
+    if (s === 'To be announced' || s === '') {
         return 'TBA'
     }
     return hentFlag(s) + ' ' + hentNavn(s, locale)
@@ -83,7 +83,8 @@ export const BetView = ({ bet, matchside, joker }: { bet: Bet; matchside: boolea
     const jokerMutation = UseMutateJoker()
     const harLagretTips = bet.home_score != null && bet.away_score != null
 
-    const disabled = kampstart.isBefore(nå())
+    const lageneIkkeKjent = !bet.home_team || !bet.away_team
+    const disabled = kampstart.isBefore(nå()) || lageneIkkeKjent
     const lagreknappSynlig = (hjemmescore !== hjemmescoreProp || bortescore !== bortescoreProp) && !nyligLagret
     const beggeFylt = hjemmescore !== '' && bortescore !== ''
 
@@ -202,7 +203,12 @@ export const BetView = ({ bet, matchside, joker }: { bet: Bet; matchside: boolea
                             <Check className="w-3.5 h-3.5" /> {t.felles.lagret}
                         </span>
                     )}
-                    {disabled && !lagreknappSynlig && !nyligLagret && (
+                    {lageneIkkeKjent && !lagreknappSynlig && !nyligLagret && (
+                        <span className="inline-flex items-center gap-1 text-xs text-stone-500">
+                            <Lock className="w-3 h-3" /> {t.mineTips.lageneIkkeKjent}
+                        </span>
+                    )}
+                    {!lageneIkkeKjent && disabled && !lagreknappSynlig && !nyligLagret && (
                         <span className="inline-flex items-center gap-1 text-xs text-stone-500">
                             <Lock className="w-3 h-3" /> {t.mineTips.kampHarStartet}
                         </span>

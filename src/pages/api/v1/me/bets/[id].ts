@@ -44,6 +44,18 @@ const handler = async function handler(opts: ApiHandlerOpts): Promise<void> {
         return
     }
 
+    const scoreRow = await client.query<{ home_team_override: string | null; away_team_override: string | null }>(
+        `SELECT home_team_override, away_team_override FROM match_scores WHERE match_num = $1`,
+        [matchNum],
+    )
+    const overrides = scoreRow.rows[0]
+    const hjemmelag = overrides?.home_team_override ?? match.home_team
+    const bortelag = overrides?.away_team_override ?? match.away_team
+    if (!hjemmelag || !bortelag) {
+        res.status(403).json({ error: 'lagene er ikke annonsert ennå' })
+        return
+    }
+
     const før = await client.query<{ home_score: number; away_score: number }>(
         `SELECT home_score, away_score FROM bets WHERE user_id = $1 AND match_num = $2`,
         [user.id, matchNum],
