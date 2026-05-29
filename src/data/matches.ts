@@ -1,6 +1,6 @@
 import { PoolClient } from 'pg'
 
-import { Match } from '../types/types'
+import { Match, MatchStatus } from '../types/types'
 
 // Kampene bor i `matches`-tabellen (seedet fra football-data og holdt oppdatert
 // av sync-cronen, se src/server/syncMatches.ts). Lesing skjer server-side med en
@@ -13,6 +13,7 @@ interface MatchRow {
     away_team: string | null
     game_start: Date
     group: string | null
+    status: MatchStatus
 }
 
 function radTilMatch(r: MatchRow): Match {
@@ -25,13 +26,14 @@ function radTilMatch(r: MatchRow): Match {
         home_score: null,
         away_score: null,
         group: r.group ?? undefined,
+        status: r.status,
     }
 }
 
 export async function hentKamper(client: PoolClient): Promise<Match[]> {
     const rows = (
         await client.query<MatchRow>(
-            `SELECT match_num, round, home_team, away_team, game_start, "group"
+            `SELECT match_num, round, home_team, away_team, game_start, "group", status
              FROM matches
              ORDER BY game_start ASC`,
         )
@@ -42,7 +44,7 @@ export async function hentKamper(client: PoolClient): Promise<Match[]> {
 export async function hentKamp(client: PoolClient, num: number): Promise<Match | undefined> {
     const rows = (
         await client.query<MatchRow>(
-            `SELECT match_num, round, home_team, away_team, game_start, "group"
+            `SELECT match_num, round, home_team, away_team, game_start, "group", status
              FROM matches
              WHERE match_num = $1`,
             [num],

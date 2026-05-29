@@ -1,5 +1,5 @@
 // Typer for private ligaer. En privat liga er en filtrert delmengde av poolen —
-// poengene er de samme som i hovedligaen. Se migrasjon 20260522120000_add_leagues.
+// poengene er de samme som i hovedligaen. Se `leagues`/`league_members` i initialschemaet.
 
 export type LeagueStatus = 'invitert' | 'medlem'
 

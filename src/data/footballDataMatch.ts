@@ -1,9 +1,10 @@
-import { Match } from '../types/types'
+import { Match, MatchStatus } from '../types/types'
 
 // Rå kamp slik football-data.org v4 leverer den (feltene vi bruker).
 export interface FootballDataMatch {
     id: number
     utcDate: string
+    status: string
     stage: string
     group: string | null
     matchday: number | null
@@ -48,6 +49,27 @@ function gruppeTilTekst(group: string | null): string | undefined {
     return `Group ${bokstav}`
 }
 
+const KJENTE_STATUSER: MatchStatus[] = [
+    'SCHEDULED',
+    'TIMED',
+    'IN_PLAY',
+    'PAUSED',
+    'FINISHED',
+    'SUSPENDED',
+    'POSTPONED',
+    'CANCELLED',
+    'AWARDED',
+]
+
+// Faller tilbake til TIMED hvis football-data sender en ukjent/ny statusverdi,
+// så vi aldri lagrer noe utenfor MatchStatus.
+export function normaliserStatus(status: string | null): MatchStatus {
+    if (status && (KJENTE_STATUSER as string[]).includes(status)) {
+        return status as MatchStatus
+    }
+    return 'TIMED'
+}
+
 // Sluttspill-lag er ukjent (null) til de er avgjort — da blir home_team/away_team
 // tom streng, og scoreadmin setter ekte lag via override.
 export function transformerKamp(raw: FootballDataMatch): Match {
@@ -60,5 +82,6 @@ export function transformerKamp(raw: FootballDataMatch): Match {
         home_score: null,
         away_score: null,
         group: gruppeTilTekst(raw.group),
+        status: normaliserStatus(raw.status),
     }
 }

@@ -10,6 +10,7 @@ describe('/api/v1/matches', () => {
         const matches = await res.json()
         expect(matches.length).toBeGreaterThan(0)
         expect(matches[0]).toHaveProperty('match_num')
+        expect(matches[0]).toHaveProperty('status')
     })
 
     it('PUT /api/v1/matches/[id] krever scoreadmin', async () => {

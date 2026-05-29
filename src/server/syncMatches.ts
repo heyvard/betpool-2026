@@ -41,8 +41,8 @@ export async function syncMatches(client: PoolClient): Promise<SyncResultat> {
         const away = k.away_team || null
         const group = k.group ?? null
         const result = await client.query(
-            `INSERT INTO matches (match_num, round, home_team, away_team, game_start, "group", stage, synced_at)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, now())
+            `INSERT INTO matches (match_num, round, home_team, away_team, game_start, "group", stage, status, synced_at)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, now())
              ON CONFLICT (match_num) DO UPDATE SET
                  round = EXCLUDED.round,
                  home_team = EXCLUDED.home_team,
@@ -50,6 +50,7 @@ export async function syncMatches(client: PoolClient): Promise<SyncResultat> {
                  game_start = EXCLUDED.game_start,
                  "group" = EXCLUDED."group",
                  stage = EXCLUDED.stage,
+                 status = EXCLUDED.status,
                  synced_at = now()
              WHERE
                  matches.round IS DISTINCT FROM EXCLUDED.round
@@ -57,8 +58,9 @@ export async function syncMatches(client: PoolClient): Promise<SyncResultat> {
                  OR matches.away_team IS DISTINCT FROM EXCLUDED.away_team
                  OR matches.game_start IS DISTINCT FROM EXCLUDED.game_start
                  OR matches."group" IS DISTINCT FROM EXCLUDED."group"
-                 OR matches.stage IS DISTINCT FROM EXCLUDED.stage`,
-            [k.match_num, k.round, home, away, k.game_start, group, stageFor(k.round)],
+                 OR matches.stage IS DISTINCT FROM EXCLUDED.stage
+                 OR matches.status IS DISTINCT FROM EXCLUDED.status`,
+            [k.match_num, k.round, home, away, k.game_start, group, stageFor(k.round), k.status],
         )
         if (result.rowCount && result.rowCount > 0) oppdatert++
     }
