@@ -20,12 +20,14 @@ interface FootballDataResponse {
 // så `synced_at` reflekterer reelle endringer. Rører ikke `match_scores` —
 // resultater og team-override er manuell sannhet.
 export async function syncMatches(client: PoolClient): Promise<SyncResultat> {
+    console.log('[sync-matches] starter')
     const token = process.env.FOOTBALL_DATA_TOKEN
     if (!token) {
         throw new Error('Mangler FOOTBALL_DATA_TOKEN')
     }
 
     const url = `${BASE_URL}/competitions/${COMPETITION}/matches?season=${SEASON}`
+    console.log(`[sync-matches] henter kampoppsett fra football-data.org (${COMPETITION} ${SEASON})`)
     const res = await fetch(url, { headers: { 'X-Auth-Token': token } })
     if (!res.ok) {
         const body = await res.text()
@@ -34,6 +36,7 @@ export async function syncMatches(client: PoolClient): Promise<SyncResultat> {
 
     const body = (await res.json()) as FootballDataResponse
     const kamper = (body.matches ?? []).map(transformerKamp)
+    console.log(`[sync-matches] mottok ${kamper.length} kamper fra API`)
 
     let oppdatert = 0
     for (const k of kamper) {
@@ -62,10 +65,17 @@ export async function syncMatches(client: PoolClient): Promise<SyncResultat> {
                  OR matches.status IS DISTINCT FROM EXCLUDED.status`,
             [k.match_num, k.round, home, away, k.game_start, group, stageFor(k.round), k.status],
         )
-        if (result.rowCount && result.rowCount > 0) oppdatert++
+        if (result.rowCount && result.rowCount > 0) {
+            oppdatert++
+            console.log(
+                `[sync-matches] oppdaterte kamp ${k.match_num}: ${home ?? '?'} vs ${away ?? '?'} (runde ${k.round}, ${k.status})`,
+            )
+        }
     }
 
-    return { hentet: kamper.length, oppdatert }
+    const resultat = { hentet: kamper.length, oppdatert }
+    console.log('[sync-matches] ferdig —', resultat)
+    return resultat
 }
 
 // stage lagres for referanse; utled fra runde slik at den holdes konsistent med
