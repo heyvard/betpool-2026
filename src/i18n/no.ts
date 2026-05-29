@@ -96,6 +96,7 @@ const no = {
         jokerDobbel: 'Joker ×2',
         norgeDobbel: 'Norge ×2',
         seAllesBets: 'Se alles bets',
+        kampIkkeFunnet: 'Ingen tips å vise for denne kampen ennå.',
         riktigResultatAntall: '{{antall}} stk ({{prosent}} %) har riktig resultat',
         riktigUtfallAntall: '{{antall}} stk ({{prosent}} %) har riktig utfall',
         poengForRiktigResultat: '{{poeng}} poeng for riktig resultat',
