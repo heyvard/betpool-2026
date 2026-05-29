@@ -3,12 +3,16 @@ import {
     signInWithPopup,
     GoogleAuthProvider,
     signInWithEmailAndPassword,
+    createUserWithEmailAndPassword,
+    updateProfile,
     sendPasswordResetEmail,
     AuthError,
 } from 'firebase/auth'
 import { getFirebaseAuth } from './clientApp'
 import { Button } from '@/components/ui/button'
 import { TextField } from '@/components/ui/text-field'
+
+type Modus = 'logginn' | 'registrer'
 
 function oversettFeil(kode: string, metode: 'google' | 'epost' = 'epost'): string {
     switch (kode) {
@@ -18,6 +22,8 @@ function oversettFeil(kode: string, metode: 'google' | 'epost' = 'epost'): strin
             return 'Feil e-post eller passord.'
         case 'auth/invalid-email':
             return 'Ugyldig e-postadresse.'
+        case 'auth/weak-password':
+            return 'Passordet må være minst 6 tegn.'
         case 'auth/too-many-requests':
             return 'For mange forsøk — prøv igjen senere.'
         case 'auth/popup-blocked':
@@ -26,7 +32,7 @@ function oversettFeil(kode: string, metode: 'google' | 'epost' = 'epost'): strin
         case 'auth/email-already-in-use':
             return metode === 'google'
                 ? 'Denne e-postadressen er allerede registrert med e-post og passord. Logg inn med e-post i stedet.'
-                : 'Denne e-postadressen er allerede registrert med Google. Logg inn med Google i stedet.'
+                : 'Denne e-postadressen er allerede registrert. Logg inn i stedet.'
         default:
             return 'Kunne ikke lagre — prøv igjen.'
     }
@@ -34,8 +40,11 @@ function oversettFeil(kode: string, metode: 'google' | 'epost' = 'epost'): strin
 
 export function InnloggingKnapper() {
     const [visEpost, setVisEpost] = useState(false)
+    const [modus, setModus] = useState<Modus>('logginn')
     const [epost, setEpost] = useState('')
     const [passord, setPassord] = useState('')
+    const [bekreftPassord, setBekreftPassord] = useState('')
+    const [navn, setNavn] = useState('')
     const [feil, setFeil] = useState<string | null>(null)
     const [laster, setLaster] = useState(false)
     const [tilbakestiltSendt, setTilbakestiltSendt] = useState(false)
@@ -74,6 +83,28 @@ export function InnloggingKnapper() {
         }
     }
 
+    const registrerMedEpost = async (e: React.FormEvent) => {
+        e.preventDefault()
+        setFeil(null)
+        if (!navn.trim()) {
+            setFeil('Fyll inn navnet ditt.')
+            return
+        }
+        if (passord !== bekreftPassord) {
+            setFeil('Passordene er ikke like.')
+            return
+        }
+        setLaster(true)
+        try {
+            const credential = await createUserWithEmailAndPassword(getFirebaseAuth(), epost, passord)
+            await updateProfile(credential.user, { displayName: navn.trim() })
+        } catch (err) {
+            setFeil(oversettFeil((err as AuthError).code, 'epost'))
+        } finally {
+            setLaster(false)
+        }
+    }
+
     const sendTilbakestilling = async () => {
         if (!epost) {
             setFeil('Fyll inn e-postadressen din for å tilbakestille passordet.')
@@ -86,6 +117,19 @@ export function InnloggingKnapper() {
         } catch (err) {
             setFeil(oversettFeil((err as AuthError).code))
         }
+    }
+
+    const byttModus = (nyModus: Modus) => {
+        setFeil(null)
+        setTilbakestiltSendt(false)
+        setModus(nyModus)
+    }
+
+    const tilbake = () => {
+        setFeil(null)
+        setTilbakestiltSendt(false)
+        setModus('logginn')
+        setVisEpost(false)
     }
 
     return (
@@ -109,7 +153,7 @@ export function InnloggingKnapper() {
                         Logg inn med e-post
                     </button>
                 </>
-            ) : (
+            ) : modus === 'logginn' ? (
                 <form onSubmit={loggInnMedEpost} className="space-y-3 pt-1">
                     <TextField
                         label="E-post"
@@ -147,10 +191,79 @@ export function InnloggingKnapper() {
                         <button
                             type="button"
                             className="text-xs text-stone-400 underline hover:text-stone-600"
-                            onClick={() => {
-                                setFeil(null)
-                                setVisEpost(false)
-                            }}
+                            onClick={tilbake}
+                        >
+                            Tilbake
+                        </button>
+                    </div>
+                    <p className="text-center text-xs text-stone-400">
+                        Ikke registrert?{' '}
+                        <button
+                            type="button"
+                            className="underline hover:text-stone-600"
+                            onClick={() => byttModus('registrer')}
+                        >
+                            Opprett konto
+                        </button>
+                    </p>
+                </form>
+            ) : (
+                <form onSubmit={registrerMedEpost} className="space-y-3 pt-1">
+                    <TextField
+                        label="Navn"
+                        type="text"
+                        value={navn}
+                        onChange={(e) => setNavn(e.target.value)}
+                        autoComplete="name"
+                        required
+                        error={!!feil}
+                    />
+                    <TextField
+                        label="E-post"
+                        type="email"
+                        value={epost}
+                        onChange={(e) => setEpost(e.target.value)}
+                        autoComplete="email"
+                        required
+                        error={!!feil}
+                    />
+                    <TextField
+                        label="Passord"
+                        type="password"
+                        value={passord}
+                        onChange={(e) => setPassord(e.target.value)}
+                        autoComplete="new-password"
+                        required
+                        error={!!feil}
+                    />
+                    <TextField
+                        label="Bekreft passord"
+                        type="password"
+                        value={bekreftPassord}
+                        onChange={(e) => setBekreftPassord(e.target.value)}
+                        autoComplete="new-password"
+                        required
+                        error={!!feil}
+                    />
+                    {feil && <p className="text-sm text-red-600">{feil}</p>}
+                    <Button type="submit" className="w-full" loading={laster}>
+                        Opprett konto
+                    </Button>
+                    <p className="text-center text-xs text-stone-400">
+                        Har du allerede konto?{' '}
+                        <button
+                            type="button"
+                            className="underline hover:text-stone-600"
+                            onClick={() => byttModus('logginn')}
+                        >
+                            Logg inn
+                        </button>
+                    </p>
+                    <div className="flex justify-end">
+                        <button
+                            type="button"
+                            className="text-xs text-stone-400 underline hover:text-stone-600"
+                            onClick={tilbake}
                         >
                             Tilbake
                         </button>
