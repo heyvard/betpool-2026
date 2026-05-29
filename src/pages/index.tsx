@@ -435,7 +435,7 @@ function ToppscorerKort({ megselv, laast, endrevindu }: { megselv: User; laast: 
         } finally {
             setLagrer(false)
         }
-    }, 600)
+    }, 1200)
 
     const lagreEndring = async () => {
         if (!window.confirm(t.hjem.bekreftEndringTopps)) return
