@@ -26,6 +26,18 @@ export interface Chat {
     user_id: string
 }
 
+// Kampstatus slik football-data.org v4 leverer den.
+export type MatchStatus =
+    | 'SCHEDULED'
+    | 'TIMED'
+    | 'IN_PLAY'
+    | 'PAUSED'
+    | 'FINISHED'
+    | 'SUSPENDED'
+    | 'POSTPONED'
+    | 'CANCELLED'
+    | 'AWARDED'
+
 export interface Match {
     game_start: string
     away_team: string
@@ -35,6 +47,7 @@ export interface Match {
     match_num: number
     round: number
     group?: string
+    status: MatchStatus
 }
 
 export interface UserForAdmin {

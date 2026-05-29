@@ -43,6 +43,7 @@ exports.up = async (knex) => {
         t.timestamp('game_start', { useTz: true }).notNullable()
         t.string('group').nullable()
         t.string('stage').nullable()
+        t.string('status').notNullable().defaultTo('TIMED') // football-data: TIMED/IN_PLAY/PAUSED/FINISHED osv.
         t.timestamp('synced_at', { useTz: true }).defaultTo(knex.fn.now())
     })
 
@@ -57,6 +58,7 @@ exports.up = async (knex) => {
             game_start: m.utcDate,
             group: gruppeTilTekst(m.group),
             stage: m.stage,
+            status: m.status || 'TIMED',
         }
     })
     await knex('matches').insert(rader)
