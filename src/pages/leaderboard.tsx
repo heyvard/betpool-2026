@@ -1,4 +1,5 @@
 import type { NextPage } from 'next'
+import { useState } from 'react'
 
 import { Spinner } from '../components/loading/Spinner'
 import { UseAllBets } from '../queries/useAllBets'
@@ -28,12 +29,25 @@ function visningsnavn(navn: string): string {
     return navn.includes('@') ? navn.split('@')[0] : navn
 }
 
+// Stabil «tilfeldig» sorteringsnøkkel for en bruker, bestemt av en seed som
+// settes én gang per økt. Brukes når alle har 0 poeng, slik at rekkefølgen
+// ikke hopper rundt ved hver re-render.
+function ordningsverdi(seed: number, userid: string): number {
+    let h = seed | 0
+    for (let i = 0; i < userid.length; i++) {
+        h = (Math.imul(31, h) + userid.charCodeAt(i)) | 0
+    }
+    return h
+}
+
 const Leaderboard: NextPage = () => {
     const { data, isLoading } = UseAllBets()
     const { data: ligaer } = UseLeagues()
     const { data: megselv } = UseUser()
     const [valgtLiga, setValgtLiga] = useValgtLiga()
     const { t } = useLanguage()
+    // Seed for tilfeldig rangering når alle har 0 poeng – stabil per økt.
+    const [seed] = useState(() => Math.floor(Math.random() * 0x7fffffff))
 
     const mineLigaer = (ligaer ?? []).filter((l) => l.my_status === 'medlem')
     const effektivLiga = valgtLiga && mineLigaer.some((l) => l.id === valgtLiga) ? valgtLiga : null
@@ -66,15 +80,25 @@ const Leaderboard: NextPage = () => {
         lista = [...full]
     }
 
-    lista.sort((a, b) => {
-        if (b.poeng === a.poeng) {
-            return a.userid.localeCompare(b.userid)
-        } else {
-            return b.poeng - a.poeng
-        }
-    })
+    // Når ingen kamper er ferdigspilt har alle 0 poeng. Da gir det ikke mening
+    // at alle deler 1. plass (og får gullmedalje) – ranger i stedet tilfeldig
+    // med unike plasser, slik at bare én får medalje nr. 1.
+    const alleNull = lista.length > 0 && lista.every((r) => r.poeng === 0)
+
+    if (alleNull) {
+        lista.sort((a, b) => ordningsverdi(seed, a.userid) - ordningsverdi(seed, b.userid))
+    } else {
+        lista.sort((a, b) => {
+            if (b.poeng === a.poeng) {
+                return a.userid.localeCompare(b.userid)
+            } else {
+                return b.poeng - a.poeng
+            }
+        })
+    }
 
     const finnFaktiskPlass = (index: number, lista: LeaderBoard[]): number => {
+        if (alleNull) return index + 1
         if (index === 0) return 1
         if (lista[index].poeng === lista[index - 1].poeng) {
             return finnFaktiskPlass(index - 1, lista)
