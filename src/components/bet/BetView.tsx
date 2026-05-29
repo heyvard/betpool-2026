@@ -215,7 +215,7 @@ export const BetView = ({ bet, matchside, joker }: { bet: Bet; matchside: boolea
                     )}
                 </div>
 
-                {disabled && !matchside && (
+                {disabled && !lageneIkkeKjent && !matchside && (
                     <NextLink
                         href={'/match/' + bet.match_num}
                         className="inline-flex items-center gap-0.5 text-xs font-medium text-amber-700 hover:text-amber-800 transition-colors"

@@ -100,6 +100,7 @@ const fr: Translations = {
         jokerDobbel: 'Joker ×2',
         norgeDobbel: 'Norvège ×2',
         seAllesBets: 'Voir les paris de tous',
+        kampIkkeFunnet: 'Aucun pari à afficher pour ce match pour le moment.',
         riktigResultatAntall: '{{antall}} pers. ({{prosent}} %) ont le bon score',
         riktigUtfallAntall: '{{antall}} pers. ({{prosent}} %) ont le bon résultat',
         poengForRiktigResultat: '{{poeng}} points pour bon score',

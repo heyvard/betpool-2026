@@ -24,7 +24,14 @@ const Home: NextPage = () => {
         return <Spinner />
     }
 
-    const match = data.bets.find((a) => a.match_num == Number(id))!
+    const match = data.bets.find((a) => a.match_num == Number(id))
+    if (!match) {
+        return (
+            <BodyShort align="center" spacing>
+                {t.spilteKamper.kampIkkeFunnet}
+            </BodyShort>
+        )
+    }
     const homeBets = match.matchpoeng.hjemme
     const drawBets = match.matchpoeng.uavgjort
     const awayBets = match.matchpoeng.borte
