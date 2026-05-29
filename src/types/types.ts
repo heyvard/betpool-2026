@@ -14,6 +14,7 @@ export interface Bet {
     match_num: number
     round: number
     joker: boolean
+    group?: string
 }
 
 export interface Chat {

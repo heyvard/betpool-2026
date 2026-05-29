@@ -7,6 +7,7 @@ import { hentFlag, hentNavn } from '../../utils/lag'
 import { erNorgeKamp, kanHaJoker } from '../../data/matches'
 import NextLink from 'next/link'
 import { rundeTilTekst } from '../../utils/rundeTilTekst'
+import { gruppeTilVisning } from '../../utils/gruppeTilVisning'
 import { nå } from '../../utils/testClock'
 import { Calendar, Check, ChevronRight, Flag, Lock, Minus, Plus, Save, Zap } from 'lucide-react'
 import nb from 'dayjs/locale/nb'
@@ -121,6 +122,11 @@ export const BetView = ({ bet, matchside, joker }: { bet: Bet; matchside: boolea
                         <span className="h-1.5 w-1.5 rounded-full bg-amber-500" aria-hidden />
                         {rundeTilTekst(bet.round, locale)}
                     </span>
+                    {bet.group && (
+                        <span className="inline-flex items-center rounded-full bg-stone-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-stone-600 ring-1 ring-stone-200">
+                            {gruppeTilVisning(bet.group, locale)}
+                        </span>
+                    )}
                     {erNorgeKamp(bet.home_team, bet.away_team) && (
                         <span className="inline-flex items-center gap-1 rounded-full bg-red-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-red-800 ring-1 ring-red-200">
                             <Flag className="w-3 h-3" />
