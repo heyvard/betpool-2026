@@ -19,6 +19,7 @@ export interface PåminnelseResultat {
 // Sender én daglig digest til hver bruker som har kamper de ikke har tippet i morgen
 // (norsk kalenderdøgn). Brukere uten push-abonnement hoppes naturlig over.
 export async function sendPåminnelser(client: PoolClient): Promise<PåminnelseResultat> {
+    console.log('[send-reminders] starter')
     // Kampdag-vindu kl. 12:00 i morgen → kl. 12:00 overimorgen Oslo-tid,
     // slik at natt-kamper (01:00–06:00 Oslo) inkluderes i riktig kampdag.
     const iMorgenKampDagStart = dayjs().tz(OSLO).add(1, 'day').startOf('day').add(12, 'hour')
@@ -29,7 +30,12 @@ export async function sendPåminnelser(client: PoolClient): Promise<PåminnelseR
         return !kampstart.isBefore(iMorgenKampDagStart) && kampstart.isBefore(iMorgenKampDagSlutt)
     })
 
+    console.log(
+        `[send-reminders] kampdag-vindu: ${iMorgenKampDagStart.format()} → ${iMorgenKampDagSlutt.format()}, ${morgendagensKamper.length} kamper`,
+    )
+
     if (morgendagensKamper.length === 0) {
+        console.log('[send-reminders] ingen kamper i morgen — avslutter')
         return { kamperIMorgen: 0, brukereVarslet: 0 }
     }
 
@@ -38,6 +44,7 @@ export async function sendPåminnelser(client: PoolClient): Promise<PåminnelseR
     const brukere = (
         await client.query<{ id: string }>(`SELECT id FROM users WHERE active = true AND notif_reminders = true`)
     ).rows
+    console.log(`[send-reminders] ${brukere.length} aktive brukere med påminnelser på`)
 
     const tippet = (
         await client.query<{ user_id: string; match_num: number }>(
@@ -70,8 +77,11 @@ export async function sendPåminnelser(client: PoolClient): Promise<PåminnelseR
         })
         if (sendt > 0) {
             brukereVarslet++
+            console.log(`[send-reminders] varslet bruker ${bruker.id} om ${antallUtippet} utippede kamper`)
         }
     }
 
-    return { kamperIMorgen: morgendagensKamper.length, brukereVarslet }
+    const resultat = { kamperIMorgen: morgendagensKamper.length, brukereVarslet }
+    console.log('[send-reminders] ferdig —', resultat)
+    return resultat
 }

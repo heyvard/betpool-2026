@@ -19,10 +19,12 @@ interface FootballDataScoreResponse {
 // football-data.org og upserter synced_*-kolonner i match_scores.
 // Rører aldri home_score/away_score (manuell) eller use_manual (admin-switch).
 export async function syncScores(client: PoolClient): Promise<SyncScoresResultat> {
+    console.log('[sync-scores] starter')
     const token = process.env.FOOTBALL_DATA_TOKEN
     if (!token) throw new Error('Mangler FOOTBALL_DATA_TOKEN')
 
     const url = `${BASE_URL}/competitions/${COMPETITION}/matches` + `?season=${SEASON}&status=IN_PLAY,PAUSED,FINISHED`
+    console.log(`[sync-scores] henter fra football-data.org (${COMPETITION} ${SEASON})`)
 
     const res = await fetch(url, { headers: { 'X-Auth-Token': token } })
     if (!res.ok) {
@@ -40,6 +42,8 @@ export async function syncScores(client: PoolClient): Promise<SyncScoresResultat
         }
         return false
     })
+
+    console.log(`[sync-scores] ${relevante.length} relevante kamper (IN_PLAY/PAUSED + FINISHED <6t)`)
 
     let oppdatert = 0
     for (const m of relevante) {
@@ -85,8 +89,15 @@ export async function syncScores(client: PoolClient): Promise<SyncScoresResultat
                 score.duration ?? null,
             ],
         )
-        if (result.rowCount && result.rowCount > 0) oppdatert++
+        if (result.rowCount && result.rowCount > 0) {
+            oppdatert++
+            console.log(
+                `[sync-scores] oppdaterte kamp ${m.id}: ${score.fullTime.home}–${score.fullTime.away} (${m.status})`,
+            )
+        }
     }
 
-    return { hentet: relevante.length, oppdatert }
+    const resultat = { hentet: relevante.length, oppdatert }
+    console.log('[sync-scores] ferdig —', resultat)
+    return resultat
 }
