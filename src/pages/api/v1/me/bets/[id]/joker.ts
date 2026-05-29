@@ -76,18 +76,19 @@ const handler = async function handler(opts: ApiHandlerOpts): Promise<void> {
         return
     }
 
-    // Håndhev «én joker per runde». Finn en evt. eksisterende joker i runden.
+    // Håndhev «én joker per runde». Finn en evt. eksisterende joker i runden
+    // sammen med kampstart i ett spørsmål.
     const rundensKamper = await hentKampnumreIRunde(client, match.round)
-    const eksisterende = await client.query<{ match_num: number }>(
-        `SELECT match_num FROM bets
-         WHERE user_id = $1 AND joker = true AND match_num = ANY($2::int[])`,
+    const eksisterende = await client.query<{ match_num: number; game_start: Date }>(
+        `SELECT b.match_num, m.game_start
+         FROM bets b
+         JOIN matches m ON m.match_num = b.match_num
+         WHERE b.user_id = $1 AND b.joker = true AND b.match_num = ANY($2::int[])`,
         [user.id, rundensKamper],
     )
 
-    // En joker som ligger på en kamp som alt har startet er låst og kan ikke flyttes.
-    const andreJokerKamper = eksisterende.rows.filter((rad) => rad.match_num !== matchNum)
-    const annenKamper = await Promise.all(andreJokerKamper.map((rad) => hentKamp(client, rad.match_num)))
-    const låst = annenKamper.some((annen) => annen != null && new Date(annen.game_start) <= now)
+    // En joker som ligger på en annen kamp som alt har startet er låst og kan ikke flyttes.
+    const låst = eksisterende.rows.some((rad) => rad.match_num !== matchNum && new Date(rad.game_start) <= now)
     if (låst) {
         res.status(409).json({ error: 'jokeren er allerede låst for denne runden' })
         return

@@ -4,44 +4,44 @@ import { PoolClient } from 'pg'
 import { serverNå } from './testClock'
 
 // Frist-datoene utledes fra kampprogrammet i databasen:
-// - førsteRunde: starten på andre gruppespillsrunde (round=2) — fristen for å
+// - forsteRunde: starten på andre gruppespillsrunde (round=2) — fristen for å
 //   sette vinner/toppscorer.
 // - endrevinduSlutt: starten på kvartfinalen (round=6) — endrevinduet er åpent
 //   gjennom sekstendels- og åttendedelsfinalene frem til da.
 // På serveren må `req` sendes med for at test-klokka skal gjelde (den bor i
 // request-cookien).
 
-async function førsteKampstartIRunde(client: PoolClient, round: number): Promise<dayjs.Dayjs> {
+type CookieReq = { cookies: Partial<Record<string, string>> }
+
+export interface Frister {
+    forsteRunde: dayjs.Dayjs
+    endrevinduSlutt: dayjs.Dayjs
+}
+
+// Henter begge fristene i ett spørsmål.
+export async function hentFrister(client: PoolClient): Promise<Frister> {
     const rows = (
-        await client.query<{ game_start: Date }>(
-            `SELECT game_start FROM matches WHERE round = $1 ORDER BY game_start ASC LIMIT 1`,
-            [round],
+        await client.query<{ round: number; first: Date }>(
+            `SELECT round, MIN(game_start) AS first FROM matches WHERE round IN (2, 6) GROUP BY round`,
         )
     ).rows
-    if (rows.length === 0) {
-        throw new Error(`Fant ingen kamper i runde ${round}`)
+    const forste = rows.find((r) => r.round === 2)?.first
+    const kvart = rows.find((r) => r.round === 6)?.first
+    if (!forste || !kvart) {
+        throw new Error('Fant ikke frist-kampene (runde 2 og 6)')
     }
-    return dayjs(rows[0].game_start)
+    return { forsteRunde: dayjs(forste), endrevinduSlutt: dayjs(kvart) }
 }
 
-export async function hentFristDatoer(client: PoolClient): Promise<{ forsteRunde: string; endrevinduSlutt: string }> {
-    const [forste, kvart] = await Promise.all([førsteKampstartIRunde(client, 2), førsteKampstartIRunde(client, 6)])
-    return { forsteRunde: forste.toISOString(), endrevinduSlutt: kvart.toISOString() }
+export function erIFørsteRundeMed(frister: Frister, req: CookieReq): boolean {
+    return frister.forsteRunde.isAfter(dayjs(serverNå(req)))
 }
 
-export async function erIFørsteRunde(
-    client: PoolClient,
-    req: { cookies: Partial<Record<string, string>> },
-): Promise<boolean> {
-    const forste = await førsteKampstartIRunde(client, 2)
-    return forste.isAfter(dayjs(serverNå(req)))
-}
-
-export async function erIEndrevindu(
-    client: PoolClient,
-    req: { cookies: Partial<Record<string, string>> },
-): Promise<boolean> {
+export function erIEndrevinduMed(frister: Frister, req: CookieReq): boolean {
     const tidspunkt = dayjs(serverNå(req))
-    const [forste, kvart] = await Promise.all([førsteKampstartIRunde(client, 2), førsteKampstartIRunde(client, 6)])
-    return !forste.isAfter(tidspunkt) && kvart.isAfter(tidspunkt)
+    return !frister.forsteRunde.isAfter(tidspunkt) && frister.endrevinduSlutt.isAfter(tidspunkt)
+}
+
+export async function erIFørsteRunde(client: PoolClient, req: CookieReq): Promise<boolean> {
+    return erIFørsteRundeMed(await hentFrister(client), req)
 }

@@ -1,5 +1,5 @@
 import { ApiHandlerOpts } from '../../../types/apiHandlerOpts'
-import { erIFørsteRunde, erIEndrevindu } from '../../../utils/isInFirstRound'
+import { erIEndrevinduMed, erIFørsteRundeMed, hentFrister } from '../../../utils/isInFirstRound'
 import { auth } from '../../../auth/authHandler'
 
 const handler = async function handler(opts: ApiHandlerOpts): Promise<void> {
@@ -9,10 +9,9 @@ const handler = async function handler(opts: ApiHandlerOpts): Promise<void> {
             const reqBody = JSON.parse(req.body)
 
             if (reqBody.winner || reqBody.topscorer !== undefined) {
-                const [iFørsteRunde, iEndrevindu] = await Promise.all([
-                    erIFørsteRunde(client, req),
-                    erIEndrevindu(client, req),
-                ])
+                const frister = await hentFrister(client)
+                const iFørsteRunde = erIFørsteRundeMed(frister, req)
+                const iEndrevindu = erIEndrevinduMed(frister, req)
 
                 if (reqBody.winner) {
                     if (iFørsteRunde) {
