@@ -1,6 +1,7 @@
 import { ApiHandlerOpts } from '../../../types/apiHandlerOpts'
 import { auth } from '../../../auth/authHandler'
 import { hentKamper } from '../../../data/matches'
+import { MatchAdminData } from '../../../types/types'
 
 interface ScoreRow {
     match_num: number
@@ -8,6 +9,26 @@ interface ScoreRow {
     away_score: number | null
     home_team_override: string | null
     away_team_override: string | null
+    synced_home_ft: number | null
+    synced_away_ft: number | null
+    synced_home_et: number | null
+    synced_away_et: number | null
+    synced_home_pen: number | null
+    synced_away_pen: number | null
+    synced_duration: string | null
+    score_synced_at: string | null
+    use_manual: boolean
+}
+
+function resolveActiveScore(score: ScoreRow): { home_score: number | null; away_score: number | null } {
+    if (score.use_manual) {
+        return { home_score: score.home_score, away_score: score.away_score }
+    }
+    if (score.synced_home_ft !== null && score.synced_away_ft !== null) {
+        return { home_score: score.synced_home_ft, away_score: score.synced_away_ft }
+    }
+    // Fallback til manuell om ingen synket score finnes ennå
+    return { home_score: score.home_score, away_score: score.away_score }
 }
 
 const handler = async function handler(opts: ApiHandlerOpts): Promise<void> {
@@ -19,7 +40,13 @@ const handler = async function handler(opts: ApiHandlerOpts): Promise<void> {
 
     const scores = (
         await client.query<ScoreRow>(
-            `SELECT match_num, home_score, away_score, home_team_override, away_team_override
+            `SELECT match_num, home_score, away_score,
+                    home_team_override, away_team_override,
+                    synced_home_ft, synced_away_ft,
+                    synced_home_et, synced_away_et,
+                    synced_home_pen, synced_away_pen,
+                    synced_duration, score_synced_at,
+                    use_manual
              FROM match_scores`,
         )
     ).rows
@@ -28,13 +55,33 @@ const handler = async function handler(opts: ApiHandlerOpts): Promise<void> {
 
     const matches = (await hentKamper(client)).map((m) => {
         const score = scoreMap.get(m.match_num)
-        return {
+        const resolved = score ? resolveActiveScore(score) : { home_score: null, away_score: null }
+
+        const base = {
             ...m,
             home_team: score?.home_team_override ?? m.home_team,
             away_team: score?.away_team_override ?? m.away_team,
-            home_score: score?.home_score ?? null,
-            away_score: score?.away_score ?? null,
+            home_score: resolved.home_score,
+            away_score: resolved.away_score,
         }
+
+        if (!user.scoreadmin || !score) return base
+
+        const adminData: MatchAdminData = {
+            manual_home_score: score.home_score,
+            manual_away_score: score.away_score,
+            synced_home_ft: score.synced_home_ft,
+            synced_away_ft: score.synced_away_ft,
+            synced_home_et: score.synced_home_et,
+            synced_away_et: score.synced_away_et,
+            synced_home_pen: score.synced_home_pen,
+            synced_away_pen: score.synced_away_pen,
+            synced_duration: score.synced_duration,
+            score_synced_at: score.score_synced_at,
+            use_manual: score.use_manual,
+        }
+
+        return { ...base, adminData }
     })
 
     res.status(200).json(matches)
