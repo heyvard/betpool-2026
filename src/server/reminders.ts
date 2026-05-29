@@ -3,7 +3,7 @@ import utc from 'dayjs/plugin/utc'
 import timezone from 'dayjs/plugin/timezone'
 import { PoolClient } from 'pg'
 
-import { getMatches } from '../data/matches'
+import { hentKamper } from '../data/matches'
 import { sendPushTilBruker } from './push'
 
 dayjs.extend(utc)
@@ -24,7 +24,7 @@ export async function sendPåminnelser(client: PoolClient): Promise<PåminnelseR
     const iMorgenKampDagStart = dayjs().tz(OSLO).add(1, 'day').startOf('day').add(12, 'hour')
     const iMorgenKampDagSlutt = iMorgenKampDagStart.add(1, 'day')
 
-    const morgendagensKamper = getMatches().filter((m) => {
+    const morgendagensKamper = (await hentKamper(client)).filter((m) => {
         const kampstart = dayjs(m.game_start)
         return !kampstart.isBefore(iMorgenKampDagStart) && kampstart.isBefore(iMorgenKampDagSlutt)
     })

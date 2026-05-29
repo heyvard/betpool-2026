@@ -1,51 +1,37 @@
-import teamsMeta from '../data/teamsMeta2026.json'
+import { landFlagg } from '../data/landFlagg'
 import { landNorsk } from '../data/landNorsk'
 import { landFransk } from '../data/landFransk'
 
-interface TeamMeta {
-    name: string
-    name_normalised?: string
-    continent: string
-    flag_icon: string
-    flag_unicode: string
-    fifa_code: string
-    group: string
-    confed: string
+// Lag identifiseres med tre-bokstavskoden (tla). football-data bruker URY for
+// Uruguay; resten av appen bruker URU.
+function normaliser(tla: string): string {
+    return tla === 'URY' ? 'URU' : tla
 }
 
-interface Lag {
-    engelsk: string
+export interface Lag {
+    tla: string
     norsk: string
     flagg: string
-    fifaKode: string
 }
 
-export const alleLag: Lag[] = (teamsMeta as TeamMeta[]).map((t) => ({
-    engelsk: t.name,
-    norsk: landNorsk[t.fifa_code] ?? t.name,
-    flagg: t.flag_icon,
-    fifaKode: t.fifa_code,
+export const alleLag: Lag[] = Object.keys(landNorsk).map((tla) => ({
+    tla,
+    norsk: landNorsk[tla],
+    flagg: landFlagg[tla] ?? '',
 }))
 
-const engelskMap = new Map<string, Lag>()
-
-alleLag.forEach((l) => {
-    engelskMap.set(l.engelsk, l)
-})
-
-export function hentFlag(engelskLag: string) {
-    return engelskMap.get(engelskLag)?.flagg || ''
+export function hentFlag(tla: string): string {
+    return landFlagg[normaliser(tla)] ?? ''
 }
 
-export function hentNorsk(engelskLag: string) {
-    return engelskMap.get(engelskLag)?.norsk || engelskLag
+export function hentNorsk(tla: string): string {
+    return landNorsk[normaliser(tla)] ?? tla
 }
 
-export function hentNavn(engelskLag: string, locale: 'no' | 'fr' = 'no') {
-    const lag = engelskMap.get(engelskLag)
-    if (!lag) return engelskLag
-    if (locale === 'fr') return landFransk[lag.fifaKode] ?? lag.norsk
-    return lag.norsk
+export function hentNavn(tla: string, locale: 'no' | 'fr' = 'no'): string {
+    const kode = normaliser(tla)
+    if (locale === 'fr') return landFransk[kode] ?? landNorsk[kode] ?? tla
+    return landNorsk[kode] ?? tla
 }
 
 export const alleLagSortert = [...alleLag].sort((a, b) => a.norsk.localeCompare(b.norsk))
@@ -54,7 +40,7 @@ export function getLagSortert(locale: 'no' | 'fr' = 'no') {
     return [...alleLag]
         .map((l) => ({
             ...l,
-            visningsnavn: locale === 'fr' ? (landFransk[l.fifaKode] ?? l.norsk) : l.norsk,
+            visningsnavn: locale === 'fr' ? (landFransk[l.tla] ?? l.norsk) : l.norsk,
         }))
         .sort((a, b) => a.visningsnavn.localeCompare(b.visningsnavn, locale))
 }

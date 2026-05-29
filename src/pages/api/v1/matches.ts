@@ -1,6 +1,6 @@
 import { ApiHandlerOpts } from '../../../types/apiHandlerOpts'
 import { auth } from '../../../auth/authHandler'
-import { getMatches } from '../../../data/matches'
+import { hentKamper } from '../../../data/matches'
 
 interface ScoreRow {
     match_num: number
@@ -26,7 +26,7 @@ const handler = async function handler(opts: ApiHandlerOpts): Promise<void> {
 
     const scoreMap = new Map<number, ScoreRow>(scores.map((s) => [s.match_num, s]))
 
-    const matches = getMatches().map((m) => {
+    const matches = (await hentKamper(client)).map((m) => {
         const score = scoreMap.get(m.match_num)
         return {
             ...m,

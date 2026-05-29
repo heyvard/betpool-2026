@@ -1,53 +1,47 @@
 import dayjs from 'dayjs'
+import { PoolClient } from 'pg'
 
-import { getMatches } from '../data/matches'
+import { serverNå } from './testClock'
 
-import { nå, serverNå } from './testClock'
+// Frist-datoene utledes fra kampprogrammet i databasen:
+// - førsteRunde: starten på andre gruppespillsrunde (round=2) — fristen for å
+//   sette vinner/toppscorer.
+// - endrevinduSlutt: starten på kvartfinalen (round=6) — endrevinduet er åpent
+//   gjennom sekstendels- og åttendedelsfinalene frem til da.
+// På serveren må `req` sendes med for at test-klokka skal gjelde (den bor i
+// request-cookien).
 
-// På serveren må `req` sendes med for at test-klokka skal gjelde — den bor i
-// request-cookien. På klienten leses cookien direkte, så `req` kan utelates.
-type CookieReq = { cookies: Partial<Record<string, string>> }
-
-export function erIFørsteRunde(req?: CookieReq): boolean {
-    const tidspunkt = req ? dayjs(serverNå(req)) : nå()
-    return førsteRunde.isAfter(tidspunkt)
-}
-
-// Fristen for å endre vinner/toppscorer er starten på andre gruppespillsrunde
-// (round=2 i Match-modellen, dvs. hvert lags andre gruppekamp).
-function finnStartenPåAndreRunde(): dayjs.Dayjs {
-    const andreRunde = getMatches()
-        .filter((m) => m.round === 2)
-        .map((m) => dayjs(m.game_start))
-        .sort((a, b) => a.valueOf() - b.valueOf())
-    if (andreRunde.length === 0) {
-        throw new Error('Fant ingen kamper i andre runde')
+async function førsteKampstartIRunde(client: PoolClient, round: number): Promise<dayjs.Dayjs> {
+    const rows = (
+        await client.query<{ game_start: Date }>(
+            `SELECT game_start FROM matches WHERE round = $1 ORDER BY game_start ASC LIMIT 1`,
+            [round],
+        )
+    ).rows
+    if (rows.length === 0) {
+        throw new Error(`Fant ingen kamper i runde ${round}`)
     }
-    return andreRunde[0]
+    return dayjs(rows[0].game_start)
 }
 
-export const førsteRunde = finnStartenPåAndreRunde()
-
-export function erEtterFørsteRunde(req?: CookieReq): boolean {
-    return !erIFørsteRunde(req)
+export async function hentFristDatoer(client: PoolClient): Promise<{ forsteRunde: string; endrevinduSlutt: string }> {
+    const [forste, kvart] = await Promise.all([førsteKampstartIRunde(client, 2), førsteKampstartIRunde(client, 6)])
+    return { forsteRunde: forste.toISOString(), endrevinduSlutt: kvart.toISOString() }
 }
 
-// Endrevinduet: brukere kan endre vinner/toppscorer én gang etter gruppespill
-// runde 1, frem til kvartfinalen starter (åpent gjennom sekstendels- og åttendedelsfinalene).
-function finnStartenPåKvartfinale(): dayjs.Dayjs {
-    const kvartfinale = getMatches()
-        .filter((m) => m.round === 6)
-        .map((m) => dayjs(m.game_start))
-        .sort((a, b) => a.valueOf() - b.valueOf())
-    if (kvartfinale.length === 0) {
-        throw new Error('Fant ingen kamper i kvartfinalen')
-    }
-    return kvartfinale[0]
+export async function erIFørsteRunde(
+    client: PoolClient,
+    req: { cookies: Partial<Record<string, string>> },
+): Promise<boolean> {
+    const forste = await førsteKampstartIRunde(client, 2)
+    return forste.isAfter(dayjs(serverNå(req)))
 }
 
-export const endrevinduSlutt = finnStartenPåKvartfinale()
-
-export function erIEndrevindu(req?: CookieReq): boolean {
-    const tidspunkt = req ? dayjs(serverNå(req)) : nå()
-    return erEtterFørsteRunde(req) && endrevinduSlutt.isAfter(tidspunkt)
+export async function erIEndrevindu(
+    client: PoolClient,
+    req: { cookies: Partial<Record<string, string>> },
+): Promise<boolean> {
+    const tidspunkt = dayjs(serverNå(req))
+    const [forste, kvart] = await Promise.all([førsteKampstartIRunde(client, 2), førsteKampstartIRunde(client, 6)])
+    return !forste.isAfter(tidspunkt) && kvart.isAfter(tidspunkt)
 }

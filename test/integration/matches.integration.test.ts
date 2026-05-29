@@ -1,4 +1,4 @@
-import { api, seedUser, truncateAll, withDb } from './helpers'
+import { api, førsteMatchNum, seedUser, truncateAll, withDb } from './helpers'
 
 beforeEach(truncateAll)
 
@@ -14,7 +14,8 @@ describe('/api/v1/matches', () => {
 
     it('PUT /api/v1/matches/[id] krever scoreadmin', async () => {
         await seedUser({ firebase_user_id: 'alice', scoreadmin: false })
-        const res = await api('/api/v1/matches/1', {
+        const matchNum = await førsteMatchNum()
+        const res = await api(`/api/v1/matches/${matchNum}`, {
             user: 'alice',
             method: 'PUT',
             body: { home_score: 1, away_score: 0 },
@@ -24,7 +25,8 @@ describe('/api/v1/matches', () => {
 
     it('scoreadmin kan sette resultat, og det vises i GET', async () => {
         await seedUser({ firebase_user_id: 'admin', scoreadmin: true })
-        const put = await api('/api/v1/matches/1', {
+        const matchNum = await førsteMatchNum()
+        const put = await api(`/api/v1/matches/${matchNum}`, {
             user: 'admin',
             method: 'PUT',
             body: { home_score: 3, away_score: 1 },
@@ -32,21 +34,22 @@ describe('/api/v1/matches', () => {
         expect(put.status).toBe(200)
 
         const dbRow = await withDb((c) =>
-            c.query('SELECT home_score, away_score FROM match_scores WHERE match_num = 1'),
+            c.query('SELECT home_score, away_score FROM match_scores WHERE match_num = $1', [matchNum]),
         )
         expect(dbRow.rows[0]).toMatchObject({ home_score: 3, away_score: 1 })
 
         const matches = await (await api('/api/v1/matches', { user: 'admin' })).json()
-        const kamp1 = matches.find((m: { match_num: number }) => m.match_num === 1)
+        const kamp1 = matches.find((m: { match_num: number }) => m.match_num === matchNum)
         expect(kamp1).toMatchObject({ home_score: 3, away_score: 1 })
     })
 
     it('scoreadmin kan overstyre lagnavn', async () => {
         await seedUser({ firebase_user_id: 'admin', scoreadmin: true })
-        await api('/api/v1/matches/1', { user: 'admin', method: 'PUT', body: { home_team: 'Norge' } })
+        const matchNum = await førsteMatchNum()
+        await api(`/api/v1/matches/${matchNum}`, { user: 'admin', method: 'PUT', body: { home_team: 'NOR' } })
 
         const matches = await (await api('/api/v1/matches', { user: 'admin' })).json()
-        const kamp1 = matches.find((m: { match_num: number }) => m.match_num === 1)
-        expect(kamp1.home_team).toBe('Norge')
+        const kamp1 = matches.find((m: { match_num: number }) => m.match_num === matchNum)
+        expect(kamp1.home_team).toBe('NOR')
     })
 })

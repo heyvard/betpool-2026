@@ -14,7 +14,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import { useDebouncedCallback } from 'use-debounce'
 import nb from 'dayjs/locale/nb'
 import fr from 'dayjs/locale/fr'
-import { erEtterFørsteRunde, erIEndrevindu, førsteRunde, endrevinduSlutt } from '../utils/isInFirstRound'
+import { beregnFrister, erEtterFørsteRunde, erIEndrevindu } from '../utils/fristDatoer'
 import { nå } from '../utils/testClock'
 import { LoadingScreen } from '../components/loading/LoadingScreen'
 import { VarslerHint } from '../components/VarslerHint'
@@ -47,8 +47,9 @@ const Home: NextPage = () => {
     const snartKamper = matches.filter((a) => {
         return dayjs(a.game_start).isAfter(nå()) && dayjs(a.game_start).isBefore(nå().add(2, 'hours'))
     })
-    const laast = erEtterFørsteRunde()
-    const endrevindu = erIEndrevindu()
+    const frister = beregnFrister(matches)
+    const laast = erEtterFørsteRunde(frister, nå())
+    const endrevindu = erIEndrevindu(frister, nå())
 
     return (
         <div className="space-y-4">
@@ -97,11 +98,12 @@ const Home: NextPage = () => {
                 <p className="mt-0.5 text-xs text-stone-500">
                     {!laast
                         ? tx(t.hjem.kanEndresFremTil, {
-                              dato: førsteRunde.locale(dayjsLocale).format('dddd D. MMM [kl] HH:mm'),
+                              dato: frister.forsteRunde?.locale(dayjsLocale).format('dddd D. MMM [kl] HH:mm') ?? '',
                           })
                         : endrevindu
                           ? tx(t.hjem.endrevinduFrist, {
-                                dato: endrevinduSlutt.locale(dayjsLocale).format('dddd D. MMM [kl] HH:mm'),
+                                dato:
+                                    frister.endrevinduSlutt?.locale(dayjsLocale).format('dddd D. MMM [kl] HH:mm') ?? '',
                             })
                           : t.hjem.vmIGangLaast}
                 </p>
@@ -383,7 +385,7 @@ function VinnerKort({ megselv, laast, endrevindu }: { megselv: User; laast: bool
                                     {t.hjem.velgLagPlaceholder}
                                 </option>
                                 {lagSortert.map((l) => (
-                                    <option key={l.engelsk} value={l.engelsk}>
+                                    <option key={l.tla} value={l.tla}>
                                         {l.flagg + ' ' + l.visningsnavn}
                                     </option>
                                 ))}

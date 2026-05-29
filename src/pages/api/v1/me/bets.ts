@@ -1,6 +1,6 @@
 import { ApiHandlerOpts } from '../../../../types/apiHandlerOpts'
 import { auth } from '../../../../auth/authHandler'
-import { getMatches } from '../../../../data/matches'
+import { hentKamper } from '../../../../data/matches'
 
 const handler = async function handler(opts: ApiHandlerOpts): Promise<void> {
     const { user, res, client } = opts
@@ -36,7 +36,7 @@ const handler = async function handler(opts: ApiHandlerOpts): Promise<void> {
     ).rows
     const overrideMap = new Map(scoreRows.map((s) => [s.match_num, s]))
 
-    const bets = getMatches()
+    const bets = (await hentKamper(client))
         .map((match) => {
             const bet = betMap.get(match.match_num)
             const override = overrideMap.get(match.match_num)

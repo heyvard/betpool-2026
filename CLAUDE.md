@@ -72,7 +72,9 @@ Next.js 16 pages router + React 19 + TypeScript, Tailwind v4 med eget brand-toke
 
 ### Domain model
 
-Tables (defined in `migrations/`): `users` (with role flags `superadmin`, `paymentadmin`, `scoreadmin`, plus `paid`, `winner`, `topscorer`), `matches` (round, teams, scheduled `game_start`, final score), `bets` (user_id + match_id + predicted home/away score), `chat`. UUIDs everywhere; CockroachDB with `uuid_generate_v4()`.
+Tables (defined in `migrations/`): `users` (with role flags `superadmin`, `paymentadmin`, `scoreadmin`, plus `paid`, `winner`, `topscorer`), `matches` (kampoppsett: `match_num` = football-data.org sin match-id, `round`, `home_team`/`away_team` som tre-bokstavskode/tla, `game_start`, `group`, `stage`), `match_scores` (faktisk resultat + team-override per `match_num`), `bets` (user_id + match_num + predicted home/away score), `chat`. UUIDs på de fleste tabeller; CockroachDB.
+
+Kampoppsettet seedes inn i `matches` av migreringen (fra `src/data/footballDataFixtures.json`) og holdes oppdatert av en cron (`/api/cron/sync-matches` → `src/server/syncMatches.ts`) som henter fra football-data.org. Lag identifiseres med tre-bokstavskoden (tla); visningsnavn/flagg slås opp i `src/utils/lag.ts` via `landNorsk`/`landFransk`/`landFlagg` (alle nøklet på tla). Sluttspill-lag er tomme i datasettet til de er avgjort — `scoreadmin` setter dem via `home_team_override` i `/sluttspill`. Server-kode leser kamper async via `hentKamper(client)` o.l. i `src/data/matches.ts`; klienten henter via `/api/v1/matches`.
 
 ### Scoring (`src/components/results/`)
 
@@ -112,7 +114,7 @@ Den fulle design-handoff-pakken (med prototyper og 6 ikon-/5 loading-screen-vari
 
 ### Environment
 
-`PG_URI`, `VM` (optional), `NEXT_PUBLIC_MOCK` (optional), `NEXT_PUBLIC_TEST_AUTH` (optional, test/e2e only — see request flow point 5), and `NEXT_PUBLIC_FIREBASE_*` (apiKey, authDomain, storageBucket, messagingSenderId, appId).
+`PG_URI`, `VM` (optional), `NEXT_PUBLIC_MOCK` (optional), `NEXT_PUBLIC_TEST_AUTH` (optional, test/e2e only — see request flow point 5), `NEXT_PUBLIC_FIREBASE_*` (apiKey, authDomain, storageBucket, messagingSenderId, appId), `CRON_SECRET` (Bearer-token for `/api/cron/*`), and `FOOTBALL_DATA_TOKEN` (football-data.org API-token for kamp-synk — `scripts/hent-fixtures-football-data.mjs` og `/api/cron/sync-matches`).
 
 ### Integration & e2e tests
 

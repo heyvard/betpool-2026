@@ -1,0 +1,64 @@
+import { Match } from '../types/types'
+
+// Rå kamp slik football-data.org v4 leverer den (feltene vi bruker).
+export interface FootballDataMatch {
+    id: number
+    utcDate: string
+    stage: string
+    group: string | null
+    matchday: number | null
+    homeTeam: { tla: string | null }
+    awayTeam: { tla: string | null }
+}
+
+// football-data bruker URY for Uruguay; resten av appen (landNorsk/landFransk/
+// landFlagg) bruker URU. Normaliser her så lag-oppslag treffer.
+export function normaliserTla(tla: string | null): string {
+    if (!tla) return ''
+    return tla === 'URY' ? 'URU' : tla
+}
+
+// Runde-modellen i appen: gruppespill 1–3 (hvert lags kampdag), så sluttspill
+// 4–9. football-data har per-gruppe matchday 1/2/3 i gruppespillet.
+export function stageTilRunde(stage: string, matchday: number | null): number {
+    switch (stage) {
+        case 'GROUP_STAGE':
+            return matchday ?? 1
+        case 'LAST_32':
+            return 4
+        case 'LAST_16':
+            return 5
+        case 'QUARTER_FINALS':
+            return 6
+        case 'SEMI_FINALS':
+            return 7
+        case 'THIRD_PLACE':
+            return 8
+        case 'FINAL':
+            return 9
+        default:
+            return 1
+    }
+}
+
+function gruppeTilTekst(group: string | null): string | undefined {
+    if (!group) return undefined
+    // "GROUP_A" -> "Group A"
+    const bokstav = group.replace('GROUP_', '')
+    return `Group ${bokstav}`
+}
+
+// Sluttspill-lag er ukjent (null) til de er avgjort — da blir home_team/away_team
+// tom streng, og scoreadmin setter ekte lag via override.
+export function transformerKamp(raw: FootballDataMatch): Match {
+    return {
+        match_num: raw.id,
+        round: stageTilRunde(raw.stage, raw.matchday),
+        home_team: normaliserTla(raw.homeTeam?.tla ?? null),
+        away_team: normaliserTla(raw.awayTeam?.tla ?? null),
+        game_start: raw.utcDate,
+        home_score: null,
+        away_score: null,
+        group: gruppeTilTekst(raw.group),
+    }
+}

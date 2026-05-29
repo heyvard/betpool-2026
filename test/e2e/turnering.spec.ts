@@ -1,7 +1,9 @@
 import { test, expect, type BrowserContext, type Locator, type Page } from '@playwright/test'
 
 import { seedBet, seedUser, truncateAll } from '../support/db'
-import { erNorgeKamp, getMatches, type Match } from '../../src/data/matches'
+import { testKamper } from '../support/matches'
+import { erNorgeKamp } from '../../src/data/matches'
+import type { Match } from '../../src/types/types'
 
 // Ende-til-ende: fire brukere spiller gjennom to gruppespillsrunder og en
 // sluttspillrunde. Test-klokka flyttes fremover mellom rundene, resultater
@@ -12,12 +14,14 @@ const PORT = Number(process.env.TEST_PORT ?? 3100)
 const URL_BASE = `http://localhost:${PORT}`
 
 // --- Kamputvalg, utledet fra kampprogrammet (ikke hardkodede kampnummer) ---
-const alleKamper = getMatches()
+const alleKamper = testKamper()
 const gruppeRunde1 = alleKamper.filter((m) => m.round === 1)
 const norgeKamp = gruppeRunde1.find((m) => erNorgeKamp(m.home_team, m.away_team))!
 const [r1a, r1b] = gruppeRunde1.filter((m) => m !== norgeKamp)
 const [r2a, r2b] = alleKamper.filter((m) => m.round === 2)
-const r4 = alleKamper.filter((m) => m.round === 4)[0]
+// Sluttspill-lag er ukjent i datasettet (tomme) til de er avgjort — testen setter
+// derfor team-override (HJE/BOR) på round 4-kampen før den tippes.
+const r4 = { ...alleKamper.filter((m) => m.round === 4)[0], home_team: 'HJE', away_team: 'BOR' }
 
 // --- Test-klokke: faste tidspunkt rundt de utvalgte kampene ---
 const FØR_TURNERING = '2026-06-01T00:00:00.000Z'
@@ -297,7 +301,14 @@ test('full gjennomspilling: tipping, tid fremover, resultater og leaderboard', a
         expect(await lesLeaderboard(page)).toEqual(FORVENTET_ETTER_R2)
     })
 
-    await test.step('Round of 32 – alice tipper med joker', async () => {
+    await test.step('Round of 32 – sett lag og alice tipper med joker', async () => {
+        // Sluttspill-lagene er tomme i datasettet; scoreadmin (alice) setter dem
+        // via override så kampen kan tippes.
+        const settLag = await page.request.put(`${URL_BASE}/api/v1/matches/${r4.match_num}`, {
+            data: JSON.stringify({ home_team: r4.home_team, away_team: r4.away_team }),
+        })
+        expect(settLag.ok()).toBeTruthy()
+
         await page.goto('/my-bets')
         for (const o of runde4) {
             await tippKampViaUi(page, o.kamp, o.tips.alice)

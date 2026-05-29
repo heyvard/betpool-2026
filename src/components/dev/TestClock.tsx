@@ -3,7 +3,7 @@ import dayjs from 'dayjs'
 import { useQueryClient } from '@tanstack/react-query'
 
 import { setKlokke, nullstillKlokke } from '../../utils/testClock'
-import { getMatches } from '../../data/matches'
+import { UseMatches } from '../../queries/useMatches'
 
 // Dev-only klokkekontroll. Rendres kun når NEXT_PUBLIC_TEST_AUTH=true.
 // Overstyrer «nå» i hele testappen via «betpool_test_clock»-cookien.
@@ -17,23 +17,28 @@ function lesKlokkeCookie(): string | undefined {
     return m ? decodeURIComponent(m[1]) : undefined
 }
 
-// «Nå» et par timer etter at kamp nr. `num` har startet.
-function etterKamp(num: number): string {
-    const match = getMatches().find((m) => m.match_num === num)
+import { Match } from '../../types/types'
+
+// «Nå» et par timer etter at den `n`-te kampen (kronologisk) har startet.
+function etterKampNr(matches: Match[], n: number): string {
+    const match = matches[n - 1]
     if (!match) return new Date().toISOString()
     return dayjs(match.game_start).add(3, 'hours').toISOString()
 }
 
 // Et døgn før første kamp — «før turneringen».
-function førTurneringen(): string {
-    const første = getMatches()[0]
+function førTurneringen(matches: Match[]): string {
+    const første = matches[0]
+    if (!første) return new Date().toISOString()
     return dayjs(første.game_start).subtract(1, 'day').toISOString()
 }
 
 export function TestClock() {
     const queryClient = useQueryClient()
+    const { data: matches } = UseMatches()
     const [open, setOpen] = useState(false)
     const [current, setCurrent] = useState<string | undefined>(undefined)
+    const kamper = matches ?? []
 
     useEffect(() => {
         // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -63,19 +68,19 @@ export function TestClock() {
                         <div className="text-xs font-normal text-zinc-500">Nå: {label}</div>
                     </div>
                     <button
-                        onClick={() => sett(førTurneringen())}
+                        onClick={() => sett(førTurneringen(kamper))}
                         className="block w-full px-3 py-2 text-left hover:bg-sky-50"
                     >
                         Før turneringen
                     </button>
                     <button
-                        onClick={() => sett(etterKamp(1))}
+                        onClick={() => sett(etterKampNr(kamper, 1))}
                         className="block w-full px-3 py-2 text-left hover:bg-sky-50"
                     >
                         Etter kamp 1
                     </button>
                     <button
-                        onClick={() => sett(etterKamp(5))}
+                        onClick={() => sett(etterKampNr(kamper, 5))}
                         className="block w-full px-3 py-2 text-left hover:bg-sky-50"
                     >
                         Etter kamp 5

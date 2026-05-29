@@ -2,7 +2,7 @@ import { ApiHandlerOpts } from '../../../types/apiHandlerOpts'
 import { erIFørsteRunde } from '../../../utils/isInFirstRound'
 import { serverNå } from '../../../utils/testClock'
 import { auth } from '../../../auth/authHandler'
-import { getMatches } from '../../../data/matches'
+import { hentKamper } from '../../../data/matches'
 
 const handler = async function handler(opts: ApiHandlerOpts): Promise<void> {
     const { req, res, user, client } = opts
@@ -54,7 +54,7 @@ const handler = async function handler(opts: ApiHandlerOpts): Promise<void> {
             WHERE u.active = true`),
     ])
 
-    const matchList = getMatches()
+    const matchList = await hentKamper(client)
     const scoreMap = new Map<number, ScoreRow>(scoreRows.rows.map((s) => [s.match_num, s]))
     const now = serverNå(req)
 
@@ -81,7 +81,7 @@ const handler = async function handler(opts: ApiHandlerOpts): Promise<void> {
         .filter(Boolean)
 
     const userList = userRows.rows
-    if (erIFørsteRunde(req)) {
+    if (await erIFørsteRunde(client, req)) {
         userList.forEach((u) => {
             delete u.winner
             delete u.topscorer
