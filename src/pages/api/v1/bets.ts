@@ -48,7 +48,7 @@ const handler = async function handler(opts: ApiHandlerOpts): Promise<void> {
             SELECT match_num, home_score, away_score, home_team_override, away_team_override
             FROM match_scores`),
         client.query<User>(`
-            SELECT u.id, u.name, u.paid, u.picture, u.winner, u.topscorer,
+            SELECT u.id, COALESCE(NULLIF(u.kallenavn, ''), u.name) AS name, u.paid, u.picture, u.winner, u.topscorer,
                    u.winner_endret, u.topscorer_endret
             FROM users u
             WHERE u.active = true`),

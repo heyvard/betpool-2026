@@ -15,7 +15,8 @@ const handler = async function handler(opts: ApiHandlerOpts): Promise<void> {
 
     const brukere = (
         await client.query<{ id: string; name: string; picture: string | null }>(
-            `SELECT id, name, picture FROM users WHERE active = true ORDER BY name`,
+            `SELECT id, COALESCE(NULLIF(kallenavn, ''), name) AS name, picture
+             FROM users WHERE active = true ORDER BY COALESCE(NULLIF(kallenavn, ''), name)`,
         )
     ).rows
 
