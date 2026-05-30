@@ -90,7 +90,7 @@ const no = {
         resultater: '{{navn}} sine resultater',
         vinner: 'Vinner:',
         toppscorer: 'Toppscorer:',
-        ingenResultater: 'Ingen resultater',
+        ingenResultater: 'Ingen spilte kamper ennå',
         riktigResultat: 'Riktig resultat',
         riktigUtfall: 'Riktig utfall',
         bom: 'Bom',
