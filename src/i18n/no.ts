@@ -25,6 +25,7 @@ const no = {
         redigerSluttspill: 'Rediger sluttspill',
         redigerResultater: 'Rediger resultater',
         brukere: 'Brukere',
+        innbetaling: 'Innbetalinger',
         sprak: 'Språk',
     },
     hjem: {

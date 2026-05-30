@@ -27,6 +27,7 @@ const fr: Translations = {
         redigerSluttspill: 'Modifier phases finales',
         redigerResultater: 'Modifier résultats',
         brukere: 'Utilisateurs',
+        innbetaling: 'Paiements',
         sprak: 'Langue',
     },
     hjem: {

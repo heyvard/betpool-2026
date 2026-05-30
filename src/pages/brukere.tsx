@@ -10,7 +10,7 @@ import { User } from '../types/user'
 import { Switch } from '@/components/ui/switch'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
-import { Check, Clock, RefreshCw, Bell, Calendar } from 'lucide-react'
+import { RefreshCw, Bell, Calendar } from 'lucide-react'
 
 function initialer(navn: string): string {
     const deler = navn.trim().split(/\s+/).filter(Boolean)
@@ -81,19 +81,9 @@ function BrukerView({ me, user }: { user: UserForAdmin; me: User }) {
                         </div>
                     )}
                 </div>
-                <span className={cn('shrink-0', user.paid ? 'bp-chip-green' : 'bp-chip-gold')}>
-                    {user.paid ? <Check className="h-3.5 w-3.5" /> : <Clock className="h-3.5 w-3.5" />}
-                    {user.paid ? 'Betalt' : 'Ikke betalt'}
-                </span>
             </div>
 
             <div className="border-t border-stone-100 divide-y divide-stone-100 px-4">
-                <InnstillingsRad
-                    label="Betalt"
-                    checked={user.paid}
-                    loading={isPending}
-                    onToggle={() => mutate({ request: { paid: !user.paid } })}
-                />
                 {me.superadmin && (
                     <>
                         <InnstillingsRad
@@ -199,16 +189,10 @@ const Brukere: NextPage = () => {
     }
 
     const sortert = [...data].sort((a, b) => a.name.localeCompare(b.name, 'nb'))
-    const antallBetalt = data.filter((u) => u.paid).length
 
     return (
         <div className="space-y-3">
-            <div className="flex items-baseline justify-between gap-3">
-                <h1 className="text-2xl font-bold text-stone-900">Brukere</h1>
-                <span className="shrink-0 text-sm text-stone-500">
-                    {antallBetalt} av {data.length} har betalt
-                </span>
-            </div>
+            <h1 className="text-2xl font-bold text-stone-900">Brukere</h1>
             {me.superadmin && <CronJobber />}
             {sortert.map((user) => (
                 <BrukerView key={user.id} user={user} me={me} />
