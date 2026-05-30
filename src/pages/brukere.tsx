@@ -10,7 +10,7 @@ import { User } from '../types/user'
 import { Switch } from '@/components/ui/switch'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
-import { RefreshCw, Bell, Calendar } from 'lucide-react'
+import { RefreshCw, Bell, Calendar, Smartphone } from 'lucide-react'
 
 function initialer(navn: string): string {
     const deler = navn.trim().split(/\s+/).filter(Boolean)
@@ -34,6 +34,42 @@ function InnstillingsRad({
         <div className="flex items-center justify-between py-2.5">
             <span className="text-sm text-stone-700">{label}</span>
             <Switch checked={checked} size="small" loading={loading} onCheckedChange={onToggle} />
+        </div>
+    )
+}
+
+function VarselChip({ label, på, dempet }: { label: string; på: boolean; dempet?: boolean }) {
+    return (
+        <span
+            className={cn(
+                'rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide',
+                på && !dempet && 'bg-green-100 text-green-800',
+                på && dempet && 'bg-stone-100 text-stone-500',
+                !på && 'bg-stone-100 text-stone-400 line-through',
+            )}
+        >
+            {label}
+        </span>
+    )
+}
+
+function PushSeksjon({ user }: { user: UserForAdmin }) {
+    const harEnhet = user.device_count > 0
+    const enhetTekst = harEnhet
+        ? `${user.device_count} ${user.device_count === 1 ? 'push-enhet' : 'push-enheter'}`
+        : 'Ingen push-enheter'
+
+    return (
+        <div className="py-2.5">
+            <div className="flex items-center gap-1.5 text-sm">
+                <Smartphone className={cn('h-4 w-4 shrink-0', harEnhet ? 'text-stone-600' : 'text-stone-400')} />
+                <span className={harEnhet ? 'text-stone-700' : 'text-stone-400'}>{enhetTekst}</span>
+            </div>
+            <div className="mt-1.5 flex flex-wrap gap-1">
+                <VarselChip label="Generelt" på={user.notif_general} dempet={!harEnhet} />
+                <VarselChip label="Påminnelser" på={user.notif_reminders} dempet={!harEnhet} />
+                <VarselChip label="Oppsummering" på={user.notif_summary} dempet={!harEnhet} />
+            </div>
         </div>
     )
 }
@@ -84,6 +120,7 @@ function BrukerView({ me, user }: { user: UserForAdmin; me: User }) {
             </div>
 
             <div className="border-t border-stone-100 divide-y divide-stone-100 px-4">
+                <PushSeksjon user={user} />
                 {me.superadmin && (
                     <>
                         <InnstillingsRad
