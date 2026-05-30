@@ -1,6 +1,7 @@
 import { ApiHandlerOpts } from '../../../types/apiHandlerOpts'
 import { erIEndrevinduMed, erIFørsteRundeMed, hentFrister } from '../../../utils/isInFirstRound'
 import { auth } from '../../../auth/authHandler'
+import { sendPushTilBruker } from '../../../server/push'
 
 const handler = async function handler(opts: ApiHandlerOpts): Promise<void> {
     const { res, req, user, jwtPayload, client } = opts
@@ -68,6 +69,23 @@ const handler = async function handler(opts: ApiHandlerOpts): Promise<void> {
                 '',
             ],
         )
+        try {
+            const superadmins = await client.query<{ id: string }>(
+                `SELECT id FROM users WHERE superadmin = true AND notif_general = true`,
+            )
+            const nyBrukerNavn = nyBruker.rows[0].name || nyBruker.rows[0].email
+            await Promise.all(
+                superadmins.rows.map((sa) =>
+                    sendPushTilBruker(client, sa.id, {
+                        title: 'Ny bruker registrert',
+                        body: `${nyBrukerNavn} har registrert seg.`,
+                        url: '/brukere',
+                    }).catch((err) => console.error('Push til superadmin feilet:', err)),
+                ),
+            )
+        } catch (err) {
+            console.error('Feil ved varsling av superadmins:', err)
+        }
         res.status(200).json(nyBruker.rows[0])
     } catch (err: any) {
         if (err.code === '23505') {
