@@ -1,5 +1,6 @@
 export interface User {
     name: string
+    kallenavn?: string | null
     email: string
     picture: string
     firebase_user_id: string

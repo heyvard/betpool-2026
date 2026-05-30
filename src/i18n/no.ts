@@ -26,6 +26,7 @@ const no = {
         redigerResultater: 'Rediger resultater',
         brukere: 'Brukere',
         innbetaling: 'Innbetalinger',
+        innstillinger: 'Innstillinger',
         sprak: 'Språk',
     },
     hjem: {
@@ -264,6 +265,15 @@ const no = {
                 forklaring: 'Hver morgen: hvordan gikk det med tipsene dine i går.',
             },
         ],
+    },
+    innstillinger: {
+        tittel: 'Innstillinger',
+        kallenavnTittel: 'Kallenavn',
+        kallenavnBeskrivelse:
+            'Vises i ledertavlen og lister i stedet for navnet ditt. La feltet stå tomt for å bruke det vanlige navnet.',
+        kallenavnLabel: 'Kallenavn',
+        kallenavnPlaceholder: 'F.eks. Kongen av VM',
+        lagre: 'Lagre',
     },
     varslerHint: {
         tittel: 'Slå på varsler?',

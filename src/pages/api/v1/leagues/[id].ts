@@ -168,11 +168,11 @@ const handler = async function handler(opts: ApiHandlerOpts): Promise<void> {
             status: string
             paid: boolean
         }>(
-            `SELECT lm.user_id, u.name, u.picture, lm.status, lm.paid
+            `SELECT lm.user_id, COALESCE(NULLIF(u.kallenavn, ''), u.name) AS name, u.picture, lm.status, lm.paid
              FROM league_members lm
              JOIN users u ON u.id = lm.user_id
              WHERE lm.league_id = $1
-             ORDER BY u.name`,
+             ORDER BY COALESCE(NULLIF(u.kallenavn, ''), u.name)`,
             [ligaId],
         )
     ).rows

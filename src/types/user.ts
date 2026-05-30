@@ -5,6 +5,12 @@ export interface User {
     active: boolean
     email: string
     name: string
+    /**
+     * Brukerens eget kallenavn. Vises i stedet for `name` overalt navnet
+     * presenteres for andre (ledertavle, ligaer, tips osv.). `null`/tom betyr
+     * at det vanlige `name` brukes. Rå verdi her — fallback gjøres i API-laget.
+     */
+    kallenavn: string | null
     superadmin: boolean
     scoreadmin: boolean
     paymentadmin: boolean

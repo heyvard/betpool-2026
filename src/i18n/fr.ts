@@ -28,6 +28,7 @@ const fr: Translations = {
         redigerResultater: 'Modifier résultats',
         brukere: 'Utilisateurs',
         innbetaling: 'Paiements',
+        innstillinger: 'Réglages',
         sprak: 'Langue',
     },
     hjem: {
@@ -270,6 +271,15 @@ const fr: Translations = {
                 forklaring: "Chaque matin : comment vos paris d'hier se sont passés.",
             },
         ],
+    },
+    innstillinger: {
+        tittel: 'Réglages',
+        kallenavnTittel: 'Surnom',
+        kallenavnBeskrivelse:
+            'Affiché dans le classement et les listes à la place de votre nom. Laissez vide pour utiliser votre nom habituel.',
+        kallenavnLabel: 'Surnom',
+        kallenavnPlaceholder: 'Ex. Le roi du Mondial',
+        lagre: 'Enregistrer',
     },
     varslerHint: {
         tittel: 'Activer les notifications ?',

@@ -34,6 +34,7 @@ export function auth(fn: { (_opts: ApiHandlerOpts): Promise<void> }) {
                     firebase_user_id: '1',
                     picture: 'https://www.nav.no',
                     name: 'Testy',
+                    kallenavn: null,
                     email: 'adsfdsf',
                     admin: false,
                     superadmin: false,

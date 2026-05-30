@@ -18,7 +18,7 @@ const handler = async function handler(opts: ApiHandlerOpts): Promise<void> {
     const chat = (
         await client.query(`
         SELECT u.id userid,
-               u.name,
+               COALESCE(NULLIF(u.kallenavn, ''), u.name) AS name,
                u.picture,
                c.*
         FROM chat c,

@@ -108,7 +108,7 @@ const handler = async function handler(opts: ApiHandlerOpts): Promise<void> {
             `SELECT l.id,
                     l.name,
                     l.owner_user_id,
-                    ou.name AS owner_name,
+                    COALESCE(NULLIF(ou.kallenavn, ''), ou.name) AS owner_name,
                     l.innsats,
                     l.betalingsinfo,
                     l.premie_forste_prosent,
