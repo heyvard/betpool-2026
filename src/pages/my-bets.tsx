@@ -29,6 +29,7 @@ const Home: NextPage = () => {
     const jokerPerRunde = byggJokerPerRunde(myBets)
 
     const kommende = myBets.filter((b) => dayjs(b.game_start).isAfter(nå()))
+    const harStartet = myBets.some((b) => !dayjs(b.game_start).isAfter(nå()))
 
     const grupper = new Map<number, Bet[]>()
     for (const b of kommende) {
@@ -40,11 +41,13 @@ const Home: NextPage = () => {
 
     return (
         <>
-            <div>
-                <NextLink passHref legacyBehavior href={'/user/' + megselv.id}>
-                    <LinkPanel className="text-xl">{t.mineTips.spilteKamper}</LinkPanel>
-                </NextLink>
-            </div>
+            {harStartet && (
+                <div className="mb-6">
+                    <NextLink passHref legacyBehavior href={'/user/' + megselv.id}>
+                        <LinkPanel className="text-xl">{t.mineTips.spilteKamper}</LinkPanel>
+                    </NextLink>
+                </div>
+            )}
 
             <ProgresjonsKort myBets={myBets} />
 

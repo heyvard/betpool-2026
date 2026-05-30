@@ -95,7 +95,7 @@ const fr: Translations = {
         resultater: 'Résultats de {{navn}}',
         vinner: 'Vainqueur :',
         toppscorer: 'Meilleur buteur :',
-        ingenResultater: 'Aucun résultat',
+        ingenResultater: 'Aucun match joué pour le moment',
         riktigResultat: 'Bon score',
         riktigUtfall: 'Bon résultat',
         bom: 'Raté',
