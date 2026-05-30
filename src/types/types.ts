@@ -74,4 +74,8 @@ export interface UserForAdmin {
     scoreadmin: boolean
     paymentadmin: boolean
     active: boolean
+    notif_general: boolean
+    notif_reminders: boolean
+    notif_summary: boolean
+    device_count: number
 }
