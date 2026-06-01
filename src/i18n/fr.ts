@@ -226,6 +226,8 @@ const fr: Translations = {
         tittel: 'VM Betpool',
         undertittel: 'Concours de pronostics pour la CM 2026',
         loggInnKnapp: 'Se connecter pour participer',
+        invitasjonBanner:
+            'Vous suivez une invitation à une ligue privée. Connectez-vous ou inscrivez-vous pour rejoindre.',
         brukVanligNettleser: 'Utilisez votre navigateur habituel sur mobile.',
         facebookAdvarsel:
             'Vous êtes dans le navigateur Facebook. Pour vous connecter, ouvrez cette page dans un navigateur normal — appuyez sur le menu et choisissez « Ouvrir dans le navigateur ».',
@@ -296,6 +298,8 @@ const fr: Translations = {
         tittel: 'Mes ligues',
         beskrivelse:
             'Les ligues privées utilisent les mêmes points que la ligue principale — vous ne concourez que dans un groupe restreint avec votre propre mise.',
+        slikInviterer:
+            "Vous n'ajoutez pas les gens manuellement. Créez une ligue, vous obtenez un lien partageable — envoyez-le à qui vous voulez, et toute personne avec le lien peut rejoindre.",
         invitasjoner: 'Invitations',
         ligaeneDine: 'Vos ligues',
         ingenLigaer: "Vous ne faites encore partie d'aucune ligue privée.",
@@ -323,11 +327,12 @@ const fr: Translations = {
         innsats: 'Mise : {{kr}} kr',
         ingenBetalingsinfo: 'Aucune information de paiement.',
         medlemmer: 'Membres ({{antall}})',
-        inviterMedlem: 'Inviter un membre',
-        alleErMed: 'Tous les utilisateurs actifs sont déjà membres ou invités.',
-        velgBruker: 'Choisir un utilisateur',
-        velgBrukerPlaceholder: 'Choisir un utilisateur…',
-        sendInvitasjon: "Envoyer l'invitation",
+        delLenke: 'Inviter avec un lien',
+        delLenkeForklaring:
+            'Partagez ce lien avec qui vous voulez. Toute personne avec le lien peut rejoindre la ligue.',
+        kopierLenke: 'Copier le lien',
+        lenkeKopiert: 'Lien copié !',
+        delKnapp: 'Partager',
         innstillinger: 'Paramètres',
         ingenInnsats: 'Aucune mise',
         betalingsinfo: 'Informations de paiement',
@@ -338,6 +343,18 @@ const fr: Translations = {
         fjernMedlem: 'Retirer {{navn}} de la ligue ?',
         forlatBekreft: 'Quitter « {{navn}} » ?',
         slettBekreft: 'Supprimer « {{navn}} » ? Cette action est irréversible.',
+    },
+    bliMed: {
+        tittel: 'Vous êtes invité',
+        ligaAv: 'Ligue de {{navn}}',
+        antallMedlemmer: '{{antall}} membres',
+        innsats: 'Mise : {{kr}} kr',
+        bliMedKnapp: 'Rejoindre la ligue',
+        alleredeMed: 'Vous faites déjà partie de cette ligue.',
+        tilLigaen: 'Aller à la ligue',
+        ugyldig: "Le lien d'invitation est invalide ou expiré.",
+        laster: "Chargement de l'invitation…",
+        tilbake: 'Vers Mes ligues',
     },
     premieInputs: {
         label: 'Répartition des prix (%)',

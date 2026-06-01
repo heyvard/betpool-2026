@@ -24,12 +24,13 @@ const handler = async function handler(opts: ApiHandlerOpts): Promise<void> {
             owner_user_id: string
             innsats: number | null
             betalingsinfo: string | null
+            invite_token: string
             owner_name: string
             premie_forste_prosent: number
             premie_andre_prosent: number
             premie_tredje_prosent: number
         }>(
-            `SELECT l.id, l.name, l.owner_user_id, l.innsats, l.betalingsinfo,
+            `SELECT l.id, l.name, l.owner_user_id, l.innsats, l.betalingsinfo, l.invite_token,
                     l.premie_forste_prosent, l.premie_andre_prosent, l.premie_tredje_prosent,
                     ou.name AS owner_name
              FROM leagues l
@@ -184,6 +185,7 @@ const handler = async function handler(opts: ApiHandlerOpts): Promise<void> {
         owner_name: liga.owner_name,
         innsats: liga.innsats,
         betalingsinfo: liga.betalingsinfo,
+        invite_token: liga.invite_token,
         premie_forste_prosent: liga.premie_forste_prosent,
         premie_andre_prosent: liga.premie_andre_prosent,
         premie_tredje_prosent: liga.premie_tredje_prosent,

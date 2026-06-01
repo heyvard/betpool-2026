@@ -42,6 +42,8 @@ export interface LeagueDetail extends PremieProsent {
     owner_name: string
     innsats: number | null
     betalingsinfo: string | null
+    /** Opak token for den delbare invitasjonslenken (/bli-med/<token>). */
+    invite_token: string
     is_owner: boolean
     members: LeagueMember[]
 }
@@ -51,4 +53,16 @@ export interface InvitableUser {
     id: string
     name: string
     picture: string | null
+}
+
+/** Lett forhåndsvisning av en liga man følger en invitasjonslenke til. */
+export interface LeagueInvitePreview {
+    id: string
+    name: string
+    owner_name: string
+    member_count: number
+    innsats: number | null
+    betalingsinfo: string | null
+    /** Om innlogget bruker allerede er medlem/invitert i ligaen. */
+    already_member: boolean
 }
