@@ -62,9 +62,7 @@ export function SignInScreen() {
                 </div>
             ) : (
                 <div className="bp-card">
-                    <p className="mb-3 text-center text-sm font-medium text-stone-700">{t.innlogging.loggInnKnapp}</p>
                     <InnloggingKnapper />
-                    <p className="mt-3 text-center text-xs text-stone-400">{t.innlogging.brukVanligNettleser}</p>
                 </div>
             )}
         </div>
