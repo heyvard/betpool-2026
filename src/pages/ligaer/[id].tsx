@@ -2,14 +2,13 @@ import type { NextPage } from 'next'
 import React, { useState } from 'react'
 import { useRouter } from 'next/router'
 import NextLink from 'next/link'
-import { ArrowLeft, Banknote, Check, Clock, LogOut, Trash2, UserPlus } from 'lucide-react'
+import { ArrowLeft, Banknote, Check, Clock, Copy, LogOut, Share2, Trash2 } from 'lucide-react'
 
 import { Spinner } from '../../components/loading/Spinner'
 import { UseLeague } from '../../queries/useLeague'
 import { UseUser } from '../../queries/useUser'
-import { UseInvitableUsers } from '../../queries/useInvitableUsers'
 import { UseDeleteLeague, UseUpdateLeague } from '../../queries/mutateLeague'
-import { UseInviteMember, UseRemoveMember, UseSetMemberPaid } from '../../queries/mutateLeagueMember'
+import { UseRemoveMember, UseSetMemberPaid } from '../../queries/mutateLeagueMember'
 import { LeagueDetail, LeagueMember } from '../../types/league'
 import { Button } from '@/components/ui/button'
 import { Switch } from '@/components/ui/switch'
@@ -49,7 +48,7 @@ const LigaSide: NextPage = () => {
             <InnsatsKort liga={liga} />
             <PremieKort liga={liga} antallMedlemmer={liga.members.filter((m) => m.status === 'medlem').length} />
             <MedlemsSeksjon liga={liga} />
-            {liga.is_owner && <InviterSeksjon liga={liga} />}
+            <DelLenkeSeksjon liga={liga} />
             {liga.is_owner && <RedigerSeksjon liga={liga} />}
             <FarligSone liga={liga} megId={megselv.id} />
         </div>
@@ -186,61 +185,62 @@ function MedlemsRad({
     )
 }
 
-function InviterSeksjon({ liga }: { liga: LeagueDetail }) {
-    const { data: brukere } = UseInvitableUsers()
-    const invite = UseInviteMember(liga.id)
+function DelLenkeSeksjon({ liga }: { liga: LeagueDetail }) {
     const { t } = useLanguage()
-    const [valgt, setValgt] = useState('')
+    const [kopiert, setKopiert] = useState(false)
 
-    const alleredeMed = new Set(liga.members.map((m) => m.user_id))
-    const tilgjengelige = (brukere ?? []).filter((u) => !alleredeMed.has(u.id))
+    // window finnes ikke ved SSR — bygg lenken først på klienten.
+    const lenke = typeof window !== 'undefined' ? `${window.location.origin}/bli-med/${liga.invite_token}` : ''
+    const kanDele = typeof navigator !== 'undefined' && typeof navigator.share === 'function'
 
-    const inviter = () => {
-        if (!valgt) return
-        invite.mutate(valgt, { onSuccess: () => setValgt('') })
+    const kopier = async () => {
+        try {
+            await navigator.clipboard.writeText(lenke)
+        } catch {
+            // clipboard kan være utilgjengelig (ikke-https / eldre nettlesere) — vis likevel feedback
+        }
+        setKopiert(true)
+        setTimeout(() => setKopiert(false), 2000)
+    }
+
+    const del = async () => {
+        try {
+            await navigator.share({ title: liga.name, url: lenke })
+        } catch {
+            // brukeren avbrøt delingen — ingen handling
+        }
     }
 
     return (
         <section className="space-y-2">
-            <h2 className="bp-overline">{t.ligaSide.inviterMedlem}</h2>
+            <h2 className="bp-overline">{t.ligaSide.delLenke}</h2>
             <div className="bp-card space-y-3">
-                {tilgjengelige.length === 0 ? (
-                    <p className="text-sm text-stone-500">{t.ligaSide.alleErMed}</p>
-                ) : (
-                    <>
-                        <div className="flex flex-col gap-1">
-                            <label htmlFor="inviter-bruker" className="sr-only">
-                                {t.ligaSide.velgBruker}
-                            </label>
-                            <select
-                                id="inviter-bruker"
-                                value={valgt}
-                                onChange={(e) => setValgt(e.target.value)}
-                                className={cn(
-                                    'h-9 rounded-lg border border-stone-300 bg-white px-3 text-sm transition-shadow',
-                                    'focus:border-amber-500 focus:outline-hidden focus:ring-2 focus:ring-amber-400',
-                                )}
-                            >
-                                <option value="">{t.ligaSide.velgBrukerPlaceholder}</option>
-                                {tilgjengelige.map((u) => (
-                                    <option key={u.id} value={u.id}>
-                                        {u.name}
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
-                        {invite.error && <p className="text-sm text-red-600">{invite.error.message}</p>}
-                        <Button
-                            variant="accent"
-                            loading={invite.isPending}
-                            disabled={!valgt}
-                            onClick={inviter}
-                            icon={<UserPlus className="h-4 w-4" />}
-                        >
-                            {t.ligaSide.sendInvitasjon}
+                <p className="text-sm text-stone-500">{t.ligaSide.delLenkeForklaring}</p>
+                <input
+                    type="text"
+                    readOnly
+                    value={lenke}
+                    onFocus={(e) => e.currentTarget.select()}
+                    aria-label={t.ligaSide.delLenke}
+                    className={cn(
+                        'w-full rounded-lg border border-stone-300 bg-stone-50 px-3 py-2 text-sm text-stone-700',
+                        'outline-hidden focus:border-amber-500 focus:ring-2 focus:ring-amber-400',
+                    )}
+                />
+                <div className="flex gap-2">
+                    <Button
+                        variant="accent"
+                        onClick={kopier}
+                        icon={kopiert ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                    >
+                        {kopiert ? t.ligaSide.lenkeKopiert : t.ligaSide.kopierLenke}
+                    </Button>
+                    {kanDele && (
+                        <Button variant="ghost" onClick={del} icon={<Share2 className="h-4 w-4" />}>
+                            {t.ligaSide.delKnapp}
                         </Button>
-                    </>
-                )}
+                    )}
+                </div>
             </div>
         </section>
     )

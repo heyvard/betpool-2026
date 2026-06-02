@@ -166,3 +166,67 @@ describe('/api/v1/leagues', () => {
         expect(navn).not.toContain('Inaktiv')
     })
 })
+
+// Henter den delbare invitasjons-tokenen til en liga (fra detaljvisningen).
+async function hentToken(owner: string, ligaId: string): Promise<string> {
+    const detalj = await (await api(`/api/v1/leagues/${ligaId}`, { user: owner })).json()
+    expect(detalj.invite_token).toBeTruthy()
+    return detalj.invite_token
+}
+
+describe('/api/v1/leagues/join/:token', () => {
+    it('GET viser forhåndsvisning uten å kreve medlemskap', async () => {
+        await seedUser({ firebase_user_id: 'alice', name: 'Alice' })
+        await seedUser({ firebase_user_id: 'bob', name: 'Bob' })
+        const id = await lagLiga('alice', { name: 'Lenkeliga', innsats: 100 })
+        const token = await hentToken('alice', id)
+
+        const res = await api(`/api/v1/leagues/join/${token}`, { user: 'bob' })
+        expect(res.status).toBe(200)
+        const data = await res.json()
+        expect(data.id).toBe(id)
+        expect(data.name).toBe('Lenkeliga')
+        expect(data.owner_name).toBe('Alice')
+        expect(data.member_count).toBe(1)
+        expect(data.already_member).toBe(false)
+    })
+
+    it('POST melder brukeren på som medlem', async () => {
+        await seedUser({ firebase_user_id: 'alice' })
+        await seedUser({ firebase_user_id: 'bob' })
+        const id = await lagLiga('alice')
+        const token = await hentToken('alice', id)
+
+        const res = await api(`/api/v1/leagues/join/${token}`, { user: 'bob', method: 'POST' })
+        expect(res.status).toBe(200)
+        expect((await res.json()).id).toBe(id)
+
+        const bobsLigaer = await (await api('/api/v1/leagues', { user: 'bob' })).json()
+        expect(bobsLigaer).toHaveLength(1)
+        expect(bobsLigaer[0].my_status).toBe('medlem')
+        expect(bobsLigaer[0].member_count).toBe(2)
+    })
+
+    it('POST er idempotent — å bli med to ganger gir bare ett medlemskap', async () => {
+        await seedUser({ firebase_user_id: 'alice' })
+        await seedUser({ firebase_user_id: 'bob' })
+        const id = await lagLiga('alice')
+        const token = await hentToken('alice', id)
+
+        await api(`/api/v1/leagues/join/${token}`, { user: 'bob', method: 'POST' })
+        const igjen = await api(`/api/v1/leagues/join/${token}`, { user: 'bob', method: 'POST' })
+        expect(igjen.status).toBe(200)
+
+        const detalj = await (await api(`/api/v1/leagues/${id}`, { user: 'alice' })).json()
+        expect(detalj.members).toHaveLength(2) // alice + bob, ikke tre
+
+        const preview = await (await api(`/api/v1/leagues/join/${token}`, { user: 'bob' })).json()
+        expect(preview.already_member).toBe(true)
+    })
+
+    it('GET gir 404 på ukjent token', async () => {
+        await seedUser({ firebase_user_id: 'alice' })
+        const res = await api('/api/v1/leagues/join/finnesikke', { user: 'alice' })
+        expect(res.status).toBe(404)
+    })
+})

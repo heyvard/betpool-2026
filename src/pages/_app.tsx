@@ -1,5 +1,5 @@
 import type { AppProps } from 'next/app'
-import React, { FC, useState } from 'react'
+import React, { FC, useEffect, useState } from 'react'
 import { UseUser } from '../queries/useUser'
 import { useRouter } from 'next/router'
 import Head from 'next/head'
@@ -22,6 +22,7 @@ import { Onboarding } from '../components/Onboarding'
 import { useQueryClient } from '@tanstack/react-query'
 import { cn } from '@/lib/utils'
 import { LanguageProvider, useLanguage } from '../i18n/LanguageContext'
+import { fjernPendingInvite, inviteTokenFraSti, lagrePendingInvite, lesPendingInvite } from '../utils/pendingInvite'
 
 // firebaseui er tungt og brukes bare i utlogga-tilstand — last det først når vi
 // faktisk trenger det.
@@ -46,6 +47,25 @@ function Layout({ children }: { children: React.ReactNode }) {
     const queryClient = useQueryClient()
     const trengerOnboarding = !!me && me.onboarded_at == null
     const { t, locale, setLocale } = useLanguage()
+
+    // Husk en invitasjonslenke en uinnlogget bruker åpner — bli-med-siden mountes
+    // ikke før man er innlogget, så vi fanger token-en her i Layout.
+    useEffect(() => {
+        if (user) return
+        const token = inviteTokenFraSti(router.asPath)
+        if (token) lagrePendingInvite(token)
+    }, [user, router.asPath])
+
+    // Når brukeren er innlogget og ferdig onboardet, send dem til den huskede
+    // invitasjonen (med mindre vi allerede er på en bli-med-side).
+    useEffect(() => {
+        if (!user || !me || me.onboarded_at == null) return
+        if (router.asPath.startsWith('/bli-med/')) return
+        const token = lesPendingInvite()
+        if (!token) return
+        fjernPendingInvite()
+        router.replace('/bli-med/' + token)
+    }, [user, me, router])
 
     return (
         <>

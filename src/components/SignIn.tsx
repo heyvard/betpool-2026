@@ -1,7 +1,8 @@
-import React from 'react'
-import { Goal, TriangleAlert, Users, Wallet } from 'lucide-react'
+import React, { useEffect, useState } from 'react'
+import { Goal, Link2, TriangleAlert, Users, Wallet } from 'lucide-react'
 import { InnloggingKnapper } from '../auth/InnloggingKnapper'
 import { useLanguage } from '../i18n/LanguageContext'
+import { lesPendingInvite } from '../utils/pendingInvite'
 
 const PUNKT_IKONER = [
     <Wallet key="wallet" className="h-4 w-4" />,
@@ -12,10 +13,23 @@ const PUNKT_IKONER = [
 export function SignInScreen() {
     const { t } = useLanguage()
 
+    // Leses etter mount for å unngå hydration-mismatch.
+    const [følgerInvitasjon, setFølgerInvitasjon] = useState(false)
+    useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setFølgerInvitasjon(lesPendingInvite() != null)
+    }, [])
+
     const isFacebookInAppBrowser = typeof navigator !== 'undefined' && /FB_IAB|FBAN|FBAV/.test(navigator.userAgent)
 
     return (
         <div className="space-y-4">
+            {følgerInvitasjon && (
+                <div className="flex items-start gap-3 rounded-xl bg-amber-50 px-4 py-3.5 ring-1 ring-amber-200">
+                    <Link2 className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" />
+                    <p className="text-sm leading-relaxed text-amber-900">{t.innlogging.invitasjonBanner}</p>
+                </div>
+            )}
             <header className="flex flex-col items-center pt-6 text-center">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img

@@ -2,7 +2,7 @@ import type { NextPage } from 'next'
 import React, { useState } from 'react'
 import { useRouter } from 'next/router'
 import NextLink from 'next/link'
-import { Mail, Plus, Users } from 'lucide-react'
+import { Link2, Mail, Plus, Users } from 'lucide-react'
 
 import { Spinner } from '../components/loading/Spinner'
 import { UseLeagues } from '../queries/useLeagues'
@@ -34,6 +34,11 @@ const Ligaer: NextPage = () => {
         <div className="space-y-6">
             <h1 className="text-2xl font-bold text-stone-900">{t.ligaer.tittel}</h1>
             <p className="-mt-4 text-sm text-stone-500">{t.ligaer.beskrivelse}</p>
+
+            <div className="flex items-start gap-3 rounded-xl bg-amber-50 px-4 py-3.5 ring-1 ring-amber-200">
+                <Link2 className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" />
+                <p className="text-sm leading-relaxed text-amber-900">{t.ligaer.slikInviterer}</p>
+            </div>
 
             {invitasjoner.length > 0 && (
                 <section className="space-y-2">
