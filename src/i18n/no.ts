@@ -290,7 +290,7 @@ const no = {
     ligaer: {
         tittel: 'Mine ligaer',
         beskrivelse:
-            'Private ligaer bruker de samme poengene som hovedligaen — du konkurrerer bare i en mindre gjeng med egen innsats.',
+            'Du tipper én gang, og tipsene teller i alle ligaene du er med i. Private ligaer lar deg konkurrere i en mindre gjeng med egen innsats og premie.',
         slikInviterer:
             'Du legger ikke til folk manuelt. Lag en liga, så får du en delbar lenke — send den til dem du vil ha med, og alle med lenken kan bli med selv.',
         invitasjoner: 'Invitasjoner',
