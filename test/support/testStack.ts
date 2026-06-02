@@ -1,10 +1,20 @@
 import { spawn, ChildProcess, execSync } from 'child_process'
 import path from 'path'
 
-import { PostgreSqlContainer, StartedPostgreSqlContainer } from '@testcontainers/postgresql'
+import { PGlite } from '@electric-sql/pglite'
+import { PGLiteSocketServer } from '@electric-sql/pglite-socket'
+import knex from 'knex'
 
-// Delt oppstart av test-stacken: en Postgres-container + en lokal Next-server
-// kjørt i test-auth-modus. Brukes av både jest-integrasjonstestene og Playwright.
+// Delt oppstart av test-stacken: en in-memory Postgres (PGlite) eksponert over en
+// TCP-socket + en lokal Next-server kjørt i test-auth-modus. Brukes av både
+// jest-integrasjonstestene og Playwright.
+//
+// PGlite er ekte Postgres kompilert til WASM. Vi kjører den i denne prosessen og
+// legger en socket-server foran (`@electric-sql/pglite-socket`), slik at de tre
+// prosessene som trenger DB-en — `next start`-serveren, jest-workerne og Playwright —
+// alle kan koble til over en vanlig connection-string. `maxConnections` skrur på
+// multiplexeren (PGlite v0.4+) som lar flere klienter dele den ene PGlite-instansen.
+// Ingen Docker.
 //
 // Vi bygger appen (`next build`) og kjører `next start` — IKKE `next dev`.
 // `next dev` (Turbopack) spawner en stor, dårlig ryddet kompilator-worker-farm
@@ -15,20 +25,32 @@ import { PostgreSqlContainer, StartedPostgreSqlContainer } from '@testcontainers
 // ved BUILD-tid — den må derfor settes både for `next build` og `next start`.
 
 export interface TestStack {
-    container: StartedPostgreSqlContainer
+    db: PGlite
+    socketServer: PGLiteSocketServer
     proc: ChildProcess
     baseUrl: string
     dbUrl: string
 }
 
 const PORT = Number(process.env.TEST_PORT ?? 3100)
+const DB_PORT = Number(process.env.TEST_DB_PORT ?? 5544)
 
 export async function startTestStack(): Promise<TestStack> {
-    console.log('[test-stack] starter Postgres-container …')
-    const container = await new PostgreSqlContainer('postgres:16').withStartupTimeout(120000).start()
-    const dbUrl = container.getConnectionUri()
+    console.log('[test-stack] starter PGlite (in-memory Postgres) …')
+    const db = await PGlite.create()
+    const socketServer = new PGLiteSocketServer({
+        db,
+        port: DB_PORT,
+        host: '127.0.0.1',
+        // Multiplexer flere samtidige tilkoblinger over den ene PGlite-instansen.
+        maxConnections: 10,
+    })
+    await socketServer.start()
+    // Migrering og seeding går over TCP mot denne stringen — aldri `db.query()`
+    // direkte, siden socket-serveren holder en eksklusiv lås på instansen.
+    const dbUrl = `postgresql://postgres:postgres@127.0.0.1:${DB_PORT}/postgres`
 
-    // Felles env for build + start: test-auth på, mock av, peker på containeren.
+    // Felles env for build + start: test-auth på, mock av, peker på PGlite-socketen.
     // Firebase initialiseres under `next build` («collecting page data») og kaster
     // `auth/invalid-api-key` hvis nøklene mangler. I test-auth-modus rører klienten
     // aldri Firebase, så dummy-verdier er trygge — de gjør bare at bygget går igjennom.
@@ -45,11 +67,22 @@ export async function startTestStack(): Promise<TestStack> {
         NEXT_PUBLIC_FIREBASE_APP_ID: process.env.NEXT_PUBLIC_FIREBASE_APP_ID ?? '1:0000000000:web:test',
     }
 
-    // Kjør knex-migrasjonene mot containeren (knexfile leser POSTGRES_URL_NON_POOLING).
-    // Kjør knex-binæren direkte — `pnpm knex` ville trigget en nøstet `pnpm install`-sjekk.
+    // Kjør knex-migrasjonene mot PGlite — IN-PROCESS, ikke via knex-CLI.
+    // PGlite + socket-serveren bor i denne prosessen, så en blokkerende `execSync`
+    // ville fryst event-loopen og hindret socket-serveren i å svare på CLI-ens
+    // tilkobling (deadlock). Programmatisk knex går over TCP mot socket-serveren
+    // mens event-loopen lever.
     console.log('[test-stack] kjører migrasjoner …')
-    const knexBin = path.join(process.cwd(), 'node_modules', '.bin', 'knex')
-    execSync(`${knexBin} migrate:latest`, { env: stackEnv, stdio: 'inherit' })
+    const migrator = knex({
+        client: 'pg',
+        connection: dbUrl,
+        migrations: { directory: path.join(process.cwd(), 'migrations') },
+    })
+    try {
+        await migrator.migrate.latest()
+    } finally {
+        await migrator.destroy()
+    }
 
     // Bygg appen før start. `NEXT_PUBLIC_TEST_AUTH` bakes inn her.
     const nextBin = path.join(process.cwd(), 'node_modules', '.bin', 'next')
@@ -69,7 +102,7 @@ export async function startTestStack(): Promise<TestStack> {
     await fetch(`${baseUrl}/api/v1/test-users`).catch(() => undefined)
     console.log('[test-stack] klar')
 
-    return { container, proc, baseUrl, dbUrl }
+    return { db, socketServer, proc, baseUrl, dbUrl }
 }
 
 export async function stopTestStack(stack: TestStack): Promise<void> {
@@ -82,10 +115,11 @@ export async function stopTestStack(stack: TestStack): Promise<void> {
             // prosessen er allerede borte
         }
         // Vent på at next-serveren faktisk avslutter og lukker DB-tilkoblingene
-        // sine før containeren stoppes — ellers logger pg en uncaughtException.
+        // sine før vi stenger PGlite — ellers logger pg en uncaughtException.
         await Promise.race([exited, new Promise((r) => setTimeout(r, 5000))])
     }
-    await stack.container.stop()
+    await stack.socketServer.stop()
+    await stack.db.close()
 }
 
 async function waitForServer(baseUrl: string, timeoutMs = 120000): Promise<void> {

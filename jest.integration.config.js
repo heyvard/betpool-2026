@@ -1,6 +1,7 @@
 // Egen jest-konfig for API-integrasjonstester. Disse kjører mot en lokal
-// `next dev` + Postgres i testcontainers (se test/support/testStack.ts).
-// Holdt adskilt fra enhetstestene (jest.config.js) som kjører i jsdom.
+// `next start` + PGlite (in-memory Postgres) via socket-server (se
+// test/support/testStack.ts). Holdt adskilt fra enhetstestene (jest.config.js)
+// som kjører i jsdom.
 module.exports = {
     testEnvironment: 'node',
     testMatch: ['<rootDir>/test/integration/**/*.integration.test.ts'],
