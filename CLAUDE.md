@@ -9,7 +9,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `pnpm lint` / `pnpm lint:fix` — `next lint`.
 - `pnpm prettier:check` / `pnpm prettier:write` — formatting. `pnpm format` runs both prettier write and lint fix.
 - `pnpm test` — Jest in watch mode. `pnpm test:ci` for CI single-run. Run a single test with `pnpm exec jest path/to/file.test.ts` or `pnpm exec jest -t "test name"`.
-- `pnpm test:integration` — API-integrasjonstester (`test/integration/`) mot en lokalt bygd Next-server (`next build` + `next start`) + Postgres i testcontainers. Krever Docker. Egen jest-konfig (`jest.integration.config.js`).
+- `pnpm test:integration` — API-integrasjonstester (`test/integration/`) mot en lokalt bygd Next-server (`next build` + `next start`) + PGlite (in-memory Postgres) via socket-server. Krever ikke Docker. Egen jest-konfig (`jest.integration.config.js`).
 - `pnpm test:e2e` — Playwright e2e (`test/e2e/`) mot samme test-stack. Krever `pnpm exec playwright install chromium` først.
 - `pnpm migrate` — `knex migrate:latest` against `PG_URI` (CockroachDB).
 - CI (`.github/workflows/workflow.yaml`) runs lint, `test:ci`, and `prettier:check`; a separate `integration-test` job runs `test:integration` + `test:e2e`; pushes to `master` deploy to Vercel.
@@ -19,6 +19,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 Always run `pnpm format` (prettier write + lint fix) before committing. This prevents CI failures on formatting and lint.
 
 Always run `pnpm exec tsc --noEmit` to check TypeScript compilation before committing. The integration-test CI job runs `next build` which includes a full type-check — TypeScript errors that slip through will break that job even if unit tests pass.
+
+Always run `pnpm test:e2e` (Playwright e2e) before committing. The test-stacken bruker PGlite (in-memory Postgres), så det kreves ikke Docker.
 
 ## Language and naming
 
@@ -118,4 +120,4 @@ Den fulle design-handoff-pakken (med prototyper og 6 ikon-/5 loading-screen-vari
 
 ### Integration & e2e tests
 
-`test/support/testStack.ts` spins up Postgres in testcontainers, runs the knex migrations against it, then `next build`s the app and starts a local `next start` server — both with `NEXT_PUBLIC_TEST_AUTH=true` (a `NEXT_PUBLIC_*` var, so it must be set at build time, not just at runtime). `next dev` is deliberately avoided: its Turbopack compiler-worker farm spawns hundreds of node processes under the test load and OOMs the machine. `test/integration/` holds jest API tests (HTTP against that server, identity via the `x-test-user` header); `test/e2e/` holds Playwright tests (identity via the `betpool_test_user` cookie). Both share `test/support/db.ts` for seeding. Requires Docker.
+`test/support/testStack.ts` starter PGlite (in-memory Postgres) og legger en socket-server (`@electric-sql/pglite-socket`) foran den, kjører knex-migrasjonene mot den over TCP, og `next build`er så appen og starter en lokal `next start`-server — begge med `NEXT_PUBLIC_TEST_AUTH=true` (a `NEXT_PUBLIC_*` var, so it must be set at build time, not just at runtime). PGlite eksponeres over socket nettopp fordi tre separate prosesser (next-serveren, jest-workerne og Playwright) alle trenger DB-en over en connection-string; `maxConnections`-multiplexeren (PGlite v0.4+) lar dem dele den ene instansen. Migrering og seeding går alltid over TCP, aldri via `db.query()` direkte (socket-serveren holder en eksklusiv lås på instansen). `next dev` is deliberately avoided: its Turbopack compiler-worker farm spawns hundreds of node processes under the test load and OOMs the machine. `test/integration/` holds jest API tests (HTTP against that server, identity via the `x-test-user` header); `test/e2e/` holds Playwright tests (identity via the `betpool_test_user` cookie). Both share `test/support/db.ts` for seeding. Krever ikke Docker.

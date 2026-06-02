@@ -1,7 +1,8 @@
 import { defineConfig, devices } from '@playwright/test'
 
-// E2E-tester mot den lokale test-stacken (Postgres i testcontainers + `next dev`
-// i test-auth-modus). Stacken startes i test/e2e/global-setup.ts.
+// E2E-tester mot den lokale test-stacken (PGlite in-memory Postgres via
+// socket-server + `next start` i test-auth-modus). Stacken startes i
+// test/e2e/global-setup.ts.
 const PORT = Number(process.env.TEST_PORT ?? 3100)
 
 export default defineConfig({
