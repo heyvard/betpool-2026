@@ -20,6 +20,13 @@
                         "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/pre-commit-format.sh",
                         "timeout": 120,
                         "statusMessage": "Kjører pnpm format før commit …"
+                    },
+                    {
+                        "type": "command",
+                        "if": "Bash(git *)",
+                        "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/pre-commit-verify.sh",
+                        "timeout": 600,
+                        "statusMessage": "Kjører tsc + e2e før commit …"
                     }
                 ]
             }
