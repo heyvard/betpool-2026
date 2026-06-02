@@ -51,15 +51,7 @@ const Leaderboard: NextPage = () => {
     const [seed] = useState(() => Math.floor(Math.random() * 0x7fffffff))
 
     const mineLigaer = (ligaer ?? []).filter((l) => l.my_status === 'medlem')
-    // Brukere som har valgt bort hovedligaen har ingenting i hovedliga-visningen,
-    // så vis i stedet deres egen liga som standard.
-    const utenforHovedliga = megselv?.i_hovedliga === false
-    const effektivLiga =
-        valgtLiga && mineLigaer.some((l) => l.id === valgtLiga)
-            ? valgtLiga
-            : utenforHovedliga && mineLigaer.length > 0
-              ? mineLigaer[0].id
-              : null
+    const effektivLiga = valgtLiga && mineLigaer.some((l) => l.id === valgtLiga) ? valgtLiga : null
     const { data: ligaDetalj } = UseLeague(effektivLiga)
 
     // Poeng beregnes populasjonsspesifikt: hovedligaen kun fra hovedligaens

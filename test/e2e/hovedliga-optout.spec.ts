@@ -15,15 +15,21 @@ async function loggInn(page: Page, bruker: string): Promise<void> {
 }
 
 // Navnene på radene i ledertavla (kolonne 3).
-async function ledertavleNavn(page: Page): Promise<string[]> {
-    await page.goto('/leaderboard')
+// Navnene på radene i ledertavla, lest fra navne-lenka i kolonne 3. Vi leser
+// lenketeksten (ikke hele cella) så «Ikke betalt»-merket ikke blander seg inn.
+async function synligeNavn(page: Page): Promise<string[]> {
     const rader = page.locator('tbody tr')
     await expect(rader.first()).toBeVisible()
     const ut: string[] = []
     for (let i = 0; i < (await rader.count()); i++) {
-        ut.push((await rader.nth(i).locator('td').nth(2).innerText()).trim())
+        ut.push((await rader.nth(i).locator('td').nth(2).locator('a').innerText()).trim())
     }
     return ut
+}
+
+async function ledertavleNavn(page: Page): Promise<string[]> {
+    await page.goto('/leaderboard')
+    return synligeNavn(page)
 }
 
 async function iHovedliga(firebaseUserId: string): Promise<boolean> {
@@ -62,12 +68,7 @@ test('opt-ut-bruker skjules fra hovedligaen, men vises i den private ligaen', as
     await test.step('Den private ligaen viser både alice og bob', async () => {
         await page.goto('/leaderboard')
         await page.locator('#liga-velger').selectOption({ label: 'Gutta' })
-        const rader = page.locator('tbody tr')
-        await expect(rader.first()).toBeVisible()
-        const navn: string[] = []
-        for (let i = 0; i < (await rader.count()); i++) {
-            navn.push((await rader.nth(i).locator('td').nth(2).innerText()).trim())
-        }
+        const navn = await synligeNavn(page)
         expect(navn).toContain('alice')
         expect(navn).toContain('bob')
         // carol er ikke medlem av Gutta, så hun vises ikke der.
@@ -90,17 +91,8 @@ test('bob kan slå seg på hovedligaen igjen under Mine ligaer', async ({ page }
         await expect(bryter).toBeVisible()
         await expect(bryter).not.toBeChecked()
 
-        // bob er opt-ut ⇒ ledertavla defaulter til den private ligaen. Velg
-        // hovedligaen eksplisitt og bekreft at bob ikke er der.
-        await page.goto('/leaderboard')
-        await page.locator('#liga-velger').selectOption({ label: '🏆 Hovedligaen' })
-        const rader = page.locator('tbody tr')
-        await expect(rader.first()).toBeVisible()
-        const navn: string[] = []
-        for (let i = 0; i < (await rader.count()); i++) {
-            navn.push((await rader.nth(i).locator('td').nth(2).innerText()).trim())
-        }
-        expect(navn).not.toContain('bob')
+        // Hovedliga-tavla (standardvisningen) skal ikke vise opt-ut-brukeren bob.
+        expect(await ledertavleNavn(page)).not.toContain('bob')
     })
 
     await test.step('Slår på bryteren', async () => {
