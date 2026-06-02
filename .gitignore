@@ -41,4 +41,7 @@ yarn-error.log*
 next-env.d.ts
 
 .idea
-.claude
+.claude/*
+!.claude/hooks/
+!.claude/settings.json
+.claude/settings.local.json
