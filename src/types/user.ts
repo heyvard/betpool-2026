@@ -32,4 +32,9 @@ export interface User {
     notif_summary: boolean
     language: 'no' | 'fr'
     onboarded_at: string | null
+    /**
+     * Om brukeren er med i hovedligaen. Default `true`. Hvis `false` teller ikke
+     * brukerens tips i hovedligaens poengberegning — kun i private ligaer.
+     */
+    i_hovedliga: boolean
 }

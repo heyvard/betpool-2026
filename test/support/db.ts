@@ -38,6 +38,7 @@ export interface SeedUser {
     paid: boolean
     winner: string
     topscorer: string | null
+    i_hovedliga: boolean
 }
 
 export interface SeedBet {
@@ -74,12 +75,13 @@ export async function seedUser(overrides: Partial<SeedUser> = {}): Promise<SeedU
         paid: overrides.paid ?? false,
         winner: overrides.winner ?? '',
         topscorer: overrides.topscorer ?? null,
+        i_hovedliga: overrides.i_hovedliga ?? true,
     }
     return withDb(async (c) => {
         const r = await c.query(
             `INSERT INTO users
-               (firebase_user_id, name, email, picture, active, scoreadmin, paymentadmin, superadmin, paid, winner, topscorer, onboarded_at)
-             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11, NOW())
+               (firebase_user_id, name, email, picture, active, scoreadmin, paymentadmin, superadmin, paid, winner, topscorer, i_hovedliga, onboarded_at)
+             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12, NOW())
              RETURNING *`,
             [
                 u.firebase_user_id,
@@ -93,8 +95,41 @@ export async function seedUser(overrides: Partial<SeedUser> = {}): Promise<SeedU
                 u.paid,
                 u.winner,
                 u.topscorer,
+                u.i_hovedliga,
             ],
         )
         return r.rows[0]
     })
+}
+
+// Oppretter en privat liga direkte i DB-et. Returnerer liga-id-en.
+export async function seedLeague(opts: {
+    name: string
+    owner_user_id: string
+    innsats?: number | null
+}): Promise<{ id: string; invite_token: string }> {
+    return withDb(async (c) => {
+        const r = await c.query<{ id: string; invite_token: string }>(
+            `INSERT INTO leagues (name, owner_user_id, innsats)
+             VALUES ($1, $2, $3) RETURNING id, invite_token`,
+            [opts.name, opts.owner_user_id, opts.innsats ?? null],
+        )
+        return r.rows[0]
+    })
+}
+
+// Melder en bruker inn i en liga. Status default 'medlem'.
+export async function seedLeagueMember(opts: {
+    league_id: string
+    user_id: string
+    status?: 'invitert' | 'medlem'
+    paid?: boolean
+}): Promise<void> {
+    await withDb((c) =>
+        c.query(
+            `INSERT INTO league_members (league_id, user_id, status, paid)
+             VALUES ($1, $2, $3, $4)`,
+            [opts.league_id, opts.user_id, opts.status ?? 'medlem', opts.paid ?? false],
+        ),
+    )
 }

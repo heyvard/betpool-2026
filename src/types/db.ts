@@ -14,4 +14,5 @@ export interface User {
     topscorer: string | undefined
     winner_endret: boolean
     topscorer_endret: boolean
+    i_hovedliga: boolean
 }

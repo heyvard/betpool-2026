@@ -77,5 +77,6 @@ export interface UserForAdmin {
     notif_general: boolean
     notif_reminders: boolean
     notif_summary: boolean
+    i_hovedliga: boolean
     device_count: number
 }

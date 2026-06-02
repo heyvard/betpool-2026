@@ -7,6 +7,7 @@ import { Calculator, Clock, Flag, Info, Sparkles, Star, Trophy, Wallet, Zap } fr
 import { Medalje } from '../components/ui/medalje'
 import { useLanguage } from '../i18n/LanguageContext'
 import { tx } from '../i18n/interpolate'
+import { HOVEDLIGA_PRIS } from '../utils/hovedliga'
 
 function Seksjon({ ikon, tittel, children }: { ikon: React.ReactNode; tittel: string; children: React.ReactNode }) {
     return (
@@ -43,8 +44,8 @@ const Regler: NextPage = () => {
         return <Spinner />
     }
 
-    const deltakere = data.users.length
-    const pot = deltakere * 300
+    const deltakere = data.users.filter((u) => u.i_hovedliga !== false).length
+    const pot = deltakere * HOVEDLIGA_PRIS
     const premier = [Math.round(pot * 0.5), Math.round(pot * 0.3), Math.round(pot * 0.2)]
     const eksempelLabel = t.nav.regler === 'Regler' ? 'Eksempel:' : 'Exemple :'
 

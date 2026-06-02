@@ -11,6 +11,19 @@ export interface AllBetsExtended {
 }
 
 /**
+ * Snevrer inn et `AllBets`-sett til en gitt populasjon (sett av user-id-er).
+ * Både brukere og bets filtreres, slik at en påfølgende `calculateAllBetsExtended`
+ * regner raritet/bonuspott kun ut fra denne populasjonen. Brukes til å skille
+ * hovedligaens poengberegning fra private ligaers.
+ */
+export function filtrerAllBets(allBets: AllBets, userIds: Set<string>): AllBets {
+    return {
+        users: allBets.users.filter((u) => userIds.has(u.id)),
+        bets: allBets.bets.filter((b) => userIds.has(b.user_id)),
+    }
+}
+
+/**
  * Bonuspoeng for winner-/topscorer-tips, basert på en trapp over andelen av poolen
  * som traff. Erstatter den gamle `min(ceil(users·3/ok), 15)`-formelen: «alene» heves
  * og premien faller brattere når flere treffer. Tersklene er andel-baserte og
