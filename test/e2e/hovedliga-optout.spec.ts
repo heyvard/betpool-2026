@@ -5,7 +5,10 @@ import { seedUser, seedLeague, seedLeagueMember, truncateAll, withDb } from '../
 // Opt-ut fra hovedligaen: en bruker som er med i en privat liga kan velge bort
 // hovedligaen. Da skal tipsene deres ikke telle i hovedligaen — de skal være
 // usynlige i hovedliga-tavla, men fortsatt med i den private ligaens tavle.
-// Valget kan endres senere under Mine ligaer, og tilbys ved oppmelding (signup).
+// Valget kan endres senere under Mine ligaer.
+//
+// Selve oppmeldings-/signup-flyten (hovedliga-valget ja/nei i `/bli-med`) dekkes
+// av onboarding-privatliga.spec.ts.
 
 const PORT = Number(process.env.TEST_PORT ?? 3100)
 const URL_BASE = `http://localhost:${PORT}`
@@ -105,27 +108,4 @@ test('bob kan slå seg på hovedligaen igjen under Mine ligaer', async ({ page }
     await test.step('Nå vises bob i hovedliga-tavla', async () => {
         expect(await ledertavleNavn(page)).toContain('bob')
     })
-})
-
-test('valgskjermen ved oppmelding lar en ny bruker velge bort hovedligaen', async ({ page }) => {
-    const alice = await seedUser({ firebase_user_id: 'alice', name: 'alice' })
-    await seedUser({ firebase_user_id: 'newbie', name: 'newbie' })
-    const liga = await seedLeague({ name: 'Gutta', owner_user_id: alice.id, innsats: 200 })
-    await seedLeagueMember({ league_id: liga.id, user_id: alice.id })
-
-    await loggInn(page, 'newbie')
-
-    // Kommer hit som om rett etter signup (nybruker=1) ⇒ hovedliga-valget vises.
-    await page.goto(`/bli-med/${liga.invite_token}?nybruker=1`)
-
-    const bryter = page.getByRole('switch', { name: 'Bli med i hovedligaen også?' })
-    await expect(bryter).toBeVisible()
-    await expect(bryter).toBeChecked()
-
-    // Velg bort hovedligaen, og bli med i ligaen.
-    await bryter.click()
-    await page.getByRole('button', { name: 'Bli med i ligaen' }).click()
-
-    await expect(page).toHaveURL(new RegExp(`/ligaer/${liga.id}$`))
-    expect(await iHovedliga('newbie')).toBe(false)
 })
