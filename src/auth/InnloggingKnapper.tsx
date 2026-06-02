@@ -8,9 +8,11 @@ import {
     sendPasswordResetEmail,
     AuthError,
 } from 'firebase/auth'
+import { Eye, EyeOff, ChevronLeft } from 'lucide-react'
 import { getFirebaseAuth } from './clientApp'
 import { Button } from '@/components/ui/button'
 import { TextField } from '@/components/ui/text-field'
+import { cn } from '@/lib/utils'
 
 type Modus = 'logginn' | 'registrer'
 
@@ -43,11 +45,11 @@ export function InnloggingKnapper() {
     const [modus, setModus] = useState<Modus>('logginn')
     const [epost, setEpost] = useState('')
     const [passord, setPassord] = useState('')
-    const [bekreftPassord, setBekreftPassord] = useState('')
     const [navn, setNavn] = useState('')
     const [feil, setFeil] = useState<string | null>(null)
     const [laster, setLaster] = useState(false)
     const [tilbakestiltSendt, setTilbakestiltSendt] = useState(false)
+    const [visPassord, setVisPassord] = useState(false)
 
     useEffect(() => {
         const conflict = sessionStorage.getItem('betpool_email_conflict')
@@ -90,10 +92,6 @@ export function InnloggingKnapper() {
             setFeil('Fyll inn navnet ditt.')
             return
         }
-        if (passord !== bekreftPassord) {
-            setFeil('Passordene er ikke like.')
-            return
-        }
         setLaster(true)
         try {
             const credential = await createUserWithEmailAndPassword(getFirebaseAuth(), epost, passord)
@@ -122,38 +120,100 @@ export function InnloggingKnapper() {
     const byttModus = (nyModus: Modus) => {
         setFeil(null)
         setTilbakestiltSendt(false)
+        setVisPassord(false)
         setModus(nyModus)
     }
 
     const tilbake = () => {
         setFeil(null)
         setTilbakestiltSendt(false)
+        setVisPassord(false)
         setModus('logginn')
         setVisEpost(false)
     }
 
+    const åpnEpostSkjema = (nyModus: Modus) => {
+        setFeil(null)
+        setTilbakestiltSendt(false)
+        setVisPassord(false)
+        setModus(nyModus)
+        setVisEpost(true)
+    }
+
+    if (!visEpost) {
+        return (
+            <div className="space-y-3">
+                <p className="text-center text-base font-semibold text-stone-800">Klar til å bli med?</p>
+                {feil && <p className="text-center text-sm text-red-600">{feil}</p>}
+                <Button variant="outline" className="w-full" onClick={loggInnMedGoogle}>
+                    <GoogleLogo />
+                    Fortsett med Google
+                </Button>
+                <div className="flex items-center gap-2">
+                    <hr className="flex-1 border-stone-200" />
+                    <span className="text-xs text-stone-400">eller</span>
+                    <hr className="flex-1 border-stone-200" />
+                </div>
+                <div className="flex gap-2">
+                    <Button className="flex-1" onClick={() => åpnEpostSkjema('registrer')}>
+                        Opprett konto
+                    </Button>
+                    <Button variant="outline" className="flex-1" onClick={() => åpnEpostSkjema('logginn')}>
+                        Logg inn
+                    </Button>
+                </div>
+            </div>
+        )
+    }
+
     return (
         <div className="space-y-3">
-            <Button variant="outline" className="w-full" onClick={loggInnMedGoogle}>
-                <GoogleLogo />
-                Logg inn med Google
-            </Button>
+            <button
+                type="button"
+                className="flex items-center gap-1 text-sm text-stone-500 hover:text-stone-700"
+                onClick={tilbake}
+            >
+                <ChevronLeft className="h-4 w-4" />
+                Tilbake
+            </button>
 
-            {!visEpost ? (
-                <>
-                    {feil && <p className="text-center text-sm text-red-600">{feil}</p>}
-                    <button
-                        type="button"
-                        className="w-full text-center text-sm text-stone-500 underline hover:text-stone-700"
-                        onClick={() => {
-                            setFeil(null)
-                            setVisEpost(true)
-                        }}
-                    >
-                        Logg inn med e-post
-                    </button>
-                </>
-            ) : modus === 'logginn' ? (
+            <div className="text-center">
+                <h2 className="text-xl font-bold text-stone-900">
+                    {modus === 'registrer' ? 'Opprett konto' : 'Logg inn'}
+                </h2>
+                <p className="text-sm text-stone-500">
+                    {modus === 'registrer' ? 'Bli med i VM-konkurransen' : 'Velkommen tilbake'}
+                </p>
+            </div>
+
+            <div className="flex rounded-lg bg-stone-100 p-1">
+                <button
+                    type="button"
+                    className={cn(
+                        'flex-1 rounded-md py-2 text-sm font-medium transition-colors',
+                        modus === 'registrer'
+                            ? 'bg-white text-stone-900 shadow-xs'
+                            : 'text-stone-500 hover:text-stone-700',
+                    )}
+                    onClick={() => byttModus('registrer')}
+                >
+                    Ny bruker
+                </button>
+                <button
+                    type="button"
+                    className={cn(
+                        'flex-1 rounded-md py-2 text-sm font-medium transition-colors',
+                        modus === 'logginn'
+                            ? 'bg-white text-stone-900 shadow-xs'
+                            : 'text-stone-500 hover:text-stone-700',
+                    )}
+                    onClick={() => byttModus('logginn')}
+                >
+                    Logg inn
+                </button>
+            </div>
+
+            {modus === 'logginn' ? (
                 <form onSubmit={loggInnMedEpost} className="space-y-3 pt-1">
                     <TextField
                         label="E-post"
@@ -164,23 +224,15 @@ export function InnloggingKnapper() {
                         required
                         error={!!feil}
                     />
-                    <TextField
-                        label="Passord"
-                        type="password"
+                    <PassordFelt
                         value={passord}
                         onChange={(e) => setPassord(e.target.value)}
                         autoComplete="current-password"
-                        required
+                        visPassord={visPassord}
+                        onToggleVis={() => setVisPassord((v) => !v)}
                         error={!!feil}
                     />
-                    {feil && <p className="text-sm text-red-600">{feil}</p>}
-                    {tilbakestiltSendt && (
-                        <p className="text-sm text-green-700">E-post for tilbakestilling er sendt.</p>
-                    )}
-                    <Button type="submit" className="w-full" loading={laster}>
-                        Logg inn
-                    </Button>
-                    <div className="flex items-center justify-between">
+                    <div className="flex justify-end">
                         <button
                             type="button"
                             className="text-xs text-stone-400 underline hover:text-stone-600"
@@ -188,16 +240,16 @@ export function InnloggingKnapper() {
                         >
                             Glemt passord?
                         </button>
-                        <button
-                            type="button"
-                            className="text-xs text-stone-400 underline hover:text-stone-600"
-                            onClick={tilbake}
-                        >
-                            Tilbake
-                        </button>
                     </div>
+                    {feil && <p className="text-sm text-red-600">{feil}</p>}
+                    {tilbakestiltSendt && (
+                        <p className="text-sm text-green-700">E-post for tilbakestilling er sendt.</p>
+                    )}
+                    <Button type="submit" className="w-full" loading={laster}>
+                        Logg inn
+                    </Button>
                     <p className="text-center text-xs text-stone-400">
-                        Ikke registrert?{' '}
+                        Ny bruker?{' '}
                         <button
                             type="button"
                             className="underline hover:text-stone-600"
@@ -227,22 +279,12 @@ export function InnloggingKnapper() {
                         required
                         error={!!feil}
                     />
-                    <TextField
-                        label="Passord"
-                        type="password"
+                    <PassordFelt
                         value={passord}
                         onChange={(e) => setPassord(e.target.value)}
                         autoComplete="new-password"
-                        required
-                        error={!!feil}
-                    />
-                    <TextField
-                        label="Bekreft passord"
-                        type="password"
-                        value={bekreftPassord}
-                        onChange={(e) => setBekreftPassord(e.target.value)}
-                        autoComplete="new-password"
-                        required
+                        visPassord={visPassord}
+                        onToggleVis={() => setVisPassord((v) => !v)}
                         error={!!feil}
                     />
                     {feil && <p className="text-sm text-red-600">{feil}</p>}
@@ -250,7 +292,7 @@ export function InnloggingKnapper() {
                         Opprett konto
                     </Button>
                     <p className="text-center text-xs text-stone-400">
-                        Har du allerede konto?{' '}
+                        Har du konto?{' '}
                         <button
                             type="button"
                             className="underline hover:text-stone-600"
@@ -259,17 +301,48 @@ export function InnloggingKnapper() {
                             Logg inn
                         </button>
                     </p>
-                    <div className="flex justify-end">
-                        <button
-                            type="button"
-                            className="text-xs text-stone-400 underline hover:text-stone-600"
-                            onClick={tilbake}
-                        >
-                            Tilbake
-                        </button>
-                    </div>
                 </form>
             )}
+        </div>
+    )
+}
+
+interface PassordFeltProps {
+    value: string
+    onChange: (e: React.ChangeEvent<HTMLInputElement>) => void
+    autoComplete: string
+    visPassord: boolean
+    onToggleVis: () => void
+    error: boolean
+}
+
+function PassordFelt({ value, onChange, autoComplete, visPassord, onToggleVis, error }: PassordFeltProps) {
+    return (
+        <div className="flex flex-col gap-1">
+            <label className="text-sm font-medium text-stone-700">Passord</label>
+            <div className="relative">
+                <input
+                    type={visPassord ? 'text' : 'password'}
+                    value={value}
+                    onChange={onChange}
+                    autoComplete={autoComplete}
+                    required
+                    className={cn(
+                        'h-9 w-full rounded-lg border bg-white px-3 py-1.5 pr-10 text-sm outline-hidden transition-shadow',
+                        'focus:border-amber-500 focus:ring-2 focus:ring-amber-400',
+                        error ? 'border-red-500 ring-1 ring-red-400' : 'border-stone-300',
+                    )}
+                />
+                <button
+                    type="button"
+                    tabIndex={-1}
+                    aria-label={visPassord ? 'Skjul passord' : 'Vis passord'}
+                    onClick={onToggleVis}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600"
+                >
+                    {visPassord ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+            </div>
         </div>
     )
 }
