@@ -86,7 +86,7 @@ const Home: NextPage = () => {
                 </NextLink>
             ))}
 
-            {!megselv.paid && <InnbetalingsAlert />}
+            {!megselv.paid && megselv.i_hovedliga && <InnbetalingsAlert />}
 
             <NesteKampSeksjon />
 

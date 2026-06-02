@@ -13,6 +13,7 @@ export interface OtherUser {
     winner_endret?: boolean
     topscorer_endret?: boolean
     paid: boolean
+    i_hovedliga?: boolean
     winnerPoints?: number
     topscorerPoints?: number
 }
@@ -71,7 +72,10 @@ export function UseAllBets() {
                     bet.away_result = '0'
                 }
             })
-            return calculateAllBetsExtended(allBets)
+            // Behold rådataene ved siden av den globale beregningen, slik at
+            // ledertavla kan beregne poeng populasjonsspesifikt (hovedliga vs.
+            // privat liga) uten et nytt API-kall.
+            return { ...calculateAllBetsExtended(allBets), raw: allBets }
         },
     })
 }

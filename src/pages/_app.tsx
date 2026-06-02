@@ -64,7 +64,9 @@ function Layout({ children }: { children: React.ReactNode }) {
         const token = lesPendingInvite()
         if (!token) return
         fjernPendingInvite()
-        router.replace('/bli-med/' + token)
+        // `nybruker=1` markerer at brukeren kom hit rett etter signup via en
+        // lagret invitasjon — da tilbys valget om å bli med i hovedligaen.
+        router.replace('/bli-med/' + token + '?nybruker=1')
     }, [user, me, router])
 
     return (

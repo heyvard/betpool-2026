@@ -348,6 +348,16 @@ const no = {
         laster: 'Laster invitasjon …',
         tilbake: 'Til Mine ligaer',
     },
+    hovedliga: {
+        overskrift: 'Hovedligaen',
+        bliMedSporsmal: 'Bli med i hovedligaen også?',
+        bliMedForklaring:
+            'Hovedligaen er den store potten alle spiller om. Velger du den bort, teller tipsene dine kun i private ligaer. Du kan endre dette senere under Mine ligaer.',
+        bryter: 'Med i hovedligaen',
+        pottOgPris: 'Pott {{pott}} kr · {{pris}} kr å delta',
+        medInfo: 'Tipsene dine teller i hovedligaen.',
+        ikkeMedInfo: 'Tipsene dine teller kun i de private ligaene dine.',
+    },
     premieInputs: {
         label: 'Premiefordeling (%)',
         beskrivelse: 'Valgfritt. Hvor stor andel av potten som går til 1./2./3. plass. Resten holdes utenom.',

@@ -1,10 +1,11 @@
 import type { NextPage } from 'next'
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 
 import { Spinner } from '../components/loading/Spinner'
 import { UseAllBets } from '../queries/useAllBets'
 import NextLink from 'next/link'
 import { calculateLeaderboard, LeaderBoard } from '../components/results/calculateAllScores'
+import { calculateAllBetsExtended, filtrerAllBets } from '../components/results/calculateAllBetsExtended'
 import { Table } from '@/components/ui/table'
 import classNames from 'classnames'
 import { UseLeagues } from '../queries/useLeagues'
@@ -50,8 +51,45 @@ const Leaderboard: NextPage = () => {
     const [seed] = useState(() => Math.floor(Math.random() * 0x7fffffff))
 
     const mineLigaer = (ligaer ?? []).filter((l) => l.my_status === 'medlem')
-    const effektivLiga = valgtLiga && mineLigaer.some((l) => l.id === valgtLiga) ? valgtLiga : null
+    // Brukere som har valgt bort hovedligaen har ingenting i hovedliga-visningen,
+    // så vis i stedet deres egen liga som standard.
+    const utenforHovedliga = megselv?.i_hovedliga === false
+    const effektivLiga =
+        valgtLiga && mineLigaer.some((l) => l.id === valgtLiga)
+            ? valgtLiga
+            : utenforHovedliga && mineLigaer.length > 0
+              ? mineLigaer[0].id
+              : null
     const { data: ligaDetalj } = UseLeague(effektivLiga)
+
+    // Poeng beregnes populasjonsspesifikt: hovedligaen kun fra hovedligaens
+    // medlemmer, en privat liga fra hovedligaens medlemmer + ligaens egne. Slik
+    // påvirker ikke de som bare er i private ligaer hovedligaens resultater.
+    const rader = useMemo<LeaderBoard[]>(() => {
+        if (!data) return []
+        const raw = data.raw
+        const hovedligaIds = new Set(raw.users.filter((u) => u.i_hovedliga !== false).map((u) => u.id))
+        const hovedligaExt = calculateAllBetsExtended(filtrerAllBets(raw, hovedligaIds))
+        const hovedligaTavle = calculateLeaderboard(hovedligaExt.bets, hovedligaExt.users)
+
+        if (effektivLiga && ligaDetalj) {
+            const populasjon = new Set(hovedligaIds)
+            ligaDetalj.members.forEach((m) => populasjon.add(m.user_id))
+            const ext = calculateAllBetsExtended(filtrerAllBets(raw, populasjon))
+            const tavle = calculateLeaderboard(ext.bets, ext.users)
+            const poengMap = new Map(tavle.map((r) => [r.userid, r.poeng]))
+            return ligaDetalj.members
+                .filter((m) => m.status === 'medlem')
+                .map((m) => ({
+                    userid: m.user_id,
+                    poeng: poengMap.get(m.user_id) ?? 0,
+                    userName: m.name,
+                    paid: m.paid,
+                    picture: m.picture,
+                }))
+        }
+        return hovedligaTavle
+    }, [data, effektivLiga, ligaDetalj])
 
     if (!data || isLoading || !ligaer) {
         return <Spinner />
@@ -60,25 +98,7 @@ const Leaderboard: NextPage = () => {
         return <Spinner />
     }
 
-    const full = calculateLeaderboard(data.bets, data.users)
-
-    let lista: LeaderBoard[]
-    if (effektivLiga && ligaDetalj) {
-        lista = ligaDetalj.members
-            .filter((m) => m.status === 'medlem')
-            .map((m) => {
-                const rad = full.find((r) => r.userid === m.user_id)
-                return {
-                    userid: m.user_id,
-                    poeng: rad?.poeng ?? 0,
-                    userName: m.name,
-                    paid: m.paid,
-                    picture: m.picture,
-                }
-            })
-    } else {
-        lista = [...full]
-    }
+    const lista: LeaderBoard[] = [...rader]
 
     // Når ingen kamper er ferdigspilt har alle 0 poeng. Da gir det ikke mening
     // at alle deler 1. plass (og får gullmedalje) – ranger i stedet tilfeldig

@@ -1,5 +1,5 @@
 import type { NextPage } from 'next'
-import React, { useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useRouter } from 'next/router'
 import NextLink from 'next/link'
 import { ArrowLeft, Check, Trophy, Users } from 'lucide-react'
@@ -8,16 +8,25 @@ import { Spinner } from '../../components/loading/Spinner'
 import { UseLeagueInvite } from '../../queries/useLeagueInvite'
 import { UseJoinLeague } from '../../queries/mutateJoinLeague'
 import { Button } from '@/components/ui/button'
+import { Switch } from '@/components/ui/switch'
 import { fjernPendingInvite } from '../../utils/pendingInvite'
 import { useLanguage } from '../../i18n/LanguageContext'
 import { tx } from '../../i18n/interpolate'
+import { UseHovedliga } from '../../queries/useHovedliga'
+import { UseMutateHovedliga } from '../../queries/mutateHovedliga'
 
 const BliMedSide: NextPage = () => {
     const router = useRouter()
     const token = typeof router.query.token === 'string' ? router.query.token : null
+    // Satt av _app ved redirect rett etter signup — da tilbys hovedliga-valget.
+    const erSignupFlyt = router.query.nybruker === '1'
     const { data: invitasjon, isLoading, isError } = UseLeagueInvite(token)
     const join = UseJoinLeague(token)
+    const hovedliga = UseHovedliga()
+    const settHovedliga = UseMutateHovedliga()
     const { t } = useLanguage()
+    // Standard: bli med i hovedligaen også. Brukeren kan velge den bort her.
+    const [medIHovedliga, setMedIHovedliga] = useState(true)
 
     // Vi har landet på invitasjonen — intent er oppfylt, så den huskes ikke videre.
     useEffect(() => {
@@ -40,7 +49,21 @@ const BliMedSide: NextPage = () => {
     }
 
     const bliMed = () => {
-        join.mutate(undefined, { onSuccess: (data) => router.replace('/ligaer/' + data.id) })
+        join.mutate(undefined, {
+            onSuccess: async (data) => {
+                // Ved signup-flyt: hvis brukeren valgte bort hovedligaen, lagre det
+                // før vi navigerer videre. (Default er med, som er DB-standarden.)
+                if (erSignupFlyt && !medIHovedliga) {
+                    try {
+                        await settHovedliga.mutateAsync(false)
+                    } catch {
+                        // Lar oppmeldingen gå videre selv om dette feiler — kan endres
+                        // senere under Mine ligaer.
+                    }
+                }
+                router.replace('/ligaer/' + data.id)
+            },
+        })
     }
 
     return (
@@ -66,6 +89,31 @@ const BliMedSide: NextPage = () => {
                     <p className="whitespace-pre-line text-stone-500">{invitasjon.betalingsinfo}</p>
                 )}
             </div>
+
+            {erSignupFlyt && !invitasjon.already_member && (
+                <div className="bp-card space-y-3">
+                    <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                            <p className="bp-overline">{t.hovedliga.overskrift}</p>
+                            <p className="mt-1 text-sm font-medium text-stone-900">{t.hovedliga.bliMedSporsmal}</p>
+                        </div>
+                        <Switch
+                            checked={medIHovedliga}
+                            onCheckedChange={setMedIHovedliga}
+                            aria-label={t.hovedliga.bliMedSporsmal}
+                        />
+                    </div>
+                    {hovedliga.data && (
+                        <p className="text-sm font-medium text-stone-700">
+                            {tx(t.hovedliga.pottOgPris, {
+                                pott: hovedliga.data.pott,
+                                pris: hovedliga.data.pris,
+                            })}
+                        </p>
+                    )}
+                    <p className="text-xs text-stone-500">{t.hovedliga.bliMedForklaring}</p>
+                </div>
+            )}
 
             {invitasjon.already_member ? (
                 <div className="space-y-3">

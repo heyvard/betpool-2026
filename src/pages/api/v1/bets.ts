@@ -36,6 +36,7 @@ const handler = async function handler(opts: ApiHandlerOpts): Promise<void> {
         topscorer?: string
         winner_endret: boolean
         topscorer_endret: boolean
+        i_hovedliga: boolean
     }
 
     const [betRows, scoreRows, userRows] = await Promise.all([
@@ -49,7 +50,7 @@ const handler = async function handler(opts: ApiHandlerOpts): Promise<void> {
             FROM match_scores`),
         client.query<User>(`
             SELECT u.id, COALESCE(NULLIF(u.kallenavn, ''), u.name) AS name, u.paid, u.picture, u.winner, u.topscorer,
-                   u.winner_endret, u.topscorer_endret
+                   u.winner_endret, u.topscorer_endret, u.i_hovedliga
             FROM users u
             WHERE u.active = true`),
     ])
