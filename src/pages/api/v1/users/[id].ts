@@ -17,6 +17,47 @@ const handler = async function handler(opts: ApiHandlerOpts): Promise<void> {
 
     const { id } = req.query
 
+    if (req.method === 'DELETE') {
+        if (!user.superadmin) {
+            res.status(403).end()
+            return
+        }
+
+        const målbruker = (
+            await client.query<{ active: boolean; name: string }>(`SELECT active, name FROM users WHERE id = $1`, [id])
+        ).rows[0]
+
+        if (!målbruker) {
+            res.status(404).end()
+            return
+        }
+
+        if (målbruker.active) {
+            res.status(409).json({ error: 'Brukeren må være inaktiv før sletting.' })
+            return
+        }
+
+        await loggEndring(client, {
+            actorUserId: user.id,
+            entitet: 'user',
+            entitetNøkkel: String(id),
+            handling: 'slett_bruker',
+            før: { name: målbruker.name },
+            etter: null,
+        })
+
+        await client.query(`DELETE FROM push_subscriptions WHERE user_id = $1`, [id])
+        await client.query(`DELETE FROM audit_log WHERE actor_user_id = $1`, [id])
+        await client.query(`DELETE FROM league_members WHERE user_id = $1`, [id])
+        await client.query(`DELETE FROM leagues WHERE owner_user_id = $1`, [id])
+        await client.query(`DELETE FROM bets WHERE user_id = $1`, [id])
+        await client.query(`DELETE FROM chat WHERE user_id = $1`, [id])
+        await client.query(`DELETE FROM users WHERE id = $1`, [id])
+
+        res.status(204).end()
+        return
+    }
+
     const reqBody = JSON.parse(req.body)
 
     const førRad = (
