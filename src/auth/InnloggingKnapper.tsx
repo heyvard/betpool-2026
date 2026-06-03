@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react'
 import {
     signInWithPopup,
+    signInWithRedirect,
+    getRedirectResult,
     GoogleAuthProvider,
     signInWithEmailAndPassword,
     createUserWithEmailAndPassword,
@@ -15,6 +17,16 @@ import { TextField } from '@/components/ui/text-field'
 import { cn } from '@/lib/utils'
 
 type Modus = 'logginn' | 'registrer'
+
+// På mobile nettlesere (særlig iOS Safari) åpner signInWithPopup Google-innlogging
+// i en ny fane. Etter at innloggingen er ferdig lukker ikke Safari fanen / gir ikke
+// fokus tilbake pålitelig, så brukeren blir stående på feil fane og må bytte manuelt.
+// Firebase anbefaler signInWithRedirect på mobil — da navigerer samme fane til Google
+// og tilbake igjen, uten ekstra fane.
+function børBrukeRedirect(): boolean {
+    if (typeof navigator === 'undefined') return false
+    return /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || navigator.maxTouchPoints > 1
+}
 
 function oversettFeil(kode: string, metode: 'google' | 'epost' = 'epost'): string {
     switch (kode) {
@@ -58,12 +70,23 @@ export function InnloggingKnapper() {
             // eslint-disable-next-line react-hooks/set-state-in-effect
             setFeil('Denne e-postadressen er allerede registrert med en annen innloggingsmetode.')
         }
+        // Fang opp feil fra redirect-baserte Google-innlogginger (mobil). Selve
+        // sesjonen plukkes opp av onAuthStateChanged; her henter vi bare ut feil.
+        getRedirectResult(getFirebaseAuth()).catch((e) => {
+            const kode = (e as AuthError).code
+            setFeil(oversettFeil(kode, 'google'))
+        })
     }, [])
 
     const loggInnMedGoogle = async () => {
         setFeil(null)
+        const provider = new GoogleAuthProvider()
         try {
-            await signInWithPopup(getFirebaseAuth(), new GoogleAuthProvider())
+            if (børBrukeRedirect()) {
+                await signInWithRedirect(getFirebaseAuth(), provider)
+            } else {
+                await signInWithPopup(getFirebaseAuth(), provider)
+            }
         } catch (e) {
             const kode = (e as AuthError).code
             if (kode !== 'auth/popup-closed-by-user' && kode !== 'auth/cancelled-popup-request') {
