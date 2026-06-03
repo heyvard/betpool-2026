@@ -30,3 +30,18 @@ export function UseMutateUser(id: string) {
         },
     })
 }
+
+export function UseSletteUser(id: string) {
+    const queryClient = useQueryClient()
+    const authedFetch = useAuthedFetch()
+
+    return useMutation<void, unknown, void>({
+        mutationFn: async () => {
+            await authedFetch(`/api/v1/users/${id}`, { method: 'DELETE' })
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['users'] }).then()
+            queryClient.invalidateQueries({ queryKey: ['all-bets'] }).then()
+        },
+    })
+}

@@ -2,7 +2,7 @@ import type { NextPage } from 'next'
 import { Spinner } from '../components/loading/Spinner'
 import React from 'react'
 import { UseUsers } from '../queries/useUsers'
-import { UseMutateUser } from '../queries/mutateUser'
+import { UseMutateUser, UseSletteUser } from '../queries/mutateUser'
 import { UseUser } from '../queries/useUser'
 import { UseMutateAdminCron, CronJobb } from '../queries/mutateAdminCron'
 import { UserForAdmin } from '../types/types'
@@ -10,7 +10,7 @@ import { User } from '../types/user'
 import { Switch } from '@/components/ui/switch'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
-import { RefreshCw, Bell, Calendar, Smartphone } from 'lucide-react'
+import { RefreshCw, Bell, Calendar, Smartphone, Trash2 } from 'lucide-react'
 
 function initialer(navn: string): string {
     const deler = navn.trim().split(/\s+/).filter(Boolean)
@@ -76,6 +76,7 @@ function PushSeksjon({ user }: { user: UserForAdmin }) {
 
 function BrukerView({ me, user }: { user: UserForAdmin; me: User }) {
     const { mutate, isPending } = UseMutateUser(user.id)
+    const { mutate: slettBruker, isPending: isPendingSletting, error: sletteError } = UseSletteUser(user.id)
 
     const roller = [
         user.superadmin && 'Superadmin',
@@ -141,6 +142,31 @@ function BrukerView({ me, user }: { user: UserForAdmin; me: User }) {
                             loading={isPending}
                             onToggle={() => mutate({ request: { active: !user.active } })}
                         />
+                        {!user.active && me.id !== user.id && (
+                            <div className="py-2.5">
+                                <Button
+                                    variant="ghost"
+                                    size="small"
+                                    loading={isPendingSletting}
+                                    icon={<Trash2 className="h-4 w-4" />}
+                                    className="text-red-600 hover:bg-red-50 hover:text-red-700"
+                                    onClick={() => {
+                                        if (
+                                            window.confirm(
+                                                `Er du sikker på at du vil slette ${user.name}? Dette kan ikke angres.`,
+                                            )
+                                        ) {
+                                            slettBruker()
+                                        }
+                                    }}
+                                >
+                                    Slett bruker
+                                </Button>
+                                {sletteError != null && (
+                                    <p className="mt-1.5 text-xs text-red-700">Kunne ikke lagre — prøv igjen.</p>
+                                )}
+                            </div>
+                        )}
                     </>
                 )}
             </div>
