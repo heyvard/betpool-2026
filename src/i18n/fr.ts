@@ -29,6 +29,8 @@ const fr: Translations = {
         brukere: 'Utilisateurs',
         innbetaling: 'Paiements',
         innstillinger: 'Réglages',
+        tilbakemelding: 'Donner un avis',
+        tilbakemeldinger: 'Retours',
         sprak: 'Langue',
     },
     hjem: {
@@ -407,6 +409,20 @@ const fr: Translations = {
     },
     testBruker: {
         velg: 'Choisissez un utilisateur test en bas à droite.',
+    },
+    tilbakemelding: {
+        tittel: 'Avis ou contact',
+        beskrivelse:
+            "Une suggestion, un bug à signaler ou une question ? Écrivez à l'organisateur ici — nous lisons tout.",
+        placeholder: 'Écrivez votre message …',
+        send: 'Envoyer',
+        takk: 'Merci pour votre retour !',
+        adminTittel: 'Retours',
+        ingen: 'Aucun retour pour le moment.',
+        behandlet: 'Traité',
+        ubehandlet: 'Nouveau',
+        markerBehandlet: 'Marquer comme traité',
+        angreBehandlet: 'Marquer comme nouveau',
     },
 }
 
