@@ -27,6 +27,8 @@ const no = {
         brukere: 'Brukere',
         innbetaling: 'Innbetalinger',
         innstillinger: 'Innstillinger',
+        tilbakemelding: 'Gi tilbakemelding',
+        tilbakemeldinger: 'Tilbakemeldinger',
         sprak: 'Språk',
     },
     hjem: {
@@ -395,6 +397,20 @@ const no = {
     },
     testBruker: {
         velg: 'Velg en test-bruker nederst til høyre.',
+    },
+    tilbakemelding: {
+        tittel: 'Tilbakemelding eller kontakt',
+        beskrivelse:
+            'Har du et forslag, en feil å melde, eller noe du lurer på? Skriv til arrangøren her — vi leser alt.',
+        placeholder: 'Skriv tilbakemeldingen din …',
+        send: 'Send',
+        takk: 'Takk for tilbakemeldingen!',
+        adminTittel: 'Tilbakemeldinger',
+        ingen: 'Ingen tilbakemeldinger ennå.',
+        behandlet: 'Behandlet',
+        ubehandlet: 'Ny',
+        markerBehandlet: 'Marker som behandlet',
+        angreBehandlet: 'Marker som ny',
     },
 }
 
