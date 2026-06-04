@@ -280,7 +280,7 @@ interface JokerSeksjonProps {
 function JokerSeksjon({ joker, harLagretTips, disabled, isPending, feil, onToggle }: JokerSeksjonProps) {
     const { t } = useLanguage()
 
-    if (disabled || !harLagretTips) {
+    if (disabled) {
         return null
     }
 
@@ -318,6 +318,7 @@ function JokerSeksjon({ joker, harLagretTips, disabled, isPending, feil, onToggl
                     variant="outline"
                     onClick={() => onToggle(true)}
                     loading={isPending}
+                    disabled={!harLagretTips}
                     icon={<Zap className="w-3.5 h-3.5" />}
                     className="shrink-0"
                 >
