@@ -29,6 +29,7 @@ const handler = async function handler(opts: ApiHandlerOpts): Promise<void> {
                        u.notif_reminders,
                        u.notif_summary,
                        u.i_hovedliga,
+                       u.sign_in_provider,
                        COUNT(ps.id)::int AS device_count
                 FROM users u
                 LEFT JOIN push_subscriptions ps ON ps.user_id = u.id

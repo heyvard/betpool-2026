@@ -5,7 +5,14 @@ import { sendPushTilBruker } from '../../../server/push'
 
 const handler = async function handler(opts: ApiHandlerOpts): Promise<void> {
     const { res, req, user, jwtPayload, client } = opts
+    const signInProvider = (jwtPayload.firebase as { sign_in_provider?: string } | undefined)?.sign_in_provider ?? null
     if (user) {
+        // Backfill/oppdater innloggingsmetode ved innlogging. Skriver kun når den
+        // faktisk er endret, så ingen unødvendige writes per sidelast.
+        if (signInProvider && user.sign_in_provider !== signInProvider) {
+            await client.query(`UPDATE users SET sign_in_provider = $1 WHERE id = $2`, [signInProvider, user.id])
+            user.sign_in_provider = signInProvider
+        }
         if (req.method == 'PUT') {
             const reqBody = JSON.parse(req.body)
 
@@ -54,8 +61,8 @@ const handler = async function handler(opts: ApiHandlerOpts): Promise<void> {
     try {
         const nyBruker = await client.query(
             `
-        INSERT INTO users (firebase_user_id, picture, active, email, name, scoreadmin, paymentadmin, superadmin, paid, winner)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING *`,
+        INSERT INTO users (firebase_user_id, picture, active, email, name, scoreadmin, paymentadmin, superadmin, paid, winner, sign_in_provider)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING *`,
             [
                 jwtPayload.sub,
                 jwtPayload.picture,
@@ -67,6 +74,7 @@ const handler = async function handler(opts: ApiHandlerOpts): Promise<void> {
                 false,
                 false,
                 '',
+                signInProvider,
             ],
         )
         try {

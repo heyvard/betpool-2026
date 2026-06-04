@@ -19,6 +19,19 @@ function initialer(navn: string): string {
     return (deler[0][0] + deler[deler.length - 1][0]).toUpperCase()
 }
 
+// Pent navn for innloggingsmetoden lagret som rå Firebase-claim. Returnerer null
+// for ukjente/manglende verdier slik at chipen ikke vises.
+function innloggingsmetodeTekst(provider: string | null): string | null {
+    switch (provider) {
+        case 'google.com':
+            return 'Google'
+        case 'password':
+            return 'E-post'
+        default:
+            return null
+    }
+}
+
 function InnstillingsRad({
     label,
     checked,
@@ -105,7 +118,7 @@ function BrukerView({ me, user }: { user: UserForAdmin; me: User }) {
                         )}
                     </div>
                     <p className="truncate text-xs text-stone-500">{user.email}</p>
-                    {roller.length > 0 && (
+                    {(roller.length > 0 || innloggingsmetodeTekst(user.sign_in_provider)) && (
                         <div className="mt-1.5 flex flex-wrap gap-1">
                             {roller.map((rolle) => (
                                 <span
@@ -115,6 +128,11 @@ function BrukerView({ me, user }: { user: UserForAdmin; me: User }) {
                                     {rolle}
                                 </span>
                             ))}
+                            {innloggingsmetodeTekst(user.sign_in_provider) && (
+                                <span className="rounded-full bg-stone-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-stone-600">
+                                    {innloggingsmetodeTekst(user.sign_in_provider)}
+                                </span>
+                            )}
                         </div>
                     )}
                 </div>
