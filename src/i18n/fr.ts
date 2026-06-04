@@ -90,6 +90,10 @@ const fr: Translations = {
         reduserLag: 'Réduire {{lag}}',
         okLag: 'Augmenter {{lag}}',
         scoreFor: 'Score pour {{lag}}',
+        endretTil: 'Modifié en {{h}}–{{b}}',
+        angre: 'Annuler',
+        tipsFjernet: 'Pari supprimé',
+        fjernTips: 'Supprimer le pari',
     },
     spilteKamper: {
         resultater: 'Résultats de {{navn}}',

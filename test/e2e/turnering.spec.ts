@@ -145,16 +145,13 @@ async function settKlokke(context: BrowserContext, iso: string): Promise<void> {
     await context.addCookies([{ name: 'betpool_test_clock', value: iso, url: URL_BASE }])
 }
 
-// BetView setter score via +/- -knapper (ingen direkte inntasting). Fra tom
-// score: ett «Øk» gir 1, så «Øk» opp til målet, og ett «Reduser» for å nå 0.
+// BetView setter score via +/- -knapper. «Øk» fra tom gir 0, deretter teller
+// hvert trykk opp én. Så for å nå `mål` trengs mål+1 trykk (1 til 0, så mål til).
 async function settScoreMedKnapper(kort: Locator, lag: string, mål: number): Promise<void> {
     const øk = kort.getByRole('button', { name: `Øk ${lag}`, exact: true })
-    await øk.click()
-    for (let i = 1; i < mål; i++) {
+    await øk.click() // tom → 0
+    for (let i = 0; i < mål; i++) {
         await øk.click()
-    }
-    if (mål === 0) {
-        await kort.getByRole('button', { name: `Reduser ${lag}`, exact: true }).click()
     }
 }
 
@@ -162,9 +159,9 @@ async function tippKampViaUi(page: Page, kamp: Match, tips: Tips): Promise<void>
     const kort = page.getByTestId(`bet-${kamp.match_num}`)
     await settScoreMedKnapper(kort, kamp.home_team, tips.hjemme)
     await settScoreMedKnapper(kort, kamp.away_team, tips.borte)
-    await kort.getByRole('button', { name: 'Lagre', exact: true }).click()
-    // Etter lagring forsvinner Lagre-knappen — tipset er i sync med DB.
-    await expect(kort.getByRole('button', { name: 'Lagre', exact: true })).toHaveCount(0)
+    // Ingen Lagre-knapp lenger — autolagring ~800 ms etter siste endring. Når
+    // tipset er lagret og synket fra DB, dukker «Fjern tips» opp og blir stående.
+    await expect(kort.getByRole('button', { name: 'Fjern tips', exact: true })).toBeVisible()
     if (tips.joker) {
         await kort.getByRole('button', { name: 'Bruk joker' }).click()
         await expect(kort.getByText('Joker aktiv — kampen teller dobbelt')).toBeVisible()
