@@ -79,4 +79,5 @@ export interface UserForAdmin {
     notif_summary: boolean
     i_hovedliga: boolean
     device_count: number
+    sign_in_provider: string | null
 }
