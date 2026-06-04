@@ -86,6 +86,10 @@ const no = {
         reduserLag: 'Reduser {{lag}}',
         okLag: 'Øk {{lag}}',
         scoreFor: 'Score for {{lag}}',
+        endretTil: 'Endret til {{h}}–{{b}}',
+        angre: 'Angre',
+        tipsFjernet: 'Tips fjernet',
+        fjernTips: 'Fjern tips',
     },
     spilteKamper: {
         resultater: '{{navn}} sine resultater',
