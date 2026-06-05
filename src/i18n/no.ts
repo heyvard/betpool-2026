@@ -25,6 +25,7 @@ const no = {
         redigerSluttspill: 'Rediger sluttspill',
         redigerResultater: 'Rediger resultater',
         brukere: 'Brukere',
+        adminLigaer: 'Private ligaer',
         innbetaling: 'Innbetalinger',
         innstillinger: 'Innstillinger',
         tilbakemelding: 'Gi tilbakemelding',
