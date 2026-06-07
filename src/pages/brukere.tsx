@@ -10,7 +10,7 @@ import { User } from '../types/user'
 import { Switch } from '@/components/ui/switch'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
-import { RefreshCw, Bell, Calendar, Smartphone, Trash2 } from 'lucide-react'
+import { RefreshCw, Bell, Calendar, Smartphone, Trash2, BarChart2 } from 'lucide-react'
 
 function initialer(navn: string): string {
     const deler = navn.trim().split(/\s+/).filter(Boolean)
@@ -87,6 +87,42 @@ function PushSeksjon({ user }: { user: UserForAdmin }) {
     )
 }
 
+function formaterTidspunkt(isoStreng: string): string {
+    const d = new Date(isoStreng)
+    return d.toLocaleString('nb-NO', { dateStyle: 'short', timeStyle: 'short' })
+}
+
+function BettingSeksjon({ user }: { user: UserForAdmin }) {
+    const harBett = user.bet_count > 0
+    const sistBett = user.last_bet_at ? formaterTidspunkt(user.last_bet_at) : null
+    const nesteutippet = user.earliest_unbet_match ? formaterTidspunkt(user.earliest_unbet_match) : null
+
+    return (
+        <div className="py-2.5">
+            <div className="flex items-center gap-1.5 text-sm mb-1.5">
+                <BarChart2 className={cn('h-4 w-4 shrink-0', harBett ? 'text-stone-600' : 'text-stone-400')} />
+                <span className={cn('bp-tabular', harBett ? 'text-stone-700' : 'text-stone-400')}>
+                    {user.bet_count} {user.bet_count === 1 ? 'bett' : 'bett'} lagt inn
+                </span>
+            </div>
+            <div className="space-y-0.5 pl-5.5">
+                {sistBett && (
+                    <p className="text-xs text-stone-500">
+                        Sist bett: <span className="bp-tabular text-stone-700">{sistBett}</span>
+                    </p>
+                )}
+                {nesteutippet ? (
+                    <p className="text-xs text-stone-500">
+                        Neste utippet: <span className="bp-tabular font-medium text-amber-700">{nesteutippet}</span>
+                    </p>
+                ) : (
+                    <p className="text-xs text-green-700">Alle kommende kamper tippet</p>
+                )}
+            </div>
+        </div>
+    )
+}
+
 function BrukerView({ me, user }: { user: UserForAdmin; me: User }) {
     const { mutate, isPending } = UseMutateUser(user.id)
     const { mutate: slettBruker, isPending: isPendingSletting, error: sletteError } = UseSletteUser(user.id)
@@ -139,6 +175,7 @@ function BrukerView({ me, user }: { user: UserForAdmin; me: User }) {
             </div>
 
             <div className="border-t border-stone-100 divide-y divide-stone-100 px-4">
+                <BettingSeksjon user={user} />
                 <PushSeksjon user={user} />
                 {me.superadmin && (
                     <>

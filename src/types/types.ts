@@ -80,4 +80,7 @@ export interface UserForAdmin {
     i_hovedliga: boolean
     device_count: number
     sign_in_provider: string | null
+    bet_count: number
+    last_bet_at: string | null
+    earliest_unbet_match: string | null
 }
