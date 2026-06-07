@@ -1,16 +1,28 @@
 import type { NextPage } from 'next'
 import { Spinner } from '../components/loading/Spinner'
-import React from 'react'
+import React, { useState, useMemo } from 'react'
 import { UseUsers } from '../queries/useUsers'
 import { UseMutateUser, UseSletteUser } from '../queries/mutateUser'
 import { UseUser } from '../queries/useUser'
-import { UseMutateAdminCron, CronJobb } from '../queries/mutateAdminCron'
 import { UserForAdmin } from '../types/types'
 import { User } from '../types/user'
 import { Switch } from '@/components/ui/switch'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
-import { RefreshCw, Bell, Calendar, Smartphone, Trash2, BarChart2 } from 'lucide-react'
+import { ChevronDown, ChevronUp, ChevronsUpDown, Trash2, Search, X } from 'lucide-react'
+import {
+    useReactTable,
+    getCoreRowModel,
+    getSortedRowModel,
+    getFilteredRowModel,
+    getExpandedRowModel,
+    flexRender,
+    createColumnHelper,
+    SortingState,
+    ColumnFiltersState,
+    ExpandedState,
+    FilterFn,
+} from '@tanstack/react-table'
 
 function initialer(navn: string): string {
     const deler = navn.trim().split(/\s+/).filter(Boolean)
@@ -19,8 +31,6 @@ function initialer(navn: string): string {
     return (deler[0][0] + deler[deler.length - 1][0]).toUpperCase()
 }
 
-// Pent navn for innloggingsmetoden lagret som rå Firebase-claim. Returnerer null
-// for ukjente/manglende verdier slik at chipen ikke vises.
 function innloggingsmetodeTekst(provider: string | null): string | null {
     switch (provider) {
         case 'google.com':
@@ -30,6 +40,32 @@ function innloggingsmetodeTekst(provider: string | null): string | null {
         default:
             return null
     }
+}
+
+function formaterTidspunkt(isoStreng: string): string {
+    const d = new Date(isoStreng)
+    return d.toLocaleString('nb-NO', { dateStyle: 'short', timeStyle: 'short' })
+}
+
+function RolleChip({ label }: { label: string }) {
+    return (
+        <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-800">
+            {label}
+        </span>
+    )
+}
+
+function StatusChip({ label, aktiv }: { label: string; aktiv: boolean }) {
+    return (
+        <span
+            className={cn(
+                'rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide',
+                aktiv ? 'bg-green-100 text-green-800' : 'bg-stone-100 text-stone-400',
+            )}
+        >
+            {label}
+        </span>
+    )
 }
 
 function InnstillingsRad({
@@ -44,255 +80,363 @@ function InnstillingsRad({
     onToggle: () => void
 }) {
     return (
-        <div className="flex items-center justify-between py-2.5">
+        <div className="flex items-center justify-between py-2">
             <span className="text-sm text-stone-700">{label}</span>
             <Switch checked={checked} size="small" loading={loading} onCheckedChange={onToggle} />
         </div>
     )
 }
 
-function VarselChip({ label, på, dempet }: { label: string; på: boolean; dempet?: boolean }) {
-    return (
-        <span
-            className={cn(
-                'rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide',
-                på && !dempet && 'bg-green-100 text-green-800',
-                på && dempet && 'bg-stone-100 text-stone-500',
-                !på && 'bg-stone-100 text-stone-400 line-through',
-            )}
-        >
-            {label}
-        </span>
-    )
-}
+function ExpandertRad({ user, me }: { user: UserForAdmin; me: User }) {
+    const { mutate, isPending } = UseMutateUser(user.id)
+    const { mutate: slettBruker, isPending: isPendingSletting, error: sletteError } = UseSletteUser(user.id)
 
-function PushSeksjon({ user }: { user: UserForAdmin }) {
-    const harEnhet = user.device_count > 0
-    const enhetTekst = harEnhet
-        ? `${user.device_count} ${user.device_count === 1 ? 'push-enhet' : 'push-enheter'}`
-        : 'Ingen push-enheter'
-
-    return (
-        <div className="py-2.5">
-            <div className="flex items-center gap-1.5 text-sm">
-                <Smartphone className={cn('h-4 w-4 shrink-0', harEnhet ? 'text-stone-600' : 'text-stone-400')} />
-                <span className={harEnhet ? 'text-stone-700' : 'text-stone-400'}>{enhetTekst}</span>
-            </div>
-            <div className="mt-1.5 flex flex-wrap gap-1">
-                <VarselChip label="Generelt" på={user.notif_general} dempet={!harEnhet} />
-                <VarselChip label="Påminnelser" på={user.notif_reminders} dempet={!harEnhet} />
-                <VarselChip label="Oppsummering" på={user.notif_summary} dempet={!harEnhet} />
-            </div>
-        </div>
-    )
-}
-
-function formaterTidspunkt(isoStreng: string): string {
-    const d = new Date(isoStreng)
-    return d.toLocaleString('nb-NO', { dateStyle: 'short', timeStyle: 'short' })
-}
-
-function BettingSeksjon({ user }: { user: UserForAdmin }) {
-    const harBett = user.bet_count > 0
     const sistBett = user.last_bet_at ? formaterTidspunkt(user.last_bet_at) : null
     const nesteutippet = user.earliest_unbet_match ? formaterTidspunkt(user.earliest_unbet_match) : null
 
     return (
-        <div className="py-2.5">
-            <div className="flex items-center gap-1.5 text-sm mb-1.5">
-                <BarChart2 className={cn('h-4 w-4 shrink-0', harBett ? 'text-stone-600' : 'text-stone-400')} />
-                <span className={cn('bp-tabular', harBett ? 'text-stone-700' : 'text-stone-400')}>
-                    {user.bet_count} {user.bet_count === 1 ? 'bett' : 'bett'} lagt inn
-                </span>
-            </div>
-            <div className="space-y-0.5 pl-5.5">
+        <div className="px-4 pb-3 pt-1 bg-stone-50 border-t border-stone-100 space-y-3">
+            <div className="grid grid-cols-2 gap-x-6 gap-y-1 text-xs">
+                <div>
+                    <span className="text-stone-500">Bett:</span>{' '}
+                    <span className="bp-tabular font-medium text-stone-800">{user.bet_count}</span>
+                </div>
+                <div>
+                    <span className="text-stone-500">Push-enheter:</span>{' '}
+                    <span className="bp-tabular font-medium text-stone-800">{user.device_count}</span>
+                </div>
                 {sistBett && (
-                    <p className="text-xs text-stone-500">
-                        Sist bett: <span className="bp-tabular text-stone-700">{sistBett}</span>
-                    </p>
+                    <div className="col-span-2">
+                        <span className="text-stone-500">Sist bett:</span>{' '}
+                        <span className="bp-tabular text-stone-700">{sistBett}</span>
+                    </div>
                 )}
                 {nesteutippet ? (
-                    <p className="text-xs text-stone-500">
-                        Neste utippet: <span className="bp-tabular font-medium text-amber-700">{nesteutippet}</span>
-                    </p>
+                    <div className="col-span-2">
+                        <span className="text-stone-500">Neste utippet:</span>{' '}
+                        <span className="bp-tabular font-medium text-amber-700">{nesteutippet}</span>
+                    </div>
                 ) : (
-                    <p className="text-xs text-green-700">Alle kommende kamper tippet</p>
+                    <div className="col-span-2 text-green-700">Alle kommende kamper tippet</div>
+                )}
+                {innloggingsmetodeTekst(user.sign_in_provider) && (
+                    <div className="col-span-2">
+                        <span className="text-stone-500">Innlogging:</span>{' '}
+                        <span className="text-stone-700">{innloggingsmetodeTekst(user.sign_in_provider)}</span>
+                    </div>
                 )}
             </div>
-        </div>
-    )
-}
 
-function BrukerView({ me, user }: { user: UserForAdmin; me: User }) {
-    const { mutate, isPending } = UseMutateUser(user.id)
-    const { mutate: slettBruker, isPending: isPendingSletting, error: sletteError } = UseSletteUser(user.id)
-
-    const roller = [
-        user.superadmin && 'Superadmin',
-        user.scoreadmin && 'Scoreadmin',
-        user.paymentadmin && 'Paymentadmin',
-    ].filter(Boolean) as string[]
-
-    return (
-        <div
-            className={cn(
-                'bg-white rounded-xl shadow-xs ring-1 ring-stone-200/70 overflow-hidden',
-                !user.active && 'opacity-60',
-            )}
-        >
-            <div className="flex items-center gap-3 px-4 pt-4 pb-3">
-                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-linear-to-br from-stone-700 to-stone-900 text-sm font-semibold text-white">
-                    {initialer(user.name)}
-                </span>
-                <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2">
-                        <span className="truncate font-semibold text-stone-900">{user.name}</span>
-                        {!user.active && (
-                            <span className="shrink-0 rounded-full bg-stone-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-stone-500">
-                                Inaktiv
-                            </span>
-                        )}
-                    </div>
-                    <p className="truncate text-xs text-stone-500">{user.email}</p>
-                    {(roller.length > 0 || innloggingsmetodeTekst(user.sign_in_provider)) && (
-                        <div className="mt-1.5 flex flex-wrap gap-1">
-                            {roller.map((rolle) => (
-                                <span
-                                    key={rolle}
-                                    className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-800"
-                                >
-                                    {rolle}
-                                </span>
-                            ))}
-                            {innloggingsmetodeTekst(user.sign_in_provider) && (
-                                <span className="rounded-full bg-stone-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-stone-600">
-                                    {innloggingsmetodeTekst(user.sign_in_provider)}
-                                </span>
+            {me.superadmin && (
+                <div className="divide-y divide-stone-200 border-t border-stone-200 pt-2">
+                    <InnstillingsRad
+                        label="Scoreadmin"
+                        checked={user.scoreadmin}
+                        loading={isPending}
+                        onToggle={() => mutate({ request: { scoreadmin: !user.scoreadmin } })}
+                    />
+                    <InnstillingsRad
+                        label="Paymentadmin"
+                        checked={user.paymentadmin}
+                        loading={isPending}
+                        onToggle={() => mutate({ request: { paymentadmin: !user.paymentadmin } })}
+                    />
+                    <InnstillingsRad
+                        label="Aktiv"
+                        checked={user.active}
+                        loading={isPending}
+                        onToggle={() => mutate({ request: { active: !user.active } })}
+                    />
+                    {!user.active && me.id !== user.id && (
+                        <div className="pt-2">
+                            <Button
+                                variant="ghost"
+                                size="small"
+                                loading={isPendingSletting}
+                                icon={<Trash2 className="h-4 w-4" />}
+                                className="text-red-600 hover:bg-red-50 hover:text-red-700"
+                                onClick={() => {
+                                    if (
+                                        window.confirm(
+                                            `Er du sikker på at du vil slette ${user.name}? Dette kan ikke angres.`,
+                                        )
+                                    ) {
+                                        slettBruker()
+                                    }
+                                }}
+                            >
+                                Slett bruker
+                            </Button>
+                            {sletteError != null && (
+                                <p className="mt-1 text-xs text-red-700">Kunne ikke lagre — prøv igjen.</p>
                             )}
                         </div>
                     )}
                 </div>
-            </div>
+            )}
+        </div>
+    )
+}
 
-            <div className="border-t border-stone-100 divide-y divide-stone-100 px-4">
-                <BettingSeksjon user={user} />
-                <PushSeksjon user={user} />
-                {me.superadmin && (
-                    <>
-                        <InnstillingsRad
-                            label="Scoreadmin"
-                            checked={user.scoreadmin}
-                            loading={isPending}
-                            onToggle={() => mutate({ request: { scoreadmin: !user.scoreadmin } })}
-                        />
-                        <InnstillingsRad
-                            label="Paymentadmin"
-                            checked={user.paymentadmin}
-                            loading={isPending}
-                            onToggle={() => mutate({ request: { paymentadmin: !user.paymentadmin } })}
-                        />
-                        <InnstillingsRad
-                            label="Aktiv"
-                            checked={user.active}
-                            loading={isPending}
-                            onToggle={() => mutate({ request: { active: !user.active } })}
-                        />
-                        {!user.active && me.id !== user.id && (
-                            <div className="py-2.5">
-                                <Button
-                                    variant="ghost"
-                                    size="small"
-                                    loading={isPendingSletting}
-                                    icon={<Trash2 className="h-4 w-4" />}
-                                    className="text-red-600 hover:bg-red-50 hover:text-red-700"
-                                    onClick={() => {
-                                        if (
-                                            window.confirm(
-                                                `Er du sikker på at du vil slette ${user.name}? Dette kan ikke angres.`,
-                                            )
-                                        ) {
-                                            slettBruker()
-                                        }
-                                    }}
-                                >
-                                    Slett bruker
-                                </Button>
-                                {sletteError != null && (
-                                    <p className="mt-1.5 text-xs text-red-700">Kunne ikke lagre — prøv igjen.</p>
+type FilterType = 'alle' | 'aktiv' | 'inaktiv' | 'betalt' | 'ikke-betalt'
+
+const globalFilterFn: FilterFn<UserForAdmin> = (row, _columnId, filterValue: string) => {
+    const søk = filterValue.toLowerCase()
+    return row.original.name.toLowerCase().includes(søk) || row.original.email.toLowerCase().includes(søk)
+}
+
+const columnHelper = createColumnHelper<UserForAdmin>()
+
+function SorterIkon({ sorted }: { sorted: false | 'asc' | 'desc' }) {
+    if (sorted === 'asc') return <ChevronUp className="h-3.5 w-3.5 shrink-0" />
+    if (sorted === 'desc') return <ChevronDown className="h-3.5 w-3.5 shrink-0" />
+    return <ChevronsUpDown className="h-3.5 w-3.5 shrink-0 text-stone-400" />
+}
+
+function BrukerTabell({ brukere, me }: { brukere: UserForAdmin[]; me: User }) {
+    const [sorting, setSorting] = useState<SortingState>([{ id: 'name', desc: false }])
+    const [globalFilter, setGlobalFilter] = useState('')
+    const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
+    const [expanded, setExpanded] = useState<ExpandedState>({})
+    const [filterType, setFilterType] = useState<FilterType>('alle')
+
+    const filtrertData = useMemo(() => {
+        switch (filterType) {
+            case 'aktiv':
+                return brukere.filter((u) => u.active)
+            case 'inaktiv':
+                return brukere.filter((u) => !u.active)
+            case 'betalt':
+                return brukere.filter((u) => u.paid)
+            case 'ikke-betalt':
+                return brukere.filter((u) => !u.paid)
+            default:
+                return brukere
+        }
+    }, [brukere, filterType])
+
+    const columns = useMemo(
+        () => [
+            columnHelper.accessor('name', {
+                header: 'Navn',
+                cell: (info) => {
+                    const user = info.row.original
+                    const roller = [
+                        user.superadmin && 'Super',
+                        user.scoreadmin && 'Score',
+                        user.paymentadmin && 'Payment',
+                    ].filter(Boolean) as string[]
+                    return (
+                        <div className="flex items-center gap-2.5 min-w-0">
+                            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-linear-to-br from-stone-700 to-stone-900 text-xs font-semibold text-white">
+                                {initialer(user.name)}
+                            </span>
+                            <div className="min-w-0">
+                                <div className="flex items-center gap-1.5 flex-wrap">
+                                    <span className="font-medium text-stone-900 text-sm leading-tight truncate max-w-[120px] sm:max-w-none">
+                                        {user.name}
+                                    </span>
+                                    {!user.active && (
+                                        <span className="shrink-0 rounded-full bg-stone-100 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-stone-500">
+                                            Inaktiv
+                                        </span>
+                                    )}
+                                </div>
+                                <p className="text-xs text-stone-500 truncate max-w-[140px] sm:max-w-none">
+                                    {user.email}
+                                </p>
+                                {roller.length > 0 && (
+                                    <div className="mt-0.5 flex flex-wrap gap-0.5">
+                                        {roller.map((r) => (
+                                            <RolleChip key={r} label={r} />
+                                        ))}
+                                    </div>
                                 )}
                             </div>
+                        </div>
+                    )
+                },
+                sortingFn: (a, b) => a.original.name.localeCompare(b.original.name, 'nb'),
+                filterFn: globalFilterFn,
+            }),
+            columnHelper.accessor('bet_count', {
+                header: 'Bett',
+                cell: (info) => <span className="bp-tabular text-sm text-stone-700">{info.getValue()}</span>,
+                size: 60,
+            }),
+            columnHelper.accessor('paid', {
+                header: 'Betalt',
+                cell: (info) => (
+                    <StatusChip label={info.getValue() ? 'Betalt' : 'Ikke betalt'} aktiv={info.getValue()} />
+                ),
+                sortingFn: (a, b) => Number(a.original.paid) - Number(b.original.paid),
+                size: 90,
+            }),
+            columnHelper.display({
+                id: 'expand',
+                header: '',
+                cell: (info) => (
+                    <button
+                        onClick={info.row.getToggleExpandedHandler()}
+                        className="flex items-center justify-center h-7 w-7 rounded-md hover:bg-stone-100 text-stone-500"
+                        aria-label={info.row.getIsExpanded() ? 'Lukk' : 'Vis detaljer'}
+                    >
+                        {info.row.getIsExpanded() ? (
+                            <ChevronUp className="h-4 w-4" />
+                        ) : (
+                            <ChevronDown className="h-4 w-4" />
                         )}
-                    </>
+                    </button>
+                ),
+                size: 44,
+            }),
+        ],
+        [],
+    )
+
+    // eslint-disable-next-line react-hooks/incompatible-library
+    const table = useReactTable({
+        data: filtrertData,
+        columns,
+        state: { sorting, globalFilter, columnFilters, expanded },
+        onSortingChange: setSorting,
+        onGlobalFilterChange: setGlobalFilter,
+        onColumnFiltersChange: setColumnFilters,
+        onExpandedChange: setExpanded,
+        globalFilterFn,
+        getCoreRowModel: getCoreRowModel(),
+        getSortedRowModel: getSortedRowModel(),
+        getFilteredRowModel: getFilteredRowModel(),
+        getExpandedRowModel: getExpandedRowModel(),
+        getRowCanExpand: () => true,
+    })
+
+    const filterKnapper: { type: FilterType; label: string }[] = [
+        { type: 'alle', label: 'Alle' },
+        { type: 'aktiv', label: 'Aktive' },
+        { type: 'inaktiv', label: 'Inaktive' },
+        { type: 'betalt', label: 'Betalt' },
+        { type: 'ikke-betalt', label: 'Ikke betalt' },
+    ]
+
+    return (
+        <div className="space-y-3">
+            {/* Søk */}
+            <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-stone-400 pointer-events-none" />
+                <input
+                    type="text"
+                    value={globalFilter}
+                    onChange={(e) => setGlobalFilter(e.target.value)}
+                    placeholder="Søk navn eller e-post…"
+                    className="w-full rounded-lg border border-stone-200 bg-white py-2 pl-9 pr-8 text-sm text-stone-900 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-amber-400"
+                />
+                {globalFilter && (
+                    <button
+                        onClick={() => setGlobalFilter('')}
+                        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600"
+                    >
+                        <X className="h-4 w-4" />
+                    </button>
                 )}
             </div>
-        </div>
-    )
-}
 
-const CRON_JOBBER: { jobb: CronJobb; label: string; beskrivelse: string; ikon: React.ReactNode }[] = [
-    {
-        jobb: 'sync-scores',
-        label: 'Synk resultater',
-        beskrivelse: 'Henter live-scores fra football-data.org for pågående og nylig ferdige kamper.',
-        ikon: <RefreshCw className="h-4 w-4" />,
-    },
-    {
-        jobb: 'sync-matches',
-        label: 'Synk kampoppsett',
-        beskrivelse: 'Henter kampoppsett (tidspunkt, lag, runde) fra football-data.org.',
-        ikon: <Calendar className="h-4 w-4" />,
-    },
-    {
-        jobb: 'send-reminders',
-        label: 'Send påminnelser',
-        beskrivelse: 'Sender push-påminnelser til brukere med utippede kamper i morgen.',
-        ikon: <Bell className="h-4 w-4" />,
-    },
-]
-
-function CronJobbKnapp({ jobb, label, beskrivelse, ikon }: (typeof CRON_JOBBER)[number]) {
-    const { mutate, isPending, data, error, isSuccess } = UseMutateAdminCron(jobb)
-
-    return (
-        <div className="flex flex-col gap-2 py-3 first:pt-0 last:pb-0">
-            <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
-                    <p className="text-sm font-medium text-stone-900">{label}</p>
-                    <p className="text-xs text-stone-500">{beskrivelse}</p>
-                </div>
-                <Button
-                    variant="outline"
-                    size="small"
-                    loading={isPending}
-                    icon={ikon}
-                    onClick={() => mutate()}
-                    className="shrink-0"
-                >
-                    Kjør
-                </Button>
-            </div>
-            {isSuccess && data && (
-                <p className="text-xs text-green-700 bg-green-50 rounded-lg px-3 py-1.5">
-                    {Object.entries(data)
-                        .map(([k, v]) => `${k}: ${v}`)
-                        .join(' · ')}
-                </p>
-            )}
-            {error && (
-                <p className="text-xs text-red-700 bg-red-50 rounded-lg px-3 py-1.5">Kunne ikke lagre — prøv igjen.</p>
-            )}
-        </div>
-    )
-}
-
-function CronJobber() {
-    return (
-        <div className="bp-card">
-            <p className="bp-overline mb-3">Cron-jobber</p>
-            <div className="divide-y divide-stone-100">
-                {CRON_JOBBER.map((props) => (
-                    <CronJobbKnapp key={props.jobb} {...props} />
+            {/* Filterknapper */}
+            <div className="flex gap-1.5 flex-wrap">
+                {filterKnapper.map(({ type, label }) => (
+                    <button
+                        key={type}
+                        onClick={() => setFilterType(type)}
+                        className={cn(
+                            'rounded-full px-3 py-1 text-xs font-medium transition-colors',
+                            filterType === type
+                                ? 'bg-stone-800 text-white'
+                                : 'bg-stone-100 text-stone-600 hover:bg-stone-200',
+                        )}
+                    >
+                        {label}
+                    </button>
                 ))}
+            </div>
+
+            {/* Antall */}
+            <p className="text-xs text-stone-500">
+                {table.getFilteredRowModel().rows.length} av {brukere.length} brukere
+            </p>
+
+            {/* Tabell */}
+            <div className="bp-card overflow-hidden p-0">
+                <div className="overflow-x-auto">
+                    <table className="w-full min-w-0 border-collapse">
+                        <thead>
+                            {table.getHeaderGroups().map((headerGroup) => (
+                                <tr key={headerGroup.id} className="border-b border-stone-100">
+                                    {headerGroup.headers.map((header) => {
+                                        const canSort = header.column.getCanSort()
+                                        const sorted = header.column.getIsSorted()
+                                        return (
+                                            <th
+                                                key={header.id}
+                                                style={{ width: header.column.columnDef.size }}
+                                                className={cn(
+                                                    'px-3 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wide text-stone-500 select-none',
+                                                    canSort && 'cursor-pointer hover:text-stone-800',
+                                                )}
+                                                onClick={canSort ? header.column.getToggleSortingHandler() : undefined}
+                                            >
+                                                {header.isPlaceholder ? null : (
+                                                    <div className="flex items-center gap-1">
+                                                        {flexRender(
+                                                            header.column.columnDef.header,
+                                                            header.getContext(),
+                                                        )}
+                                                        {canSort && <SorterIkon sorted={sorted} />}
+                                                    </div>
+                                                )}
+                                            </th>
+                                        )
+                                    })}
+                                </tr>
+                            ))}
+                        </thead>
+                        <tbody className="divide-y divide-stone-100">
+                            {table.getRowModel().rows.length === 0 && (
+                                <tr>
+                                    <td
+                                        colSpan={columns.length}
+                                        className="px-4 py-8 text-center text-sm text-stone-400"
+                                    >
+                                        Ingen brukere funnet.
+                                    </td>
+                                </tr>
+                            )}
+                            {table.getRowModel().rows.map((row) => (
+                                <React.Fragment key={row.id}>
+                                    <tr
+                                        className={cn(
+                                            'transition-colors',
+                                            row.getIsExpanded() ? 'bg-stone-50' : 'hover:bg-stone-50/50',
+                                            !row.original.active && 'opacity-60',
+                                        )}
+                                    >
+                                        {row.getVisibleCells().map((cell) => (
+                                            <td key={cell.id} className="px-3 py-2.5 align-middle">
+                                                {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                                            </td>
+                                        ))}
+                                    </tr>
+                                    {row.getIsExpanded() && (
+                                        <tr>
+                                            <td colSpan={columns.length} className="p-0">
+                                                <ExpandertRad user={row.original} me={me} />
+                                            </td>
+                                        </tr>
+                                    )}
+                                </React.Fragment>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     )
@@ -306,15 +450,10 @@ const Brukere: NextPage = () => {
         return <Spinner />
     }
 
-    const sortert = [...data].sort((a, b) => a.name.localeCompare(b.name, 'nb'))
-
     return (
         <div className="space-y-3">
             <h1 className="text-2xl font-bold text-stone-900">Brukere</h1>
-            {me.superadmin && <CronJobber />}
-            {sortert.map((user) => (
-                <BrukerView key={user.id} user={user} me={me} />
-            ))}
+            <BrukerTabell brukere={data} me={me} />
         </div>
     )
 }
