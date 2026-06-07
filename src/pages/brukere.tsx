@@ -92,7 +92,6 @@ function ExpandertRad({ user, me }: { user: UserForAdmin; me: User }) {
     const { mutate: slettBruker, isPending: isPendingSletting, error: sletteError } = UseSletteUser(user.id)
 
     const sistBett = user.last_bet_at ? formaterTidspunkt(user.last_bet_at) : null
-    const nesteutippet = user.earliest_unbet_match ? formaterTidspunkt(user.earliest_unbet_match) : null
 
     return (
         <div className="px-4 pb-3 pt-1 bg-stone-50 border-t border-stone-100 space-y-3">
@@ -110,14 +109,6 @@ function ExpandertRad({ user, me }: { user: UserForAdmin; me: User }) {
                         <span className="text-stone-500">Sist bett:</span>{' '}
                         <span className="bp-tabular text-stone-700">{sistBett}</span>
                     </div>
-                )}
-                {nesteutippet ? (
-                    <div className="col-span-2">
-                        <span className="text-stone-500">Neste utippet:</span>{' '}
-                        <span className="bp-tabular font-medium text-amber-700">{nesteutippet}</span>
-                    </div>
-                ) : (
-                    <div className="col-span-2 text-green-700">Alle kommende kamper tippet</div>
                 )}
                 {innloggingsmetodeTekst(user.sign_in_provider) && (
                     <div className="col-span-2">
@@ -263,6 +254,34 @@ function BrukerTabell({ brukere, me }: { brukere: UserForAdmin[]; me: User }) {
                 header: 'Bett',
                 cell: (info) => <span className="bp-tabular text-sm text-stone-700">{info.getValue()}</span>,
                 size: 60,
+            }),
+            columnHelper.accessor('earliest_unbet_match', {
+                header: 'Neste utippet',
+                cell: (info) => {
+                    const val = info.getValue()
+                    if (!val)
+                        return (
+                            <span className="rounded-full bg-green-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-green-800">
+                                Alt tippet
+                            </span>
+                        )
+                    const d = new Date(val)
+                    const dag = d.toLocaleDateString('nb-NO', { day: 'numeric', month: 'short' })
+                    const tid = d.toLocaleTimeString('nb-NO', { hour: '2-digit', minute: '2-digit' })
+                    return (
+                        <span className="bp-tabular text-xs font-medium text-amber-700 whitespace-nowrap">
+                            {dag} {tid}
+                        </span>
+                    )
+                },
+                sortingFn: (a, b) => {
+                    const av = a.original.earliest_unbet_match
+                    const bv = b.original.earliest_unbet_match
+                    if (!av && !bv) return 0
+                    if (!av) return 1
+                    if (!bv) return -1
+                    return new Date(av).getTime() - new Date(bv).getTime()
+                },
             }),
             columnHelper.accessor('paid', {
                 header: 'Betalt',
