@@ -5,6 +5,7 @@ import { UseAllBets } from '../queries/useAllBets'
 import NextLink from 'next/link'
 import { Table } from '@/components/ui/table'
 import { Link } from '@/components/ui/typography'
+import { hentFlag, hentNorsk } from '@/utils/lag'
 
 const Leaderboard: NextPage = () => {
     const { data, isLoading } = UseAllBets()
@@ -30,7 +31,20 @@ const Leaderboard: NextPage = () => {
                                 <Link>{user?.name}</Link>
                             </NextLink>
                         </Table.DataCell>
-                        <Table.DataCell>{user.winner}</Table.DataCell>
+                        <Table.DataCell>
+                            {user.winner_endret && user.winner_forrige ? (
+                                <span className="flex flex-col gap-0.5">
+                                    <span className="text-stone-400 line-through text-xs">
+                                        {hentFlag(user.winner_forrige)} {hentNorsk(user.winner_forrige)}
+                                    </span>
+                                    <span>
+                                        {hentFlag(user.winner ?? '')} {hentNorsk(user.winner ?? '')}
+                                    </span>
+                                </span>
+                            ) : (
+                                <span>{user.winner ? `${hentFlag(user.winner)} ${hentNorsk(user.winner)}` : ''}</span>
+                            )}
+                        </Table.DataCell>
                         <Table.DataCell align="right">{user.winnerPoints}</Table.DataCell>
                     </Table.Row>
                 ))}
