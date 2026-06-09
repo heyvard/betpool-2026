@@ -65,6 +65,7 @@ export async function startTestStack(): Promise<TestStack> {
         NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET ?? 'test.appspot.com',
         NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID ?? '0000000000',
         NEXT_PUBLIC_FIREBASE_APP_ID: process.env.NEXT_PUBLIC_FIREBASE_APP_ID ?? '1:0000000000:web:test',
+        CRON_SECRET: process.env.CRON_SECRET ?? 'test-cron-secret',
     }
 
     // Kjør knex-migrasjonene mot PGlite — IN-PROCESS, ikke via knex-CLI.
