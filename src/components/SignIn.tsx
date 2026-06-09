@@ -3,6 +3,7 @@ import { Goal, Link2, TriangleAlert, Users, Wallet } from 'lucide-react'
 import { InnloggingKnapper } from '../auth/InnloggingKnapper'
 import { useLanguage } from '../i18n/LanguageContext'
 import { lesPendingInvite } from '../utils/pendingInvite'
+import { tx } from '../i18n/interpolate'
 
 const PUNKT_IKONER = [
     <Wallet key="wallet" className="h-4 w-4" />,
@@ -10,14 +11,26 @@ const PUNKT_IKONER = [
     <Users key="users" className="h-4 w-4" />,
 ]
 
+interface PottData {
+    betalte: number
+    pott: number
+}
+
 export function SignInScreen() {
     const { t } = useLanguage()
 
     // Leses etter mount for å unngå hydration-mismatch.
     const [følgerInvitasjon, setFølgerInvitasjon] = useState(false)
+    const [pottData, setPottData] = useState<PottData | null>(null)
     useEffect(() => {
         // eslint-disable-next-line react-hooks/set-state-in-effect
         setFølgerInvitasjon(lesPendingInvite() != null)
+        fetch('/api/v1/pott')
+            .then((r) => (r.ok ? r.json() : null))
+            .then((data: PottData | null) => {
+                if (data) setPottData(data)
+            })
+            .catch(() => undefined)
     }, [])
 
     const isFacebookInAppBrowser = typeof navigator !== 'undefined' && /FB_IAB|FBAN|FBAV/.test(navigator.userAgent)
@@ -40,6 +53,19 @@ export function SignInScreen() {
                 <h1 className="mt-4 text-3xl font-bold text-stone-900">{t.innlogging.tittel}</h1>
                 <p className="mt-1 text-stone-500">{t.innlogging.undertittel}</p>
             </header>
+
+            {pottData && (
+                <div className="rounded-xl bg-white px-4 py-3.5 text-center shadow-xs ring-1 ring-stone-200/70">
+                    <p className="bp-overline">{t.innlogging.pottLabel}</p>
+                    <p className="text-3xl font-bold text-stone-900">
+                        {pottData.pott.toLocaleString('nb-NO')} {t.felles.kr}
+                    </p>
+                    <p className="mt-0.5 text-xs text-stone-500">
+                        {tx(t.innlogging.pottDeltakere, { antall: pottData.betalte })}
+                    </p>
+                    <p className="mt-1 text-xs font-medium text-amber-700">{t.innlogging.pottVokser}</p>
+                </div>
+            )}
 
             <div className="divide-y divide-stone-100 rounded-xl bg-white shadow-xs ring-1 ring-stone-200/70">
                 {t.innlogging.punkter.map((p, i) => (
