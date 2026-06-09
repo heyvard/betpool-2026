@@ -2,9 +2,7 @@
     "framework": "nextjs",
     "buildCommand": "pnpm vercel-build",
     "git": {
-        "deploymentEnabled": {
-            "main": false
-        }
+        "deploymentEnabled": false
     },
     "crons": [
         {
