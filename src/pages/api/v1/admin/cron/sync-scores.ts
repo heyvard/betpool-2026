@@ -2,15 +2,16 @@ import { ApiHandlerOpts } from '../../../../../types/apiHandlerOpts'
 import { auth } from '../../../../../auth/authHandler'
 import { syncScores } from '../../../../../server/syncScores'
 
-const handler = async function ({ user, res, client }: ApiHandlerOpts): Promise<void> {
+const handler = async function ({ req, user, res, client }: ApiHandlerOpts): Promise<void> {
     if (!user?.superadmin) {
         res.status(403).end()
         return
     }
 
-    console.log(`[admin/cron/sync-scores] manuelt trigget av ${user.email}`)
+    const dryRun = req.query.dryRun === 'true'
+    console.log(`[admin/cron/sync-scores] manuelt trigget av ${user.email}${dryRun ? ' (dry run)' : ''}`)
     try {
-        const resultat = await syncScores(client)
+        const resultat = dryRun ? await syncScores(client, true) : await syncScores(client)
         res.status(200).json(resultat)
     } catch (e) {
         console.error('[admin/cron/sync-scores] feilet', e)
