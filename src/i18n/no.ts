@@ -133,7 +133,8 @@ const no = {
         innskuddVipps: 'Beløpet må vippses til {{nummer}} før den første kampen starter.',
         premiepottTittel: 'Premiepott',
         premiepott: 'Premiepott',
-        deltakere: '{{antall}} deltakere × 300 kr',
+        deltakere: '{{antall}} betalte deltakere × 300 kr',
+        pottVokser: 'Potten øker med 300 kr for hver ny deltaker som betaler.',
         poenglikhet:
             'Blir det poenglikhet, slås premiene for de aktuelle plassene sammen og deles likt mellom dem som er like.',
         poenglikhetsEksempel:
@@ -233,6 +234,9 @@ const no = {
         brukVanligNettleser: 'Bruk din vanlige nettleser på mobil.',
         facebookAdvarsel:
             'Du er inne via Facebook. For å logge inn må du åpne denne siden i en vanlig nettleser — trykk på menyen og velg «Åpne i nettleser».',
+        pottLabel: 'Nåværende premiepott',
+        pottDeltakere: '{{antall}} betalte deltakere × 300 kr',
+        pottVokser: 'Potten øker med 300 kr per ny deltaker',
         punkter: [
             {
                 tittel: '300 kr i innskudd',

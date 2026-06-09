@@ -44,7 +44,7 @@ const Regler: NextPage = () => {
         return <Spinner />
     }
 
-    const deltakere = data.users.filter((u) => u.i_hovedliga !== false).length
+    const deltakere = data.users.filter((u) => u.i_hovedliga !== false && u.paid).length
     const pot = deltakere * HOVEDLIGA_PRIS
     const premier = [Math.round(pot * 0.5), Math.round(pot * 0.3), Math.round(pot * 0.2)]
     const eksempelLabel = t.nav.regler === 'Regler' ? 'Eksempel:' : 'Exemple :'
@@ -91,6 +91,7 @@ const Regler: NextPage = () => {
                         </div>
                     ))}
                 </div>
+                <p className="text-sm text-amber-700 font-medium">{r.pottVokser}</p>
                 <p>{r.poenglikhet}</p>
                 <p className="rounded-lg bg-stone-50 px-3 py-2 text-stone-600">
                     <span className="font-medium text-stone-700">{eksempelLabel}</span> {r.poenglikhetsEksempel}

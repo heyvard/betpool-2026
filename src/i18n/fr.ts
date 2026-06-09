@@ -137,7 +137,8 @@ const fr: Translations = {
         innskuddVipps: 'Le montant doit être vippsé au {{nummer}} avant le début du premier match.',
         premiepottTittel: 'Cagnotte',
         premiepott: 'Cagnotte',
-        deltakere: '{{antall}} participants × 300 kr',
+        deltakere: '{{antall}} participants ayant payé × 300 kr',
+        pottVokser: 'La cagnotte augmente de 300 kr pour chaque nouveau participant qui paie.',
         poenglikhet:
             "En cas d'égalité de points, les prix des places concernées sont cumulés et partagés équitablement.",
         poenglikhetsEksempel:
@@ -239,6 +240,9 @@ const fr: Translations = {
         brukVanligNettleser: 'Utilisez votre navigateur habituel sur mobile.',
         facebookAdvarsel:
             'Vous êtes dans le navigateur Facebook. Pour vous connecter, ouvrez cette page dans un navigateur normal — appuyez sur le menu et choisissez « Ouvrir dans le navigateur ».',
+        pottLabel: 'Cagnotte actuelle',
+        pottDeltakere: '{{antall}} participants ayant payé × 300 kr',
+        pottVokser: '+300 kr par nouveau participant',
         punkter: [
             {
                 tittel: '300 kr de mise',
