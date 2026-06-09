@@ -1,16 +1,17 @@
 import { ApiHandlerOpts } from '../../../../../types/apiHandlerOpts'
 import { auth } from '../../../../../auth/authHandler'
-import { sendPåminnelser } from '../../../../../server/reminders'
+import { dryRunPåminnelser, sendPåminnelser } from '../../../../../server/reminders'
 
-const handler = async function ({ user, res, client }: ApiHandlerOpts): Promise<void> {
+const handler = async function ({ req, user, res, client }: ApiHandlerOpts): Promise<void> {
     if (!user?.superadmin) {
         res.status(403).end()
         return
     }
 
-    console.log(`[admin/cron/send-reminders] manuelt trigget av ${user.email}`)
+    const dryRun = req.query.dryRun === 'true'
+    console.log(`[admin/cron/send-reminders] manuelt trigget av ${user.email}${dryRun ? ' (dry run)' : ''}`)
     try {
-        const resultat = await sendPåminnelser(client)
+        const resultat = dryRun ? await dryRunPåminnelser(client) : await sendPåminnelser(client)
         res.status(200).json(resultat)
     } catch (e) {
         console.error('[admin/cron/send-reminders] feilet', e)
