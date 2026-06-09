@@ -39,6 +39,7 @@ export interface SeedUser {
     winner: string
     topscorer: string | null
     i_hovedliga: boolean
+    notif_reminders: boolean
 }
 
 export interface SeedBet {
@@ -76,12 +77,13 @@ export async function seedUser(overrides: Partial<SeedUser> = {}): Promise<SeedU
         winner: overrides.winner ?? '',
         topscorer: overrides.topscorer ?? null,
         i_hovedliga: overrides.i_hovedliga ?? true,
+        notif_reminders: overrides.notif_reminders ?? false,
     }
     return withDb(async (c) => {
         const r = await c.query(
             `INSERT INTO users
-               (firebase_user_id, name, email, picture, active, scoreadmin, paymentadmin, superadmin, paid, winner, topscorer, i_hovedliga, onboarded_at)
-             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12, NOW())
+               (firebase_user_id, name, email, picture, active, scoreadmin, paymentadmin, superadmin, paid, winner, topscorer, i_hovedliga, notif_reminders, onboarded_at)
+             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13, NOW())
              RETURNING *`,
             [
                 u.firebase_user_id,
@@ -96,6 +98,7 @@ export async function seedUser(overrides: Partial<SeedUser> = {}): Promise<SeedU
                 u.winner,
                 u.topscorer,
                 u.i_hovedliga,
+                u.notif_reminders,
             ],
         )
         return r.rows[0]
