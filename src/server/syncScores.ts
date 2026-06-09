@@ -11,6 +11,39 @@ export interface SyncScoresResultat {
     oppdatert: number
 }
 
+export interface DryRunScoreKamp {
+    match_num: number
+    status: string
+    home_team: string | null
+    away_team: string | null
+    relevant: boolean
+    api: {
+        fullTime: { home: number | null; away: number | null }
+        extraTime: { home: number | null; away: number | null } | null
+        penalties: { home: number | null; away: number | null } | null
+        duration: string | null
+    }
+    db: {
+        synced_home_ft: number | null
+        synced_away_ft: number | null
+        synced_home_et: number | null
+        synced_away_et: number | null
+        synced_home_pen: number | null
+        synced_away_pen: number | null
+        synced_duration: string | null
+        score_synced_at: string | null
+    } | null
+    villeBlittOppdatert: boolean
+}
+
+export interface DryRunSyncScoresResultat {
+    hentet: number
+    relevante: number
+    oppdatert: number
+    dryRun: true
+    kamper: DryRunScoreKamp[]
+}
+
 interface FootballDataScoreResponse {
     matches: FootballDataMatch[]
 }
@@ -18,8 +51,14 @@ interface FootballDataScoreResponse {
 // Henter scores for pågående kamper og kamper ferdig de siste 6 timene fra
 // football-data.org og upserter synced_*-kolonner i match_scores.
 // Rører aldri home_score/away_score (manuell) eller use_manual (admin-switch).
-export async function syncScores(client: PoolClient): Promise<SyncScoresResultat> {
-    console.log('[sync-scores] starter')
+// Med dryRun=true gjøres ingen DB-skriving; returnerer rådata fra API + nåværende DB-tilstand.
+export async function syncScores(client: PoolClient, dryRun?: false): Promise<SyncScoresResultat>
+export async function syncScores(client: PoolClient, dryRun: true): Promise<DryRunSyncScoresResultat>
+export async function syncScores(
+    client: PoolClient,
+    dryRun = false,
+): Promise<SyncScoresResultat | DryRunSyncScoresResultat> {
+    console.log(`[sync-scores] starter${dryRun ? ' (dry run)' : ''}`)
     const token = process.env.FOOTBALL_DATA_TOKEN
     if (!token) throw new Error('Mangler FOOTBALL_DATA_TOKEN')
 
@@ -35,15 +74,106 @@ export async function syncScores(client: PoolClient): Promise<SyncScoresResultat
     const body = (await res.json()) as FootballDataScoreResponse
     const now = Date.now()
 
-    const relevante = (body.matches ?? []).filter((m) => {
+    const alleKamper = body.matches ?? []
+    const erRelevant = (m: FootballDataMatch) => {
         if (m.status === 'IN_PLAY' || m.status === 'PAUSED') return true
         if (m.status === 'FINISHED') {
             return now - new Date(m.utcDate).getTime() < SEKS_TIMER_MS
         }
         return false
-    })
+    }
+    const relevante = alleKamper.filter(erRelevant)
 
     console.log(`[sync-scores] ${relevante.length} relevante kamper (IN_PLAY/PAUSED + FINISHED <6t)`)
+
+    if (dryRun) {
+        const matchNums = alleKamper.map((m) => m.id)
+        const { rows: dbRader } = await client.query<{
+            match_num: number
+            synced_home_ft: number | null
+            synced_away_ft: number | null
+            synced_home_et: number | null
+            synced_away_et: number | null
+            synced_home_pen: number | null
+            synced_away_pen: number | null
+            synced_duration: string | null
+            score_synced_at: string | null
+            home_team: string | null
+            away_team: string | null
+        }>(
+            `SELECT ms.match_num,
+                    ms.synced_home_ft, ms.synced_away_ft,
+                    ms.synced_home_et, ms.synced_away_et,
+                    ms.synced_home_pen, ms.synced_away_pen,
+                    ms.synced_duration,
+                    ms.score_synced_at::text,
+                    m.home_team, m.away_team
+             FROM matches m
+             LEFT JOIN match_scores ms ON ms.match_num = m.match_num
+             WHERE m.match_num = ANY($1)`,
+            [matchNums],
+        )
+        const dbMap = new Map(dbRader.map((r) => [r.match_num, r]))
+
+        let oppdatertDry = 0
+        const kamper: DryRunScoreKamp[] = alleKamper.map((m) => {
+            const { score } = m
+            const relevant = erRelevant(m)
+            const dbRad = dbMap.get(m.id) ?? null
+
+            const harFulltid = score?.fullTime.home !== null && score?.fullTime.away !== null
+            const villeBlittOppdatert =
+                relevant &&
+                harFulltid &&
+                (!dbRad ||
+                    dbRad.synced_home_ft !== score.fullTime.home ||
+                    dbRad.synced_away_ft !== score.fullTime.away ||
+                    (dbRad.synced_home_et ?? null) !== (score.extraTime?.home ?? null) ||
+                    (dbRad.synced_away_et ?? null) !== (score.extraTime?.away ?? null) ||
+                    (dbRad.synced_home_pen ?? null) !== (score.penalties?.home ?? null) ||
+                    (dbRad.synced_away_pen ?? null) !== (score.penalties?.away ?? null) ||
+                    (dbRad.synced_duration ?? null) !== (score.duration ?? null))
+
+            if (villeBlittOppdatert) oppdatertDry++
+
+            return {
+                match_num: m.id,
+                status: m.status,
+                home_team: dbRad?.home_team ?? null,
+                away_team: dbRad?.away_team ?? null,
+                relevant,
+                api: {
+                    fullTime: score?.fullTime ?? { home: null, away: null },
+                    extraTime: score?.extraTime ?? null,
+                    penalties: score?.penalties ?? null,
+                    duration: score?.duration ?? null,
+                },
+                db: dbRad
+                    ? {
+                          synced_home_ft: dbRad.synced_home_ft,
+                          synced_away_ft: dbRad.synced_away_ft,
+                          synced_home_et: dbRad.synced_home_et,
+                          synced_away_et: dbRad.synced_away_et,
+                          synced_home_pen: dbRad.synced_home_pen,
+                          synced_away_pen: dbRad.synced_away_pen,
+                          synced_duration: dbRad.synced_duration,
+                          score_synced_at: dbRad.score_synced_at,
+                      }
+                    : null,
+                villeBlittOppdatert,
+            }
+        })
+
+        const resultat: DryRunSyncScoresResultat = {
+            hentet: alleKamper.length,
+            relevante: relevante.length,
+            oppdatert: oppdatertDry,
+            dryRun: true,
+            kamper,
+        }
+        console.log(`[sync-scores] dry run ferdig — ${oppdatertDry} ville blitt oppdatert`)
+        return resultat
+    }
 
     let oppdatert = 0
     for (const m of relevante) {
@@ -97,7 +227,7 @@ export async function syncScores(client: PoolClient): Promise<SyncScoresResultat
         }
     }
 
-    const resultat = { hentet: relevante.length, oppdatert }
+    const resultat: SyncScoresResultat = { hentet: relevante.length, oppdatert }
     console.log('[sync-scores] ferdig —', resultat)
     return resultat
 }
