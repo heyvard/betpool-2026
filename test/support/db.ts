@@ -77,7 +77,7 @@ export async function seedUser(overrides: Partial<SeedUser> = {}): Promise<SeedU
         winner: overrides.winner ?? '',
         topscorer: overrides.topscorer ?? null,
         i_hovedliga: overrides.i_hovedliga ?? true,
-        notif_reminders: overrides.notif_reminders ?? false,
+        notif_reminders: overrides.notif_reminders ?? true,
     }
     return withDb(async (c) => {
         const r = await c.query(
