@@ -86,3 +86,34 @@ export function UseDryRunSyncScores() {
         },
     })
 }
+
+export interface KampInfo {
+    match_num: number
+    home_team: string
+    away_team: string
+    game_start: string
+}
+
+export interface DryRunBruker {
+    id: string
+    name: string
+    email: string
+    antallUtippet: number
+    utippedeKamper: KampInfo[]
+}
+
+export interface PåminnelseDryRunResultat {
+    kamperIMorgen: KampInfo[]
+    brukereVilBliVarslet: DryRunBruker[]
+}
+
+export function UseDryRunSendReminders() {
+    const authedFetch = useAuthedFetch()
+    return useMutation({
+        mutationFn: async () => {
+            const response = await authedFetch('/api/v1/admin/cron/send-reminders?dryRun=true', { method: 'POST' })
+            if (!response.ok) throw new Error(`Serverfeil: ${response.status}`)
+            return response.json() as Promise<PåminnelseDryRunResultat>
+        },
+    })
+}
