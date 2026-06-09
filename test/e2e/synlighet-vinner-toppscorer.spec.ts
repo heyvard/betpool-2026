@@ -60,9 +60,8 @@ test('andre brukeres vinner og toppscorer er skjult før runde 2', async ({ cont
 test('andre brukeres vinner og toppscorer blir synlige etter runde 2-fristen', async ({ context, page }) => {
     await loggInn(context, 'alice', ETTER_FRIST)
 
-    // /winnerbets viser den lagrede TLA-en direkte (ikke landsnavnet).
     await page.goto('/winnerbets')
-    expect(await tippetForNavn(page, 'bob')).toBe('ARG')
+    expect(await tippetForNavn(page, 'bob')).toBe('🇦🇷 Argentina')
 
     await page.goto('/toppscorer')
     expect(await tippetForNavn(page, 'bob')).toBe('Kylian Mbappé')

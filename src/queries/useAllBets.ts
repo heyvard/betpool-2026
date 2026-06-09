@@ -12,6 +12,8 @@ export interface OtherUser {
     topscorer?: string
     winner_endret?: boolean
     topscorer_endret?: boolean
+    winner_forrige?: string
+    topscorer_forrige?: string
     paid: boolean
     i_hovedliga?: boolean
     winnerPoints?: number

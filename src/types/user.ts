@@ -27,6 +27,8 @@ export interface User {
     topscorer: string | undefined
     winner_endret: boolean
     topscorer_endret: boolean
+    winner_forrige: string | null
+    topscorer_forrige: string | null
     notif_general: boolean
     notif_reminders: boolean
     notif_summary: boolean

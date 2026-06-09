@@ -25,10 +25,10 @@ const handler = async function handler(opts: ApiHandlerOpts): Promise<void> {
                     if (iFørsteRunde) {
                         await client.query(`UPDATE users SET winner = $1 WHERE id = $2`, [reqBody.winner, user.id])
                     } else if (iEndrevindu && !user.winner_endret && user.winner) {
-                        await client.query(`UPDATE users SET winner = $1, winner_endret = true WHERE id = $2`, [
-                            reqBody.winner,
-                            user.id,
-                        ])
+                        await client.query(
+                            `UPDATE users SET winner = $1, winner_endret = true, winner_forrige = $2 WHERE id = $3`,
+                            [reqBody.winner, user.winner, user.id],
+                        )
                     }
                 }
                 if (reqBody.topscorer !== undefined) {
@@ -38,10 +38,10 @@ const handler = async function handler(opts: ApiHandlerOpts): Promise<void> {
                             user.id,
                         ])
                     } else if (iEndrevindu && !user.topscorer_endret && user.topscorer) {
-                        await client.query(`UPDATE users SET topscorer = $1, topscorer_endret = true WHERE id = $2`, [
-                            reqBody.topscorer,
-                            user.id,
-                        ])
+                        await client.query(
+                            `UPDATE users SET topscorer = $1, topscorer_endret = true, topscorer_forrige = $2 WHERE id = $3`,
+                            [reqBody.topscorer, user.topscorer, user.id],
+                        )
                     }
                 }
             }
