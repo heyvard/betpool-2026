@@ -6,9 +6,21 @@ const BASE_URL = 'https://api.football-data.org/v4'
 const COMPETITION = 'WC'
 const SEASON = '2026'
 
+export interface DryRunEndring {
+    match_num: number
+    home_team: string | null
+    away_team: string | null
+    ny: boolean
+    felt: string[]
+    fra: Partial<Record<string, string | number | null>>
+    til: Partial<Record<string, string | number | null>>
+}
+
 export interface SyncResultat {
     hentet: number
     oppdatert: number
+    dryRun?: true
+    endringer?: DryRunEndring[]
 }
 
 interface FootballDataResponse {
@@ -19,8 +31,9 @@ interface FootballDataResponse {
 // Oppdaterer kun rader der noe faktisk er endret (tid, lag, runde, gruppe, stage),
 // så `synced_at` reflekterer reelle endringer. Rører ikke `match_scores` —
 // resultater og team-override er manuell sannhet.
-export async function syncMatches(client: PoolClient): Promise<SyncResultat> {
-    console.log('[sync-matches] starter')
+// Med dryRun=true gjøres ingen DB-skriving; returnerer hva som ville blitt endret.
+export async function syncMatches(client: PoolClient, dryRun = false): Promise<SyncResultat> {
+    console.log(`[sync-matches] starter${dryRun ? ' (dry run)' : ''}`)
     const token = process.env.FOOTBALL_DATA_TOKEN
     if (!token) {
         throw new Error('Mangler FOOTBALL_DATA_TOKEN')
@@ -37,6 +50,99 @@ export async function syncMatches(client: PoolClient): Promise<SyncResultat> {
     const body = (await res.json()) as FootballDataResponse
     const kamper = (body.matches ?? []).map(transformerKamp)
     console.log(`[sync-matches] mottok ${kamper.length} kamper fra API`)
+
+    if (dryRun) {
+        const { rows: eksisterende } = await client.query<{
+            match_num: number
+            round: number
+            home_team: string | null
+            away_team: string | null
+            game_start: Date
+            group: string | null
+            stage: string
+            status: string
+        }>('SELECT match_num, round, home_team, away_team, game_start, "group", stage, status FROM matches')
+
+        const eksisterendeMap = new Map(eksisterende.map((r) => [r.match_num, r]))
+        const endringer: DryRunEndring[] = []
+
+        for (const k of kamper) {
+            const home = k.home_team || null
+            const away = k.away_team || null
+            const group = k.group ?? null
+            const stage = stageFor(k.round)
+            const existing = eksisterendeMap.get(k.match_num)
+
+            if (!existing) {
+                endringer.push({
+                    match_num: k.match_num,
+                    home_team: home,
+                    away_team: away,
+                    ny: true,
+                    felt: ['round', 'home_team', 'away_team', 'game_start', 'group', 'stage', 'status'],
+                    fra: {},
+                    til: {
+                        round: k.round,
+                        home_team: home,
+                        away_team: away,
+                        game_start: k.game_start,
+                        group,
+                        stage,
+                        status: k.status,
+                    },
+                })
+                continue
+            }
+
+            const felt: string[] = []
+            const fra: DryRunEndring['fra'] = {}
+            const til: DryRunEndring['til'] = {}
+
+            if (existing.round !== k.round) {
+                felt.push('round')
+                fra.round = existing.round
+                til.round = k.round
+            }
+            if ((existing.home_team ?? null) !== home) {
+                felt.push('home_team')
+                fra.home_team = existing.home_team ?? null
+                til.home_team = home
+            }
+            if ((existing.away_team ?? null) !== away) {
+                felt.push('away_team')
+                fra.away_team = existing.away_team ?? null
+                til.away_team = away
+            }
+            if ((existing.group ?? null) !== group) {
+                felt.push('group')
+                fra.group = existing.group ?? null
+                til.group = group
+            }
+            if (existing.stage !== stage) {
+                felt.push('stage')
+                fra.stage = existing.stage
+                til.stage = stage
+            }
+            if (existing.status !== k.status) {
+                felt.push('status')
+                fra.status = existing.status
+                til.status = k.status
+            }
+            if (new Date(existing.game_start).getTime() !== new Date(k.game_start).getTime()) {
+                felt.push('game_start')
+                fra.game_start = new Date(existing.game_start).toISOString()
+                til.game_start = new Date(k.game_start).toISOString()
+            }
+
+            if (felt.length > 0) {
+                endringer.push({ match_num: k.match_num, home_team: home, away_team: away, ny: false, felt, fra, til })
+            }
+        }
+
+        const resultat: SyncResultat = { hentet: kamper.length, oppdatert: endringer.length, dryRun: true, endringer }
+        console.log(`[sync-matches] dry run ferdig — ${endringer.length} endringer funnet`)
+        return resultat
+    }
 
     let oppdatert = 0
     for (const k of kamper) {
