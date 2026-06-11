@@ -207,10 +207,13 @@ export async function dryRunPåminnelser(client: PoolClient): Promise<Påminnels
 
     const brukere = (
         await client.query<{ id: string; name: string; email: string; language: string }>(
-            `SELECT id, name, email, language FROM users WHERE active = true AND notif_reminders = true`,
+            `SELECT DISTINCT u.id, u.name, u.email, u.language
+             FROM users u
+             INNER JOIN push_subscriptions ps ON ps.user_id = u.id
+             WHERE u.active = true AND u.notif_reminders = true`,
         )
     ).rows
-    console.log(`[send-reminders] dry run: ${brukere.length} aktive brukere med påminnelser på`)
+    console.log(`[send-reminders] dry run: ${brukere.length} aktive brukere med påminnelser på og push-abonnement`)
 
     const tippet = (
         await client.query<{ user_id: string; match_num: number }>(
@@ -328,10 +331,15 @@ export async function dryRunEttermiddagsVarsler(client: PoolClient): Promise<Ett
 
     const brukere = (
         await client.query<{ id: string; name: string; email: string; language: string }>(
-            `SELECT id, name, email, language FROM users WHERE active = true AND notif_reminders = true`,
+            `SELECT DISTINCT u.id, u.name, u.email, u.language
+             FROM users u
+             INNER JOIN push_subscriptions ps ON ps.user_id = u.id
+             WHERE u.active = true AND u.notif_reminders = true`,
         )
     ).rows
-    console.log(`[send-evening-reminders] dry run: ${brukere.length} aktive brukere med påminnelser på`)
+    console.log(
+        `[send-evening-reminders] dry run: ${brukere.length} aktive brukere med påminnelser på og push-abonnement`,
+    )
 
     const tippet = (
         await client.query<{ user_id: string; match_num: number }>(
