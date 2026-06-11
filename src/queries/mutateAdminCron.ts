@@ -2,7 +2,7 @@ import { useMutation } from '@tanstack/react-query'
 
 import { useAuthedFetch } from '../auth/authedFetch'
 
-export type CronJobb = 'sync-scores' | 'sync-matches' | 'send-reminders' | 'send-vm-start'
+export type CronJobb = 'sync-scores' | 'sync-matches' | 'send-reminders' | 'send-vm-start' | 'send-evening-reminders'
 
 export interface DryRunEndring {
     match_num: number
@@ -98,6 +98,7 @@ export interface DryRunBruker {
     id: string
     name: string
     email: string
+    language: string
     antallUtippet: number
     utippedeKamper: KampInfo[]
 }
@@ -136,6 +137,33 @@ export function UseDryRunSendVmStart() {
             const response = await authedFetch('/api/v1/admin/cron/send-vm-start?dryRun=true', { method: 'POST' })
             if (!response.ok) throw new Error(`Serverfeil: ${response.status}`)
             return response.json() as Promise<VmStartDryRunResultat>
+        },
+    })
+}
+
+export interface EttermiddagsVarselDryRunBruker {
+    id: string
+    name: string
+    email: string
+    language: string
+    antallUtippet: number
+    utippedeKamper: KampInfo[]
+}
+
+export interface EttermiddagsVarselDryRunResultat {
+    kamperIKveldOgNatt: KampInfo[]
+    brukereVilBliVarslet: EttermiddagsVarselDryRunBruker[]
+}
+
+export function UseDryRunSendEveningReminders() {
+    const authedFetch = useAuthedFetch()
+    return useMutation({
+        mutationFn: async () => {
+            const response = await authedFetch('/api/v1/admin/cron/send-evening-reminders?dryRun=true', {
+                method: 'POST',
+            })
+            if (!response.ok) throw new Error(`Serverfeil: ${response.status}`)
+            return response.json() as Promise<EttermiddagsVarselDryRunResultat>
         },
     })
 }
