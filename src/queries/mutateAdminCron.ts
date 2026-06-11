@@ -2,7 +2,7 @@ import { useMutation } from '@tanstack/react-query'
 
 import { useAuthedFetch } from '../auth/authedFetch'
 
-export type CronJobb = 'sync-scores' | 'sync-matches' | 'send-reminders'
+export type CronJobb = 'sync-scores' | 'sync-matches' | 'send-reminders' | 'send-vm-start'
 
 export interface DryRunEndring {
     match_num: number
@@ -114,6 +114,28 @@ export function UseDryRunSendReminders() {
             const response = await authedFetch('/api/v1/admin/cron/send-reminders?dryRun=true', { method: 'POST' })
             if (!response.ok) throw new Error(`Serverfeil: ${response.status}`)
             return response.json() as Promise<PåminnelseDryRunResultat>
+        },
+    })
+}
+
+export interface VmStartDryRunBruker {
+    id: string
+    name: string
+    email: string
+    language: string
+}
+
+export interface VmStartDryRunResultat {
+    brukereVilBliVarslet: VmStartDryRunBruker[]
+}
+
+export function UseDryRunSendVmStart() {
+    const authedFetch = useAuthedFetch()
+    return useMutation({
+        mutationFn: async () => {
+            const response = await authedFetch('/api/v1/admin/cron/send-vm-start?dryRun=true', { method: 'POST' })
+            if (!response.ok) throw new Error(`Serverfeil: ${response.status}`)
+            return response.json() as Promise<VmStartDryRunResultat>
         },
     })
 }
