@@ -111,6 +111,67 @@ it('ekskluderer FINISHED-kamper eldre enn 6 timer', async () => {
     expect(mockClient.query).not.toHaveBeenCalled()
 })
 
+it('inkluderer TIMED-kamper der kampstart har passert', async () => {
+    const passert = new Date(Date.now() - 5 * 60 * 1000).toISOString() // 5 min siden
+    jest.spyOn(global, 'fetch').mockResolvedValue(
+        mockOkResponse([
+            lagKamp({
+                id: 1,
+                status: 'TIMED',
+                utcDate: passert,
+                score: {
+                    winner: null,
+                    duration: 'REGULAR',
+                    fullTime: { home: 1, away: 0 },
+                    halfTime: { home: 0, away: 0 },
+                    extraTime: null,
+                    penalties: null,
+                },
+            }),
+        ]),
+    )
+    mockClient.query.mockResolvedValue({ rowCount: 1 })
+
+    const resultat = await syncScores(mockClient as any)
+    expect(resultat.hentet).toBe(1)
+})
+
+it('inkluderer SCHEDULED-kamper der kampstart har passert', async () => {
+    const passert = new Date(Date.now() - 2 * 60 * 1000).toISOString() // 2 min siden
+    jest.spyOn(global, 'fetch').mockResolvedValue(
+        mockOkResponse([
+            lagKamp({
+                id: 1,
+                status: 'SCHEDULED',
+                utcDate: passert,
+                score: {
+                    winner: null,
+                    duration: 'REGULAR',
+                    fullTime: { home: 0, away: 1 },
+                    halfTime: { home: 0, away: 0 },
+                    extraTime: null,
+                    penalties: null,
+                },
+            }),
+        ]),
+    )
+    mockClient.query.mockResolvedValue({ rowCount: 1 })
+
+    const resultat = await syncScores(mockClient as any)
+    expect(resultat.hentet).toBe(1)
+})
+
+it('ekskluderer TIMED-kamper der kampstart ikke har passert', async () => {
+    const fremtidig = new Date(Date.now() + 30 * 60 * 1000).toISOString() // 30 min frem
+    jest.spyOn(global, 'fetch').mockResolvedValue(
+        mockOkResponse([lagKamp({ id: 1, status: 'TIMED', utcDate: fremtidig })]),
+    )
+
+    const resultat = await syncScores(mockClient as any)
+    expect(resultat.hentet).toBe(0)
+    expect(mockClient.query).not.toHaveBeenCalled()
+})
+
 it('hopper over kamper uten fullTime-score (null)', async () => {
     jest.spyOn(global, 'fetch').mockResolvedValue(
         mockOkResponse([

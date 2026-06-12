@@ -62,7 +62,9 @@ export async function syncScores(
     const token = process.env.FOOTBALL_DATA_TOKEN
     if (!token) throw new Error('Mangler FOOTBALL_DATA_TOKEN')
 
-    const url = `${BASE_URL}/competitions/${COMPETITION}/matches` + `?season=${SEASON}&status=IN_PLAY,PAUSED,FINISHED`
+    const url =
+        `${BASE_URL}/competitions/${COMPETITION}/matches` +
+        `?season=${SEASON}&status=IN_PLAY,PAUSED,FINISHED,TIMED,SCHEDULED`
     console.log(`[sync-scores] henter fra football-data.org (${COMPETITION} ${SEASON})`)
 
     const res = await fetch(url, { headers: { 'X-Auth-Token': token } })
@@ -80,11 +82,17 @@ export async function syncScores(
         if (m.status === 'FINISHED') {
             return now - new Date(m.utcDate).getTime() < SEKS_TIMER_MS
         }
+        // Kampstart har passert i klokketid, men API-status er ennå ikke oppdatert
+        if (m.status === 'TIMED' || m.status === 'SCHEDULED') {
+            return now >= new Date(m.utcDate).getTime()
+        }
         return false
     }
     const relevante = alleKamper.filter(erRelevant)
 
-    console.log(`[sync-scores] ${relevante.length} relevante kamper (IN_PLAY/PAUSED + FINISHED <6t)`)
+    console.log(
+        `[sync-scores] ${relevante.length} relevante kamper (IN_PLAY/PAUSED/TIMED+SCHEDULED etter start + FINISHED <6t)`,
+    )
 
     if (dryRun) {
         const matchNums = alleKamper.map((m) => m.id)
