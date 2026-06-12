@@ -24,6 +24,7 @@ export interface DryRunScoreKamp {
         duration: string | null
     }
     db: {
+        use_manual: boolean
         synced_home_ft: number | null
         synced_away_ft: number | null
         synced_home_et: number | null
@@ -98,6 +99,7 @@ export async function syncScores(
         const matchNums = alleKamper.map((m) => m.id)
         const { rows: dbRader } = await client.query<{
             match_num: number
+            use_manual: boolean
             synced_home_ft: number | null
             synced_away_ft: number | null
             synced_home_et: number | null
@@ -110,6 +112,7 @@ export async function syncScores(
             away_team: string | null
         }>(
             `SELECT ms.match_num,
+                    ms.use_manual,
                     ms.synced_home_ft, ms.synced_away_ft,
                     ms.synced_home_et, ms.synced_away_et,
                     ms.synced_home_pen, ms.synced_away_pen,
@@ -133,6 +136,7 @@ export async function syncScores(
             const villeBlittOppdatert =
                 relevant &&
                 harFulltid &&
+                !dbRad?.use_manual &&
                 (!dbRad ||
                     dbRad.synced_home_ft !== score.fullTime.home ||
                     dbRad.synced_away_ft !== score.fullTime.away ||
@@ -158,6 +162,7 @@ export async function syncScores(
                 },
                 db: dbRad
                     ? {
+                          use_manual: dbRad.use_manual,
                           synced_home_ft: dbRad.synced_home_ft,
                           synced_away_ft: dbRad.synced_away_ft,
                           synced_home_et: dbRad.synced_home_et,
@@ -183,8 +188,23 @@ export async function syncScores(
         return resultat
     }
 
+    let manuelleMatchNums = new Set<number>()
+    if (relevante.length > 0) {
+        const { rows: manuelleRader } = await client.query<{ match_num: number }>(
+            `SELECT match_num FROM match_scores WHERE use_manual = true AND match_num = ANY($1)`,
+            [relevante.map((m) => m.id)],
+        )
+        manuelleMatchNums = new Set(manuelleRader.map((r) => r.match_num))
+        if (manuelleMatchNums.size > 0) {
+            console.log(
+                `[sync-scores] hopper over ${manuelleMatchNums.size} kamp(er) med manuell score aktiv: ${[...manuelleMatchNums].join(', ')}`,
+            )
+        }
+    }
+
     let oppdatert = 0
     for (const m of relevante) {
+        if (manuelleMatchNums.has(m.id)) continue
         const { score } = m
         if (!score) continue
         if (score.fullTime.home === null || score.fullTime.away === null) continue

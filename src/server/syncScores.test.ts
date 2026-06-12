@@ -71,7 +71,7 @@ it('inkluderer IN_PLAY-kamper uansett alder', async () => {
     jest.spyOn(global, 'fetch').mockResolvedValue(
         mockOkResponse([lagKamp({ id: 1, status: 'IN_PLAY', utcDate: gammel })]),
     )
-    mockClient.query.mockResolvedValue({ rowCount: 0 })
+    mockClient.query.mockResolvedValue({ rows: [], rowCount: 0 })
 
     const resultat = await syncScores(mockClient as any)
     expect(resultat.hentet).toBe(1)
@@ -82,7 +82,7 @@ it('inkluderer PAUSED-kamper uansett alder', async () => {
     jest.spyOn(global, 'fetch').mockResolvedValue(
         mockOkResponse([lagKamp({ id: 1, status: 'PAUSED', utcDate: gammel })]),
     )
-    mockClient.query.mockResolvedValue({ rowCount: 0 })
+    mockClient.query.mockResolvedValue({ rows: [], rowCount: 0 })
 
     const resultat = await syncScores(mockClient as any)
     expect(resultat.hentet).toBe(1)
@@ -93,7 +93,7 @@ it('inkluderer FINISHED-kamper innenfor 6 timer', async () => {
     jest.spyOn(global, 'fetch').mockResolvedValue(
         mockOkResponse([lagKamp({ id: 1, status: 'FINISHED', utcDate: nylig })]),
     )
-    mockClient.query.mockResolvedValue({ rowCount: 1 })
+    mockClient.query.mockResolvedValueOnce({ rows: [] }).mockResolvedValue({ rowCount: 1 })
 
     const resultat = await syncScores(mockClient as any)
     expect(resultat.hentet).toBe(1)
@@ -130,7 +130,7 @@ it('inkluderer TIMED-kamper der kampstart har passert', async () => {
             }),
         ]),
     )
-    mockClient.query.mockResolvedValue({ rowCount: 1 })
+    mockClient.query.mockResolvedValue({ rows: [], rowCount: 1 })
 
     const resultat = await syncScores(mockClient as any)
     expect(resultat.hentet).toBe(1)
@@ -155,7 +155,7 @@ it('inkluderer SCHEDULED-kamper der kampstart har passert', async () => {
             }),
         ]),
     )
-    mockClient.query.mockResolvedValue({ rowCount: 1 })
+    mockClient.query.mockResolvedValue({ rows: [], rowCount: 1 })
 
     const resultat = await syncScores(mockClient as any)
     expect(resultat.hentet).toBe(1)
@@ -187,15 +187,22 @@ it('hopper over kamper uten fullTime-score (null)', async () => {
             }),
         ]),
     )
+    // use_manual-spørringen kjøres, men upsert hopper vi over
+    mockClient.query.mockResolvedValue({ rows: [] })
 
     const resultat = await syncScores(mockClient as any)
     expect(resultat.hentet).toBe(1)
-    expect(mockClient.query).not.toHaveBeenCalled()
+    // Bare use_manual-spørringen, ingen upsert
+    expect(mockClient.query).toHaveBeenCalledTimes(1)
+    expect(mockClient.query.mock.calls[0][0]).toMatch(/use_manual/)
 })
 
 it('teller oppdatert basert på rowCount', async () => {
     jest.spyOn(global, 'fetch').mockResolvedValue(mockOkResponse([lagKamp({ id: 1 }), lagKamp({ id: 2 })]))
-    mockClient.query.mockResolvedValueOnce({ rowCount: 1 }).mockResolvedValueOnce({ rowCount: 0 })
+    mockClient.query
+        .mockResolvedValueOnce({ rows: [] }) // use_manual-spørring
+        .mockResolvedValueOnce({ rowCount: 1 }) // upsert kamp 1
+        .mockResolvedValueOnce({ rowCount: 0 }) // upsert kamp 2
 
     const resultat = await syncScores(mockClient as any)
     expect(resultat).toEqual({ hentet: 2, oppdatert: 1 })
@@ -216,11 +223,13 @@ it('sender ekstraomgangs- og straffepark-score videre når de finnes', async () 
             }),
         ]),
     )
-    mockClient.query.mockResolvedValue({ rowCount: 1 })
+    mockClient.query
+        .mockResolvedValueOnce({ rows: [] }) // use_manual-spørring
+        .mockResolvedValue({ rowCount: 1 }) // upsert
 
     await syncScores(mockClient as any)
 
-    const params = mockClient.query.mock.calls[0][1]
+    const params = mockClient.query.mock.calls[1][1] // calls[1] = upsert
     expect(params[1]).toBe(1) // synced_home_ft
     expect(params[2]).toBe(1) // synced_away_ft
     expect(params[3]).toBe(0) // synced_home_et
@@ -232,13 +241,28 @@ it('sender ekstraomgangs- og straffepark-score videre når de finnes', async () 
 
 it('sender null for ekstraomgang og straffer når det ikke finnes', async () => {
     jest.spyOn(global, 'fetch').mockResolvedValue(mockOkResponse([lagKamp()]))
-    mockClient.query.mockResolvedValue({ rowCount: 0 })
+    mockClient.query
+        .mockResolvedValueOnce({ rows: [] }) // use_manual-spørring
+        .mockResolvedValue({ rowCount: 0 }) // upsert
 
     await syncScores(mockClient as any)
 
-    const params = mockClient.query.mock.calls[0][1]
+    const params = mockClient.query.mock.calls[1][1] // calls[1] = upsert
     expect(params[3]).toBeNull() // synced_home_et
     expect(params[4]).toBeNull() // synced_away_et
     expect(params[5]).toBeNull() // synced_home_pen
     expect(params[6]).toBeNull() // synced_away_pen
+})
+
+it('hopper over kamper med use_manual = true', async () => {
+    jest.spyOn(global, 'fetch').mockResolvedValue(mockOkResponse([lagKamp({ id: 42 })]))
+    // Første query: hent use_manual-kamper — returnerer kamp 42
+    mockClient.query.mockResolvedValueOnce({ rows: [{ match_num: 42 }] })
+
+    const resultat = await syncScores(mockClient as any)
+
+    // Bare use_manual-spørringen skal ha blitt kalt, ikke upsert
+    expect(mockClient.query).toHaveBeenCalledTimes(1)
+    expect(mockClient.query.mock.calls[0][0]).toMatch(/use_manual/)
+    expect(resultat.oppdatert).toBe(0)
 })
