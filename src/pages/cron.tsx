@@ -113,6 +113,7 @@ function SyncScoresKnapp() {
         error: dryError,
         isSuccess: drySuccess,
     } = UseDryRunSyncScores()
+    const [visJson, setVisJson] = React.useState(false)
 
     return (
         <div className="flex flex-col gap-2 py-3 first:pt-0 last:pb-0">
@@ -120,7 +121,8 @@ function SyncScoresKnapp() {
                 <div className="min-w-0">
                     <p className="text-sm font-medium text-stone-900">Synk resultater</p>
                     <p className="text-xs text-stone-500">
-                        Henter live-scores fra football-data.org for pågående og nylig ferdige kamper.
+                        Henter live-scores fra football-data.org for pågående, nylig ferdige, og kamper der kampstart
+                        har passert.
                     </p>
                 </div>
                 <div className="flex gap-2 shrink-0">
@@ -154,21 +156,35 @@ function SyncScoresKnapp() {
             )}
             {drySuccess && dryData && (
                 <div className="text-xs bg-blue-50 rounded-lg px-3 py-2 space-y-1.5">
-                    <p className="font-medium text-blue-800">
-                        Dry run: {dryData.hentet} fra API ({dryData.relevante} relevante) —{' '}
-                        {dryData.oppdatert === 0
-                            ? 'ingen ville blitt oppdatert'
-                            : `${dryData.oppdatert} ville blitt oppdatert`}
-                    </p>
-                    {dryData.kamper.length > 0 && (
-                        <ul className="space-y-0.5">
-                            {dryData.kamper.map((k) => (
-                                <DryRunScoreKampRad key={k.match_num} kamp={k} />
-                            ))}
-                        </ul>
-                    )}
-                    {dryData.kamper.length === 0 && (
-                        <p className="text-blue-600">Ingen kamper med status IN_PLAY/PAUSED/FINISHED fra API.</p>
+                    <div className="flex items-center justify-between gap-2">
+                        <p className="font-medium text-blue-800">
+                            Dry run: {dryData.hentet} fra API ({dryData.relevante} relevante) —{' '}
+                            {dryData.oppdatert === 0
+                                ? 'ingen ville blitt oppdatert'
+                                : `${dryData.oppdatert} ville blitt oppdatert`}
+                        </p>
+                        <button
+                            className="shrink-0 font-mono text-[10px] text-blue-600 hover:text-blue-800"
+                            onClick={() => setVisJson((v) => !v)}
+                        >
+                            {visJson ? 'Skjul JSON' : 'Vis JSON'}
+                        </button>
+                    </div>
+                    {visJson ? (
+                        <pre className="max-h-96 overflow-x-auto rounded bg-white p-2 text-[10px] text-stone-700">
+                            {JSON.stringify(dryData, null, 2)}
+                        </pre>
+                    ) : (
+                        <>
+                            {dryData.kamper.length > 0 && (
+                                <ul className="space-y-0.5">
+                                    {dryData.kamper.map((k) => (
+                                        <DryRunScoreKampRad key={k.match_num} kamp={k} />
+                                    ))}
+                                </ul>
+                            )}
+                            {dryData.kamper.length === 0 && <p className="text-blue-600">Ingen kamper fra API.</p>}
+                        </>
                     )}
                 </div>
             )}
@@ -188,6 +204,7 @@ function SyncMatchesKnapp() {
         error: dryError,
         isSuccess: drySuccess,
     } = UseDryRunSyncMatches()
+    const [visJson, setVisJson] = React.useState(false)
 
     return (
         <div className="flex flex-col gap-2 py-3 first:pt-0 last:pb-0">
@@ -229,16 +246,30 @@ function SyncMatchesKnapp() {
             )}
             {drySuccess && dryData && (
                 <div className="text-xs bg-blue-50 rounded-lg px-3 py-2 space-y-1.5">
-                    <p className="font-medium text-blue-800">
-                        Dry run: {dryData.hentet} kamper hentet —{' '}
-                        {dryData.oppdatert === 0 ? 'ingen endringer' : `${dryData.oppdatert} ville blitt oppdatert`}
-                    </p>
-                    {dryData.endringer.length > 0 && (
-                        <ul className="space-y-0.5 text-blue-700">
-                            {dryData.endringer.map((e) => (
-                                <DryRunEndringRad key={e.match_num} endring={e} />
-                            ))}
-                        </ul>
+                    <div className="flex items-center justify-between gap-2">
+                        <p className="font-medium text-blue-800">
+                            Dry run: {dryData.hentet} kamper hentet —{' '}
+                            {dryData.oppdatert === 0 ? 'ingen endringer' : `${dryData.oppdatert} ville blitt oppdatert`}
+                        </p>
+                        <button
+                            className="shrink-0 font-mono text-[10px] text-blue-600 hover:text-blue-800"
+                            onClick={() => setVisJson((v) => !v)}
+                        >
+                            {visJson ? 'Skjul JSON' : 'Vis JSON'}
+                        </button>
+                    </div>
+                    {visJson ? (
+                        <pre className="max-h-96 overflow-x-auto rounded bg-white p-2 text-[10px] text-stone-700">
+                            {JSON.stringify(dryData, null, 2)}
+                        </pre>
+                    ) : (
+                        dryData.endringer.length > 0 && (
+                            <ul className="space-y-0.5 text-blue-700">
+                                {dryData.endringer.map((e) => (
+                                    <DryRunEndringRad key={e.match_num} endring={e} />
+                                ))}
+                            </ul>
+                        )
                     )}
                 </div>
             )}
