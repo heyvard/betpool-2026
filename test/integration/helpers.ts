@@ -13,12 +13,16 @@ interface ApiOpts {
     method?: string
     body?: unknown
     cookieUser?: string // alternativt: send identitet som «betpool_test_user»-cookie
+    clock?: string // ISO-streng for betpool_test_clock-cookie — overstyrer serverNå()
 }
 
 export async function api(path: string, opts: ApiOpts = {}): Promise<Response> {
     const headers: Record<string, string> = {}
     if (opts.user) headers['x-test-user'] = opts.user
-    if (opts.cookieUser) headers['cookie'] = `betpool_test_user=${encodeURIComponent(opts.cookieUser)}`
+    const cookies: string[] = []
+    if (opts.cookieUser) cookies.push(`betpool_test_user=${encodeURIComponent(opts.cookieUser)}`)
+    if (opts.clock) cookies.push(`betpool_test_clock=${encodeURIComponent(opts.clock)}`)
+    if (cookies.length > 0) headers['cookie'] = cookies.join('; ')
     // Bevisst ingen content-type: handlerne gjør JSON.parse(req.body) og
     // forventer en streng (Next.js parser bare JSON ved application/json).
     return fetch(`${baseUrl()}${path}`, {

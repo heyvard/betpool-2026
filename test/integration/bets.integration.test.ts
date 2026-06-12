@@ -6,11 +6,14 @@ describe('tipping', () => {
     it('PUT /api/v1/me/bets/[id] lagrer og upserter tips', async () => {
         await seedUser({ firebase_user_id: 'alice' })
         const matchNum = await førsteMatchNum()
+        // Sett klokka til før turneringen startet, slik at APIet godtar tipset
+        const clock = '2026-06-01T00:00:00Z'
 
         const first = await api(`/api/v1/me/bets/${matchNum}`, {
             user: 'alice',
             method: 'PUT',
             body: { home_score: 2, away_score: 1 },
+            clock,
         })
         expect(first.status).toBe(200)
 
@@ -25,6 +28,7 @@ describe('tipping', () => {
             user: 'alice',
             method: 'PUT',
             body: { home_score: 3, away_score: 3 },
+            clock,
         })
         rows = await withDb((c) => c.query('SELECT home_score, away_score FROM bets WHERE match_num = $1', [matchNum]))
         expect(rows.rows).toHaveLength(1)
@@ -68,10 +72,13 @@ describe('tipping', () => {
     it('GET /api/v1/me/bets returnerer egne tip per kamp', async () => {
         await seedUser({ firebase_user_id: 'alice' })
         const matchNum = await førsteMatchNum()
+        // Sett klokka til før turneringen startet, slik at APIet godtar tipset
+        const clock = '2026-06-01T00:00:00Z'
         await api(`/api/v1/me/bets/${matchNum}`, {
             user: 'alice',
             method: 'PUT',
             body: { home_score: 2, away_score: 1 },
+            clock,
         })
 
         const res = await api('/api/v1/me/bets', { user: 'alice' })
