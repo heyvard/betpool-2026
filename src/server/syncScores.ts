@@ -78,10 +78,54 @@ export async function syncScores(
     const now = Date.now()
 
     const alleKamper = body.matches ?? []
+
+    // Hent gjeldende DB-tilstand for kampene API-et kjenner til. Brukes både til
+    // catch-up (se erRelevant) og til dry-run-rapporten.
+    const matchNums = alleKamper.map((m) => m.id)
+    const dbRes = await client.query<{
+        match_num: number
+        use_manual: boolean
+        synced_home_ft: number | null
+        synced_away_ft: number | null
+        synced_home_et: number | null
+        synced_away_et: number | null
+        synced_home_pen: number | null
+        synced_away_pen: number | null
+        synced_duration: string | null
+        score_synced_at: string | null
+        home_team: string | null
+        away_team: string | null
+    }>(
+        `SELECT ms.match_num,
+                ms.use_manual,
+                ms.synced_home_ft, ms.synced_away_ft,
+                ms.synced_home_et, ms.synced_away_et,
+                ms.synced_home_pen, ms.synced_away_pen,
+                ms.synced_duration,
+                ms.score_synced_at::text,
+                m.home_team, m.away_team
+         FROM matches m
+         LEFT JOIN match_scores ms ON ms.match_num = m.match_num
+         WHERE m.match_num = ANY($1)`,
+        [matchNums],
+    )
+    const dbMap = new Map((dbRes?.rows ?? []).map((r) => [r.match_num, r]))
+
+    // En kamp mangler synket score hvis det ikke finnes en match_scores-rad, eller
+    // fulltidsresultatet ikke er satt ennå.
+    const manglerSynketScore = (m: FootballDataMatch) => {
+        const r = dbMap.get(m.id)
+        return !r || r.synced_home_ft === null || r.synced_away_ft === null
+    }
+
     const erRelevant = (m: FootballDataMatch) => {
         if (m.status === 'IN_PLAY' || m.status === 'PAUSED') return true
         if (m.status === 'FINISHED') {
-            return now - new Date(m.utcDate).getTime() < SEKS_TIMER_MS
+            // Fersk: synk på nytt en stund i tilfelle korreksjoner. Eldre: catch-up
+            // bare hvis scoren ennå ikke er synket — da mister vi aldri en kamp
+            // selv om synken ikke kjørte mens den var live / innen 6 t.
+            if (now - new Date(m.utcDate).getTime() < SEKS_TIMER_MS) return true
+            return manglerSynketScore(m)
         }
         // Kampstart har passert i klokketid, men API-status er ennå ikke oppdatert
         if (m.status === 'TIMED' || m.status === 'SCHEDULED') {
@@ -92,40 +136,10 @@ export async function syncScores(
     const relevante = alleKamper.filter(erRelevant)
 
     console.log(
-        `[sync-scores] ${relevante.length} relevante kamper (IN_PLAY/PAUSED/TIMED+SCHEDULED etter start + FINISHED <6t)`,
+        `[sync-scores] ${relevante.length} relevante kamper (IN_PLAY/PAUSED/TIMED+SCHEDULED etter start + FINISHED <6t eller uten synket score)`,
     )
 
     if (dryRun) {
-        const matchNums = alleKamper.map((m) => m.id)
-        const { rows: dbRader } = await client.query<{
-            match_num: number
-            use_manual: boolean
-            synced_home_ft: number | null
-            synced_away_ft: number | null
-            synced_home_et: number | null
-            synced_away_et: number | null
-            synced_home_pen: number | null
-            synced_away_pen: number | null
-            synced_duration: string | null
-            score_synced_at: string | null
-            home_team: string | null
-            away_team: string | null
-        }>(
-            `SELECT ms.match_num,
-                    ms.use_manual,
-                    ms.synced_home_ft, ms.synced_away_ft,
-                    ms.synced_home_et, ms.synced_away_et,
-                    ms.synced_home_pen, ms.synced_away_pen,
-                    ms.synced_duration,
-                    ms.score_synced_at::text,
-                    m.home_team, m.away_team
-             FROM matches m
-             LEFT JOIN match_scores ms ON ms.match_num = m.match_num
-             WHERE m.match_num = ANY($1)`,
-            [matchNums],
-        )
-        const dbMap = new Map(dbRader.map((r) => [r.match_num, r]))
-
         let oppdatertDry = 0
         const kamper: DryRunScoreKamp[] = alleKamper.map((m) => {
             const { score } = m
