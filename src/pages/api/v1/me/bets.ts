@@ -50,6 +50,7 @@ const handler = async function handler(opts: ApiHandlerOpts): Promise<void> {
                 match_num: match.match_num,
                 joker: bet?.joker ?? false,
                 group: match.group,
+                status: match.status,
             }
         })
         .sort((a, b) => new Date(a.game_start).getTime() - new Date(b.game_start).getTime())

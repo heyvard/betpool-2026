@@ -46,7 +46,6 @@ const no = {
         poeng: 'P',
     },
     hjem: {
-        naPagarKamp: '{{home}} vs {{away}} pågår nå',
         kampStarterKl: '{{home}} vs {{away}} starter kl {{tid}}',
         dineVmTips: 'Dine VM-tips',
         vmIGangLaast: 'VM er i gang — vinner og toppscorer er låst.',
@@ -56,7 +55,8 @@ const no = {
         nesteKampdag: 'Neste kampdag',
         altTippet: 'Alt tippet',
         manglerTips: '{{n}} ikke tippet',
-        spilt: 'Spilt',
+        paagaar: 'Pågår',
+        ferdig: 'Ferdig',
         seAlleTips: 'Se alle dine tips →',
         tippeKampen: 'Tipp kampen →',
         tippeKampene: 'Tipp kampene →',

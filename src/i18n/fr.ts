@@ -48,7 +48,6 @@ const fr: Translations = {
         poeng: 'Pts',
     },
     hjem: {
-        naPagarKamp: '{{home}} vs {{away}} en cours',
         kampStarterKl: '{{home}} vs {{away}} commence à {{tid}}h',
         dineVmTips: 'Vos paris CM',
         vmIGangLaast: 'La CM est en cours — champion et buteur verrouillés.',
@@ -58,7 +57,8 @@ const fr: Translations = {
         nesteKampdag: 'Prochaine journée',
         altTippet: 'Tout parié',
         manglerTips: '{{n}} sans pari',
-        spilt: 'Joué',
+        paagaar: 'En cours',
+        ferdig: 'Terminé',
         seAlleTips: 'Voir tous vos paris →',
         tippeKampen: 'Parier sur le match →',
         tippeKampene: 'Parier sur les matchs →',
