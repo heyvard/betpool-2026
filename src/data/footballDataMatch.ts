@@ -57,7 +57,7 @@ export function stageTilRunde(stage: string, matchday: number | null): number {
     }
 }
 
-function gruppeTilTekst(group: string | null): string | undefined {
+export function gruppeTilTekst(group: string | null): string | undefined {
     if (!group) return undefined
     // "GROUP_A" -> "Group A"
     const bokstav = group.replace('GROUP_', '')

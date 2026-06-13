@@ -65,6 +65,24 @@ export interface Match {
     adminData?: MatchAdminData
 }
 
+export interface StandingRow {
+    team_tla: string
+    position: number
+    played: number
+    won: number
+    draw: number
+    lost: number
+    goals_for: number
+    goals_against: number
+    goal_difference: number
+    points: number
+}
+
+export interface GroupStanding {
+    group: string // "Group A"
+    table: StandingRow[]
+}
+
 export interface UserForAdmin {
     id: string
     name: string
