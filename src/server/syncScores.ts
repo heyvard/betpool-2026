@@ -24,6 +24,7 @@ export interface DryRunScoreKamp {
         duration: string | null
     }
     db: {
+        use_manual: boolean
         synced_home_ft: number | null
         synced_away_ft: number | null
         synced_home_et: number | null
@@ -98,6 +99,7 @@ export async function syncScores(
         const matchNums = alleKamper.map((m) => m.id)
         const { rows: dbRader } = await client.query<{
             match_num: number
+            use_manual: boolean
             synced_home_ft: number | null
             synced_away_ft: number | null
             synced_home_et: number | null
@@ -110,6 +112,7 @@ export async function syncScores(
             away_team: string | null
         }>(
             `SELECT ms.match_num,
+                    ms.use_manual,
                     ms.synced_home_ft, ms.synced_away_ft,
                     ms.synced_home_et, ms.synced_away_et,
                     ms.synced_home_pen, ms.synced_away_pen,
@@ -158,6 +161,7 @@ export async function syncScores(
                 },
                 db: dbRad
                     ? {
+                          use_manual: dbRad.use_manual,
                           synced_home_ft: dbRad.synced_home_ft,
                           synced_away_ft: dbRad.synced_away_ft,
                           synced_home_et: dbRad.synced_home_et,
