@@ -100,15 +100,39 @@ it('inkluderer FINISHED-kamper innenfor 6 timer', async () => {
     expect(resultat.oppdatert).toBe(1)
 })
 
-it('ekskluderer FINISHED-kamper eldre enn 6 timer', async () => {
+it('inkluderer FINISHED-kamper eldre enn 6 timer som mangler synket score (catch-up)', async () => {
     const gammel = new Date(Date.now() - 7 * 60 * 60 * 1000).toISOString()
     jest.spyOn(global, 'fetch').mockResolvedValue(
         mockOkResponse([lagKamp({ id: 1, status: 'FINISHED', utcDate: gammel })]),
     )
+    // DB har ingen synket score for kampen ennå
+    mockClient.query.mockImplementation((sql: string) =>
+        Promise.resolve(sql.trim().startsWith('SELECT') ? { rows: [] } : { rowCount: 1 }),
+    )
+
+    const resultat = await syncScores(mockClient as any)
+    expect(resultat.hentet).toBe(1)
+    expect(resultat.oppdatert).toBe(1)
+})
+
+it('ekskluderer FINISHED-kamper eldre enn 6 timer som allerede er synket', async () => {
+    const gammel = new Date(Date.now() - 7 * 60 * 60 * 1000).toISOString()
+    jest.spyOn(global, 'fetch').mockResolvedValue(
+        mockOkResponse([lagKamp({ id: 1, status: 'FINISHED', utcDate: gammel })]),
+    )
+    // DB har allerede synket fulltidsresultat → ingen catch-up
+    mockClient.query.mockImplementation((sql: string) =>
+        Promise.resolve(
+            sql.trim().startsWith('SELECT')
+                ? { rows: [{ match_num: 1, synced_home_ft: 2, synced_away_ft: 1 }] }
+                : { rowCount: 0 },
+        ),
+    )
 
     const resultat = await syncScores(mockClient as any)
     expect(resultat.hentet).toBe(0)
-    expect(mockClient.query).not.toHaveBeenCalled()
+    // bare SELECT skal ha blitt kjørt, ingen INSERT
+    expect(mockClient.query).toHaveBeenCalledTimes(1)
 })
 
 it('inkluderer TIMED-kamper der kampstart har passert', async () => {
@@ -166,10 +190,12 @@ it('ekskluderer TIMED-kamper der kampstart ikke har passert', async () => {
     jest.spyOn(global, 'fetch').mockResolvedValue(
         mockOkResponse([lagKamp({ id: 1, status: 'TIMED', utcDate: fremtidig })]),
     )
+    mockClient.query.mockResolvedValue({ rows: [] })
 
     const resultat = await syncScores(mockClient as any)
     expect(resultat.hentet).toBe(0)
-    expect(mockClient.query).not.toHaveBeenCalled()
+    // bare SELECT (DB-tilstand) kjøres, ingen INSERT
+    expect(mockClient.query).toHaveBeenCalledTimes(1)
 })
 
 it('hopper over kamper uten fullTime-score (null)', async () => {
@@ -187,15 +213,20 @@ it('hopper over kamper uten fullTime-score (null)', async () => {
             }),
         ]),
     )
+    mockClient.query.mockResolvedValue({ rows: [] })
 
     const resultat = await syncScores(mockClient as any)
     expect(resultat.hentet).toBe(1)
-    expect(mockClient.query).not.toHaveBeenCalled()
+    // SELECT kjøres, men ingen INSERT siden fullTime mangler
+    expect(mockClient.query).toHaveBeenCalledTimes(1)
 })
 
 it('teller oppdatert basert på rowCount', async () => {
     jest.spyOn(global, 'fetch').mockResolvedValue(mockOkResponse([lagKamp({ id: 1 }), lagKamp({ id: 2 })]))
-    mockClient.query.mockResolvedValueOnce({ rowCount: 1 }).mockResolvedValueOnce({ rowCount: 0 })
+    mockClient.query
+        .mockResolvedValueOnce({ rows: [] }) // SELECT (DB-tilstand)
+        .mockResolvedValueOnce({ rowCount: 1 }) // INSERT kamp 1
+        .mockResolvedValueOnce({ rowCount: 0 }) // INSERT kamp 2
 
     const resultat = await syncScores(mockClient as any)
     expect(resultat).toEqual({ hentet: 2, oppdatert: 1 })
@@ -220,7 +251,8 @@ it('sender ekstraomgangs- og straffepark-score videre når de finnes', async () 
 
     await syncScores(mockClient as any)
 
-    const params = mockClient.query.mock.calls[0][1]
+    // calls[0] er SELECT (DB-tilstand), calls[1] er INSERT-en
+    const params = mockClient.query.mock.calls[1][1]
     expect(params[1]).toBe(1) // synced_home_ft
     expect(params[2]).toBe(1) // synced_away_ft
     expect(params[3]).toBe(0) // synced_home_et
@@ -236,7 +268,8 @@ it('sender null for ekstraomgang og straffer når det ikke finnes', async () => 
 
     await syncScores(mockClient as any)
 
-    const params = mockClient.query.mock.calls[0][1]
+    // calls[0] er SELECT (DB-tilstand), calls[1] er INSERT-en
+    const params = mockClient.query.mock.calls[1][1]
     expect(params[3]).toBeNull() // synced_home_et
     expect(params[4]).toBeNull() // synced_away_et
     expect(params[5]).toBeNull() // synced_home_pen
