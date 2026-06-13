@@ -15,6 +15,7 @@ export interface Bet {
     round: number
     joker: boolean
     group?: string
+    status?: MatchStatus
 }
 
 export interface Chat {

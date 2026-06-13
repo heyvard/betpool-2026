@@ -15,6 +15,7 @@ import { useDebouncedCallback } from 'use-debounce'
 import nb from 'dayjs/locale/nb'
 import fr from 'dayjs/locale/fr'
 import { beregnFrister, erEtterFørsteRunde, erIEndrevindu } from '../utils/fristDatoer'
+import { erKampFerdig } from '../data/matches'
 import { nå } from '../utils/testClock'
 import { LoadingScreen } from '../components/loading/LoadingScreen'
 import { VarslerHint } from '../components/VarslerHint'
@@ -41,9 +42,6 @@ const Home: NextPage = () => {
         return <LoadingScreen />
     }
 
-    const kamper = matches.filter((a) => {
-        return dayjs(a.game_start).isAfter(nå().subtract(2, 'hours')) && dayjs(a.game_start).isBefore(nå())
-    })
     const snartKamper = matches.filter((a) => {
         return dayjs(a.game_start).isAfter(nå()) && dayjs(a.game_start).isBefore(nå().add(2, 'hours'))
     })
@@ -54,21 +52,6 @@ const Home: NextPage = () => {
     return (
         <div className="space-y-4">
             <VarslerHint />
-            {kamper.map((k) => (
-                <NextLink
-                    key={k.match_num}
-                    href={'/match/' + k.match_num}
-                    className="block rounded-xl bg-red-50 px-4 py-3 ring-1 ring-red-200"
-                >
-                    <span className="inline-flex items-center gap-2 text-sm font-semibold text-red-800">
-                        <span className="h-2 w-2 animate-pulse rounded-full bg-red-600" />
-                        {tx(t.hjem.naPagarKamp, {
-                            home: fixLandMedLocale(k.home_team, locale),
-                            away: fixLandMedLocale(k.away_team, locale),
-                        })}
-                    </span>
-                </NextLink>
-            ))}
             {snartKamper.map((k) => (
                 <NextLink
                     key={k.match_num}
@@ -197,6 +180,7 @@ function NesteKampSeksjon() {
                 {kampene.map((b) => {
                     const tippet = b.home_score != null && b.away_score != null
                     const startet = dayjs(b.game_start).isBefore(nå())
+                    const ferdig = erKampFerdig(b.status)
                     return (
                         <NextLink
                             key={b.match_num}
@@ -215,11 +199,17 @@ function NesteKampSeksjon() {
                                 {hentFlag(b.home_team)} {hentNavn(b.home_team, locale)} – {hentFlag(b.away_team)}{' '}
                                 {hentNavn(b.away_team, locale)}
                             </span>
-                            {startet && (
-                                <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-stone-100 px-1.5 py-0.5 text-[10px] font-bold text-stone-500 ring-1 ring-stone-200">
-                                    <Lock className="h-2.5 w-2.5" /> {t.hjem.spilt}
-                                </span>
-                            )}
+                            {startet &&
+                                (ferdig ? (
+                                    <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-stone-100 px-1.5 py-0.5 text-[10px] font-bold text-stone-500 ring-1 ring-stone-200">
+                                        <Lock className="h-2.5 w-2.5" /> {t.hjem.ferdig}
+                                    </span>
+                                ) : (
+                                    <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-red-50 px-1.5 py-0.5 text-[10px] font-bold text-red-700 ring-1 ring-red-200">
+                                        <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-red-600" />{' '}
+                                        {t.hjem.paagaar}
+                                    </span>
+                                ))}
                             {tippet ? (
                                 <span
                                     className={cn(
