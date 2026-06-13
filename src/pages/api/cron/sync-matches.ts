@@ -3,6 +3,7 @@ import { PoolClient } from 'pg'
 
 import { getPool } from '../../../auth/authHandler'
 import { syncMatches } from '../../../server/syncMatches'
+import { syncStandings } from '../../../server/syncStandings'
 
 // Cron-jobb (se vercel.json). Synker kampoppsettet fra football-data.org og
 // upserter endringer (kickoff-tider, sluttspill-lag) til `matches`-tabellen.
@@ -18,7 +19,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     try {
         client = await getPool().connect()
         const resultat = await syncMatches(client)
-        res.status(200).json(resultat)
+        // Gruppetabellene oppdateres sammen med kampene. La en standings-feil
+        // ikke velte kamp-synken — logg og rapporter den separat.
+        let standings: Awaited<ReturnType<typeof syncStandings>> | { error: string }
+        try {
+            standings = await syncStandings(client)
+        } catch (e) {
+            console.error('sync-standings feilet', e)
+            standings = { error: 'standings-synk feilet' }
+        }
+        res.status(200).json({ ...resultat, standings })
     } catch (e) {
         console.error('sync-matches feilet', e)
         res.status(500).json({ error: 'intern feil' })
