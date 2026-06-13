@@ -2,7 +2,7 @@ import { ApiHandlerOpts } from '../../../types/apiHandlerOpts'
 import { erIFørsteRunde } from '../../../utils/isInFirstRound'
 import { serverNå } from '../../../utils/testClock'
 import { auth } from '../../../auth/authHandler'
-import { hentKamper } from '../../../data/matches'
+import { hentKamper, erKampPågående } from '../../../data/matches'
 import { resolveActiveScore } from '../../../data/matchScore'
 
 const handler = async function handler(opts: ApiHandlerOpts): Promise<void> {
@@ -73,6 +73,12 @@ const handler = async function handler(opts: ApiHandlerOpts): Promise<void> {
             if (new Date(jsonMatch.game_start) >= now) return null
             const score = scoreMap.get(b.match_num)
             const resultat = score ? resolveActiveScore(score) : { home_score: null, away_score: null }
+            // Foreløpig = kampen pågår ennå, OG resultatet som teller kommer fra en
+            // live synk (synced_*, ikke admin-satt manuelt). Et manuelt resultat er
+            // autoritativt og regnes som endelig uansett kampstatus.
+            const resultatFraSynk =
+                !!score && !score.use_manual && score.synced_home_ft !== null && score.synced_away_ft !== null
+            const foreløpig = erKampPågående(jsonMatch.status) && resultatFraSynk
             return {
                 user_id: b.user_id,
                 match_num: b.match_num,
@@ -85,6 +91,7 @@ const handler = async function handler(opts: ApiHandlerOpts): Promise<void> {
                 home_result: resultat.home_score,
                 away_result: resultat.away_score,
                 joker: b.joker,
+                foreløpig,
             }
         })
         .filter(Boolean)

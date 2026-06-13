@@ -62,6 +62,31 @@ export async function seedBet(b: SeedBet): Promise<void> {
     )
 }
 
+// Setter kampstatus direkte (football-data-status). Brukes til å simulere en
+// kamp som pågår (IN_PLAY) uten å kjøre synken.
+export async function setMatchStatus(matchNum: number, status: string): Promise<void> {
+    await withDb((c) => c.query(`UPDATE matches SET status = $1 WHERE match_num = $2`, [status, matchNum]))
+}
+
+// Legger inn et synket (live) delresultat i match_scores — som om synken hentet
+// det fra football-data. use_manual blir false, så dette er et live synket
+// resultat (ikke admin-satt), og poengene regnes som foreløpige.
+export async function seedSyncedScore(matchNum: number, home: number, away: number): Promise<void> {
+    await withDb((c) =>
+        c.query(
+            `INSERT INTO match_scores (match_num, synced_home_ft, synced_away_ft, use_manual, score_synced_at, created_at, updated_at)
+             VALUES ($1,$2,$3,false,now(),now(),now())
+             ON CONFLICT (match_num) DO UPDATE SET
+               synced_home_ft = EXCLUDED.synced_home_ft,
+               synced_away_ft = EXCLUDED.synced_away_ft,
+               use_manual = false,
+               score_synced_at = now(),
+               updated_at = now()`,
+            [matchNum, home, away],
+        ),
+    )
+}
+
 export async function seedUser(overrides: Partial<SeedUser> = {}): Promise<SeedUser & { id: string }> {
     const fid = overrides.firebase_user_id ?? `user-${Math.random().toString(36).slice(2, 8)}`
     const u: SeedUser = {

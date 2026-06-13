@@ -7,6 +7,7 @@ import NextLink from 'next/link'
 import { calculateLeaderboard, LeaderBoard } from '../components/results/calculateAllScores'
 import { calculateAllBetsExtended, filtrerAllBets } from '../components/results/calculateAllBetsExtended'
 import { Table } from '@/components/ui/table'
+import { Switch } from '@/components/ui/switch'
 import classNames from 'classnames'
 import { UseLeagues } from '../queries/useLeagues'
 import { UseLeague } from '../queries/useLeague'
@@ -49,6 +50,8 @@ const Leaderboard: NextPage = () => {
     const { t } = useLanguage()
     // Seed for tilfeldig rangering når alle har 0 poeng – stabil per økt.
     const [seed] = useState(() => Math.floor(Math.random() * 0x7fffffff))
+    // Bryter for å inkludere foreløpige poeng fra kamper som pågår. Står på som standard.
+    const [visPågående, setVisPågående] = useState(true)
 
     const mineLigaer = (ligaer ?? []).filter((l) => l.my_status === 'medlem')
     const effektivLiga = valgtLiga && mineLigaer.some((l) => l.id === valgtLiga) ? valgtLiga : null
@@ -70,11 +73,13 @@ const Leaderboard: NextPage = () => {
             const ext = calculateAllBetsExtended(filtrerAllBets(raw, populasjon))
             const tavle = calculateLeaderboard(ext.bets, ext.users)
             const poengMap = new Map(tavle.map((r) => [r.userid, r.poeng]))
+            const liveMap = new Map(tavle.map((r) => [r.userid, r.livePoeng ?? 0]))
             return ligaDetalj.members
                 .filter((m) => m.status === 'medlem')
                 .map((m) => ({
                     userid: m.user_id,
                     poeng: poengMap.get(m.user_id) ?? 0,
+                    livePoeng: liveMap.get(m.user_id) ?? 0,
                     userName: m.name,
                     paid: m.paid,
                     picture: m.picture,
@@ -92,19 +97,26 @@ const Leaderboard: NextPage = () => {
 
     const lista: LeaderBoard[] = [...rader]
 
+    // Effektiv poengsum gitt bryteren: med pågående kamper teller hele summen,
+    // uten dem trekkes de foreløpige poengene fra.
+    const effektivPoeng = (r: LeaderBoard): number => (visPågående ? r.poeng : r.poeng - (r.livePoeng ?? 0))
+
+    // Bryteren vises kun når minst én bruker har foreløpige poeng fra en pågående kamp.
+    const harPågående = rader.some((r) => (r.livePoeng ?? 0) !== 0)
+
     // Når ingen kamper er ferdigspilt har alle 0 poeng. Da gir det ikke mening
     // at alle deler 1. plass (og får gullmedalje) – ranger i stedet tilfeldig
     // med unike plasser, slik at bare én får medalje nr. 1.
-    const alleNull = lista.length > 0 && lista.every((r) => r.poeng === 0)
+    const alleNull = lista.length > 0 && lista.every((r) => effektivPoeng(r) === 0)
 
     if (alleNull) {
         lista.sort((a, b) => ordningsverdi(seed, a.userid) - ordningsverdi(seed, b.userid))
     } else {
         lista.sort((a, b) => {
-            if (b.poeng === a.poeng) {
+            if (effektivPoeng(b) === effektivPoeng(a)) {
                 return a.userid.localeCompare(b.userid)
             } else {
-                return b.poeng - a.poeng
+                return effektivPoeng(b) - effektivPoeng(a)
             }
         })
     }
@@ -112,7 +124,7 @@ const Leaderboard: NextPage = () => {
     const finnFaktiskPlass = (index: number, lista: LeaderBoard[]): number => {
         if (alleNull) return index + 1
         if (index === 0) return 1
-        if (lista[index].poeng === lista[index - 1].poeng) {
+        if (effektivPoeng(lista[index]) === effektivPoeng(lista[index - 1])) {
             return finnFaktiskPlass(index - 1, lista)
         }
         return index + 1
@@ -127,6 +139,13 @@ const Leaderboard: NextPage = () => {
                     liga={ligaDetalj}
                     antallMedlemmer={ligaDetalj.members.filter((m) => m.status === 'medlem').length}
                 />
+            )}
+            {harPågående && (
+                <div className="flex justify-end">
+                    <Switch checked={visPågående} onCheckedChange={setVisPågående} size="small">
+                        {t.ledertavle.visPågående}
+                    </Switch>
+                </div>
             )}
             <Table>
                 <Table.Header>
@@ -157,7 +176,14 @@ const Leaderboard: NextPage = () => {
                                 )}
                             </Table.DataCell>
                             <Table.DataCell align="right" className="pr-4 font-bold">
-                                {row.poeng.toFixed(0)}
+                                <span className="inline-flex items-center justify-end gap-1.5">
+                                    {visPågående && (row.livePoeng ?? 0) > 0 && (
+                                        <span className="bp-chip-live">
+                                            {t.ledertavle.live} +{(row.livePoeng ?? 0).toFixed(0)}
+                                        </span>
+                                    )}
+                                    <span className="bp-tabular">{effektivPoeng(row).toFixed(0)}</span>
+                                </span>
                             </Table.DataCell>
                         </Table.Row>
                     ))}

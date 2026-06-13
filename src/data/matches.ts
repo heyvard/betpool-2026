@@ -70,3 +70,14 @@ export function kanHaJoker(round: number): boolean {
 export function erNorgeKamp(homeTeam: string, awayTeam: string): boolean {
     return [homeTeam, awayTeam].some((t) => t.trim().toUpperCase() === 'NOR')
 }
+
+// En kamp er ferdigspilt når football-data rapporterer den som avsluttet.
+export function erKampFerdig(status?: MatchStatus): boolean {
+    return status === 'FINISHED' || status === 'AWARDED'
+}
+
+// Pågår = har startet, men er ikke ferdig (og ikke avlyst/utsatt). Udefinert status
+// (historiske testdata) regnes som IKKE pågående, slik at gamle fixtures er upåvirket.
+export function erKampPågående(status?: MatchStatus): boolean {
+    return status != null && !erKampFerdig(status) && status !== 'CANCELLED' && status !== 'POSTPONED'
+}

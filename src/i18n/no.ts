@@ -138,6 +138,8 @@ const no = {
         pott: 'Pott: {{kr}} kr',
         velgLiga: 'Velg liga',
         hovedligaen: '🏆 Hovedligaen',
+        visPågående: 'Inkluder kamper som pågår',
+        live: 'LIVE',
     },
     regler: {
         tittel: 'Regler',
