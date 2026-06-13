@@ -16,7 +16,7 @@ import {
     EttermiddagsVarselDryRunBruker,
 } from '../queries/mutateAdminCron'
 import { Button } from '@/components/ui/button'
-import { RefreshCw, Bell, Calendar, Eye, Trophy } from 'lucide-react'
+import { RefreshCw, Bell, Calendar, Eye, Trophy, ListOrdered } from 'lucide-react'
 
 function formaterFeltVerdi(felt: string, verdi: string | number | null): string {
     if (verdi === null) return 'null'
@@ -280,6 +280,43 @@ function SyncMatchesKnapp() {
     )
 }
 
+function SyncStandingsKnapp() {
+    const { mutate, isPending, data, error, isSuccess } = UseMutateAdminCron('sync-standings')
+
+    return (
+        <div className="flex flex-col gap-2 py-3 first:pt-0 last:pb-0">
+            <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                    <p className="text-sm font-medium text-stone-900">Synk gruppetabeller</p>
+                    <p className="text-xs text-stone-500">
+                        Henter gruppetabellene (plassering, poeng, målforskjell) fra football-data.org. Synkes ellers
+                        sammen med kampoppsettet.
+                    </p>
+                </div>
+                <div className="flex gap-2 shrink-0">
+                    <Button
+                        variant="outline"
+                        size="small"
+                        loading={isPending}
+                        icon={<ListOrdered className="h-4 w-4" />}
+                        onClick={() => mutate()}
+                    >
+                        Kjør
+                    </Button>
+                </div>
+            </div>
+            {isSuccess && data && (
+                <p className="text-xs text-green-700 bg-green-50 rounded-lg px-3 py-1.5">
+                    {`grupper: ${data.grupper} · rader: ${data.rader}`}
+                </p>
+            )}
+            {error && (
+                <p className="text-xs text-red-700 bg-red-50 rounded-lg px-3 py-1.5">Kunne ikke lagre — prøv igjen.</p>
+            )}
+        </div>
+    )
+}
+
 function SendPåminnelserKnapp() {
     const { mutate, isPending, data, error, isSuccess } = UseMutateAdminCron('send-reminders')
     const {
@@ -528,6 +565,7 @@ const CronPage: NextPage = () => {
                 <div className="divide-y divide-stone-100">
                     <SyncScoresKnapp />
                     <SyncMatchesKnapp />
+                    <SyncStandingsKnapp />
                     <SendPåminnelserKnapp />
                     <SendEttermiddagsVarselKnapp />
                     <SendVmStartKnapp />

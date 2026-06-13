@@ -52,6 +52,7 @@ describe('/api/v1/admin/cron/* — tilgangskontroll', () => {
     const adminRuter = [
         '/api/v1/admin/cron/sync-matches',
         '/api/v1/admin/cron/sync-scores',
+        '/api/v1/admin/cron/sync-standings',
         '/api/v1/admin/cron/send-reminders',
     ]
 
