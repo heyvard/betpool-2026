@@ -3,6 +3,7 @@ import { erIFørsteRunde } from '../../../utils/isInFirstRound'
 import { serverNå } from '../../../utils/testClock'
 import { auth } from '../../../auth/authHandler'
 import { hentKamper } from '../../../data/matches'
+import { resolveActiveScore } from '../../../data/matchScore'
 
 const handler = async function handler(opts: ApiHandlerOpts): Promise<void> {
     const { req, res, user, client } = opts
@@ -25,6 +26,9 @@ const handler = async function handler(opts: ApiHandlerOpts): Promise<void> {
         away_score: number | null
         home_team_override: string | null
         away_team_override: string | null
+        synced_home_ft: number | null
+        synced_away_ft: number | null
+        use_manual: boolean
     }
 
     interface User {
@@ -48,7 +52,8 @@ const handler = async function handler(opts: ApiHandlerOpts): Promise<void> {
             JOIN users u ON u.id = b.user_id
             WHERE u.active = true`),
         client.query<ScoreRow>(`
-            SELECT match_num, home_score, away_score, home_team_override, away_team_override
+            SELECT match_num, home_score, away_score, home_team_override, away_team_override,
+                   synced_home_ft, synced_away_ft, use_manual
             FROM match_scores`),
         client.query<User>(`
             SELECT u.id, COALESCE(NULLIF(u.kallenavn, ''), u.name) AS name, u.paid, u.picture, u.winner, u.topscorer,
@@ -67,6 +72,7 @@ const handler = async function handler(opts: ApiHandlerOpts): Promise<void> {
             if (!jsonMatch) return null
             if (new Date(jsonMatch.game_start) >= now) return null
             const score = scoreMap.get(b.match_num)
+            const resultat = score ? resolveActiveScore(score) : { home_score: null, away_score: null }
             return {
                 user_id: b.user_id,
                 match_num: b.match_num,
@@ -76,8 +82,8 @@ const handler = async function handler(opts: ApiHandlerOpts): Promise<void> {
                 round: jsonMatch.round,
                 home_score: b.home_score,
                 away_score: b.away_score,
-                home_result: score?.home_score ?? null,
-                away_result: score?.away_score ?? null,
+                home_result: resultat.home_score,
+                away_result: resultat.away_score,
                 joker: b.joker,
             }
         })
