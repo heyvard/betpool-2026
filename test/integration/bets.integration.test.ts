@@ -1,4 +1,5 @@
 import { api, førsteMatchNum, seedUser, truncateAll, withDb } from './helpers'
+import { seedBet } from '../support/db'
 
 beforeEach(truncateAll)
 
@@ -97,5 +98,28 @@ describe('tipping', () => {
         const body = await res.json()
         expect(Array.isArray(body.bets)).toBe(true)
         expect(body.users.map((u: { name: string }) => u.name).sort()).toEqual(['Alice', 'Bob'])
+    })
+
+    it('GET /api/v1/bets bruker den synkede (automatiske) scoren når use_manual er av', async () => {
+        const alice = await seedUser({ firebase_user_id: 'alice', name: 'Alice' })
+        const matchNum = await førsteMatchNum()
+        await seedBet({ user_id: alice.id, match_num: matchNum, home_score: 4, away_score: 1 })
+
+        // Synket resultat satt, men ingen manuell score og use_manual = false.
+        // Tidligere ble da home/away_result null → defaultet til 0–0 i beregningen.
+        await withDb((c) =>
+            c.query(
+                `INSERT INTO match_scores (match_num, synced_home_ft, synced_away_ft, use_manual)
+                 VALUES ($1, 4, 1, false)`,
+                [matchNum],
+            ),
+        )
+
+        // Sen klokke slik at kampen regnes som spilt og taes med i bets-lista
+        const res = await api('/api/v1/bets', { user: 'alice', clock: '2030-01-01T00:00:00Z' })
+        expect(res.status).toBe(200)
+        const body = await res.json()
+        const bet = body.bets.find((b: { match_num: number }) => b.match_num === matchNum)
+        expect(bet).toMatchObject({ home_result: 4, away_result: 1 })
     })
 })

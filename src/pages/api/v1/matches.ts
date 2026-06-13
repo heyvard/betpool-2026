@@ -1,6 +1,7 @@
 import { ApiHandlerOpts } from '../../../types/apiHandlerOpts'
 import { auth } from '../../../auth/authHandler'
 import { hentKamper } from '../../../data/matches'
+import { resolveActiveScore } from '../../../data/matchScore'
 import { MatchAdminData } from '../../../types/types'
 
 interface ScoreRow {
@@ -18,17 +19,6 @@ interface ScoreRow {
     synced_duration: string | null
     score_synced_at: string | null
     use_manual: boolean
-}
-
-function resolveActiveScore(score: ScoreRow): { home_score: number | null; away_score: number | null } {
-    if (score.use_manual) {
-        return { home_score: score.home_score, away_score: score.away_score }
-    }
-    if (score.synced_home_ft !== null && score.synced_away_ft !== null) {
-        return { home_score: score.synced_home_ft, away_score: score.synced_away_ft }
-    }
-    // Fallback til manuell om ingen synket score finnes ennå
-    return { home_score: score.home_score, away_score: score.away_score }
 }
 
 const handler = async function handler(opts: ApiHandlerOpts): Promise<void> {
