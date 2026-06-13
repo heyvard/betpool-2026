@@ -6,6 +6,8 @@ export interface LeaderBoard {
     userName: string
     paid: boolean
     picture: string | null
+    // Delen av `poeng` som kommer fra kamper som fortsatt pågår (foreløpige poeng).
+    livePoeng?: number
 }
 
 export function calculateLeaderboard(bets: MatchBetMedScore[], users: OtherUser[]): LeaderBoard[] {
@@ -15,6 +17,7 @@ export function calculateLeaderboard(bets: MatchBetMedScore[], users: OtherUser[
             return {
                 userid: u.id,
                 poeng: 0,
+                livePoeng: 0,
                 userName: u.name,
                 paid: u.paid,
                 picture: u.picture,
@@ -30,11 +33,17 @@ export function calculateLeaderboard(bets: MatchBetMedScore[], users: OtherUser[
     const res = [] as LeaderBoard[]
     userMap.forEach((bets, user) => {
         let poeng = 0
+        let livePoeng = 0
         bets.forEach((b) => {
             poeng = poeng + b.poeng
+            // Foreløpige poeng: kampen pågår ennå (live synket delresultat).
+            if (b.foreløpig) {
+                livePoeng = livePoeng + b.poeng
+            }
         })
         users.forEach((u) => {
             if (u.id == user) {
+                // Winner/topscorer-bonus avgjøres ved turneringsslutt og regnes ikke som foreløpig.
                 poeng = poeng + (u.winnerPoints || 0) + (u.topscorerPoints || 0)
             }
         })
@@ -42,6 +51,7 @@ export function calculateLeaderboard(bets: MatchBetMedScore[], users: OtherUser[
         res.push({
             userid: user,
             poeng,
+            livePoeng,
             userName: otherUserMap.get(user)?.name || 'unknown',
             paid: otherUserMap.get(user)?.paid || false,
             picture: otherUserMap.get(user)?.picture || null,

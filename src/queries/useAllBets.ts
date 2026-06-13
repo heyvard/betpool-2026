@@ -32,6 +32,9 @@ export interface MatchBet {
     home_team: string
     round: number
     joker?: boolean
+    // Settes av /api/v1/bets: kampen pågår fortsatt og resultatet er et live
+    // synket delresultat — poengene er dermed foreløpige.
+    foreløpig?: boolean
 }
 
 export interface MatchBetMedScore {
@@ -50,6 +53,7 @@ export interface MatchBetMedScore {
     riktigResultat: boolean
     joker: boolean
     matchpoeng: MatchPoeng
+    foreløpig?: boolean
 }
 
 export interface AllBets {

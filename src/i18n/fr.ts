@@ -130,6 +130,8 @@ const fr: Translations = {
         pott: 'Cagnotte : {{kr}} kr',
         velgLiga: 'Choisir une ligue',
         hovedligaen: '🏆 Ligue principale',
+        visPågående: 'Inclure les matchs en cours',
+        live: 'LIVE',
     },
     regler: {
         tittel: 'Règles',
