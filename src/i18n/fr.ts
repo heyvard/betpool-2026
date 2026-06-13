@@ -46,6 +46,7 @@ const fr: Translations = {
         nesteKampdag: 'Prochaine journée',
         altTippet: 'Tout parié',
         manglerTips: '{{n}} sans pari',
+        spilt: 'Joué',
         seAlleTips: 'Voir tous vos paris →',
         tippeKampen: 'Parier sur le match →',
         tippeKampene: 'Parier sur les matchs →',

@@ -44,6 +44,7 @@ const no = {
         nesteKampdag: 'Neste kampdag',
         altTippet: 'Alt tippet',
         manglerTips: '{{n}} ikke tippet',
+        spilt: 'Spilt',
         seAlleTips: 'Se alle dine tips →',
         tippeKampen: 'Tipp kampen →',
         tippeKampene: 'Tipp kampene →',
