@@ -122,11 +122,22 @@ function NesteKampSeksjon() {
 
     if (!bets) return null
 
+    // Kamper starter 18:00–06:00 Oslo-tid. Skift 10 timer bakover slik at
+    // grensen mellom kampdag og neste kampdag blir kl. 10:00 (morgen) i stedet
+    // for midnatt – ellers havner natt-kamper (01:00–06:00 Oslo) på feil dag.
+    // Startede/ferdige kamper blir dermed stående til kl. 10:00 dagen etter.
+    const kampDag = (t: dayjs.Dayjs) => t.subtract(10, 'hour').startOf('day')
+
     const kommende = bets
         .filter((b) => dayjs(b.game_start).isAfter(nå()))
         .sort((a, b) => dayjs(a.game_start).valueOf() - dayjs(b.game_start).valueOf())
 
-    if (kommende.length === 0) {
+    const denneDagen = kampDag(nå())
+    const iVinduet = bets
+        .filter((b) => kampDag(dayjs(b.game_start)).isSame(denneDagen, 'day'))
+        .sort((a, b) => dayjs(a.game_start).valueOf() - dayjs(b.game_start).valueOf())
+
+    if (iVinduet.length === 0 && kommende.length === 0) {
         return (
             <NextLink passHref legacyBehavior href="/my-bets">
                 <LinkPanel>
@@ -139,14 +150,13 @@ function NesteKampSeksjon() {
         )
     }
 
-    // Kamper starter 18:00–06:00 Oslo-tid. Skift 12 timer bakover slik at
-    // grensen mellom kampdag og neste kampdag blir kl. 12:00 (middag) i stedet
-    // for midnatt – ellers havner natt-kamper (01:00–06:00 Oslo) på feil dag.
-    const kampDag = (t: dayjs.Dayjs) => t.subtract(12, 'hour').startOf('day')
-    const nesteKampDag = kampDag(dayjs(kommende[0].game_start))
-    const kampene = kommende.filter((b) => kampDag(dayjs(b.game_start)).isSame(nesteKampDag, 'day'))
+    const nesteKampDag = iVinduet.length > 0 ? denneDagen : kampDag(dayjs(kommende[0].game_start))
+    const kildeListe = iVinduet.length > 0 ? iVinduet : kommende
+    const kampene = kildeListe.filter((b) => kampDag(dayjs(b.game_start)).isSame(nesteKampDag, 'day'))
 
-    const manglerTips = kampene.filter((b) => b.home_score == null || b.away_score == null).length
+    const manglerTips = kampene.filter(
+        (b) => dayjs(b.game_start).isAfter(nå()) && (b.home_score == null || b.away_score == null),
+    ).length
     const altTippet = manglerTips === 0
 
     const erIDag = nesteKampDag.isSame(kampDag(nå()), 'day')
@@ -186,6 +196,7 @@ function NesteKampSeksjon() {
 
                 {kampene.map((b) => {
                     const tippet = b.home_score != null && b.away_score != null
+                    const startet = dayjs(b.game_start).isBefore(nå())
                     return (
                         <NextLink
                             key={b.match_num}
@@ -195,14 +206,31 @@ function NesteKampSeksjon() {
                             <span className="w-9 shrink-0 text-[11px] font-bold tabular-nums text-stone-400">
                                 {dayjs(b.game_start).format('HH:mm')}
                             </span>
-                            <span className="min-w-0 flex-1 truncate text-xs font-semibold text-stone-900">
+                            <span
+                                className={cn(
+                                    'min-w-0 flex-1 truncate text-xs font-semibold',
+                                    startet ? 'text-stone-500' : 'text-stone-900',
+                                )}
+                            >
                                 {hentFlag(b.home_team)} {hentNavn(b.home_team, locale)} – {hentFlag(b.away_team)}{' '}
                                 {hentNavn(b.away_team, locale)}
                             </span>
+                            {startet && (
+                                <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-stone-100 px-1.5 py-0.5 text-[10px] font-bold text-stone-500 ring-1 ring-stone-200">
+                                    <Lock className="h-2.5 w-2.5" /> {t.hjem.spilt}
+                                </span>
+                            )}
                             {tippet ? (
-                                <span className="shrink-0 rounded-md bg-emerald-50 px-1.5 py-0.5 text-[11px] font-bold tabular-nums text-emerald-700">
+                                <span
+                                    className={cn(
+                                        'shrink-0 rounded-md px-1.5 py-0.5 text-[11px] font-bold tabular-nums',
+                                        startet ? 'bg-stone-100 text-stone-600' : 'bg-emerald-50 text-emerald-700',
+                                    )}
+                                >
                                     {b.home_score}–{b.away_score}
                                 </span>
+                            ) : startet ? (
+                                <span className="shrink-0 text-[11px] font-bold text-stone-400">–</span>
                             ) : (
                                 <span className="h-4 w-4 shrink-0 rounded border-[1.5px] border-dashed border-stone-300" />
                             )}
