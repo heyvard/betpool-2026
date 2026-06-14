@@ -83,6 +83,10 @@ const fr: Translations = {
         bekreftEndringTopps:
             "Êtes-vous sûr(e) ? Vous ne pouvez modifier qu'une seule fois, et les points pour le pronostic meilleur buteur seront divisés par deux.",
         lagreEndring: 'Enregistrer la modification',
+        tippet: 'Parié',
+        kickoff: "Coup d'envoi",
+        slutt: 'Terminé',
+        venterPaaPoeng: 'en attente de points',
     },
     mineTips: {
         spilteKamper: 'Matchs joués',
