@@ -318,8 +318,6 @@ const no = {
         tittel: 'Mine ligaer',
         beskrivelse:
             'Du tipper én gang, og tipsene teller i alle ligaene du er med i. Private ligaer lar deg konkurrere i en mindre gjeng med egen innsats og premie.',
-        slikInviterer:
-            'Du legger ikke til folk manuelt. Lag en liga, så får du en delbar lenke — send den til dem du vil ha med, og alle med lenken kan bli med selv.',
         invitasjoner: 'Invitasjoner',
         ligaeneDine: 'Ligaene dine',
         ingenLigaer: 'Du er ikke med i noen private ligaer ennå.',
@@ -339,6 +337,11 @@ const no = {
         betalingsinfoBeskrivelse: 'Valgfritt. Hvor og hvordan medlemmene skal betale inn.',
         betalingsinfoPlaceholder: 'F.eks. Vipps 200 kr til 123 45 678 før første kamp.',
         opprettLiga: 'Opprett liga',
+        inviterPersoner: 'Inviter deltakere',
+        inviterPersonerBeskrivelse: 'Valgfritt. Du kan også invitere via lenke etter at ligaen er opprettet.',
+        sokBruker: 'Søk etter navn …',
+        ingenBrukere: 'Ingen brukere funnet.',
+        fjernValgt: 'Fjern {{navn}}',
     },
     ligaSide: {
         tilbake: 'Mine ligaer',

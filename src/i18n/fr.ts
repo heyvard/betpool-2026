@@ -325,8 +325,6 @@ const fr: Translations = {
         tittel: 'Mes ligues',
         beskrivelse:
             'Les ligues privées utilisent les mêmes points que la ligue principale — vous ne concourez que dans un groupe restreint avec votre propre mise.',
-        slikInviterer:
-            "Vous n'ajoutez pas les gens manuellement. Créez une ligue, vous obtenez un lien partageable — envoyez-le à qui vous voulez, et toute personne avec le lien peut rejoindre.",
         invitasjoner: 'Invitations',
         ligaeneDine: 'Vos ligues',
         ingenLigaer: "Vous ne faites encore partie d'aucune ligue privée.",
@@ -346,6 +344,11 @@ const fr: Translations = {
         betalingsinfoBeskrivelse: 'Optionnel. Comment et où les membres doivent payer.',
         betalingsinfoPlaceholder: 'Ex. : Vipps 200 kr au 123 45 678 avant le premier match.',
         opprettLiga: 'Créer la ligue',
+        inviterPersoner: 'Inviter des participants',
+        inviterPersonerBeskrivelse: 'Optionnel. Vous pouvez aussi inviter via un lien après la création.',
+        sokBruker: 'Rechercher par nom …',
+        ingenBrukere: 'Aucun utilisateur trouvé.',
+        fjernValgt: 'Retirer {{navn}}',
     },
     ligaSide: {
         tilbake: 'Mes ligues',
