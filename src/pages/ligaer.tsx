@@ -181,7 +181,7 @@ function NyLigaSkjema() {
                         valgtePersoner.map((p) =>
                             authedFetch(`/api/v1/leagues/${data.id}/members`, {
                                 method: 'POST',
-                                body: JSON.stringify({ user_id: p.id }),
+                                body: JSON.stringify({ user_id: p.id, status: 'medlem' }),
                             }),
                         ),
                     )

@@ -41,6 +41,8 @@ const handler = async function handler(opts: ApiHandlerOpts): Promise<void> {
         return
     }
 
+    const status: 'invitert' | 'medlem' = reqBody.status === 'medlem' ? 'medlem' : 'invitert'
+
     const målbruker = (
         await client.query<{ id: string; active: boolean }>(`SELECT id, active FROM users WHERE id = $1`, [userId])
     ).rows[0]
@@ -59,17 +61,17 @@ const handler = async function handler(opts: ApiHandlerOpts): Promise<void> {
 
     await client.query(
         `INSERT INTO league_members (league_id, user_id, status, paid)
-         VALUES ($1, $2, 'invitert', false)`,
-        [ligaId, userId],
+         VALUES ($1, $2, $3, false)`,
+        [ligaId, userId, status],
     )
 
     await loggEndring(client, {
         actorUserId: user.id,
         entitet: 'league',
         entitetNøkkel: `${ligaId}:${userId}`,
-        handling: 'inviter_medlem',
+        handling: status === 'medlem' ? 'legg_til_medlem' : 'inviter_medlem',
         før: null,
-        etter: { status: 'invitert' },
+        etter: { status },
     })
 
     res.status(201).json({ ok: true })
