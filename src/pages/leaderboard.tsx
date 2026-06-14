@@ -162,7 +162,7 @@ const Leaderboard: NextPage = () => {
                                 )}
                             </Table.DataCell>
                             <Table.DataCell align="right" className="pr-4 font-bold">
-                                <span className="inline-flex flex-col items-end gap-0.5">
+                                <span className="inline-flex items-center justify-end gap-1.5 whitespace-nowrap">
                                     {visPågående && (row.livePoeng ?? 0) > 0 && (
                                         <span className="bp-chip-live">+{(row.livePoeng ?? 0).toFixed(0)}</span>
                                     )}
