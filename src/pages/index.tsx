@@ -184,7 +184,7 @@ function NesteKampSeksjon() {
                     return (
                         <NextLink
                             key={b.match_num}
-                            href="/my-bets"
+                            href={startet ? '/match/' + b.match_num : '/my-bets'}
                             className="flex items-center gap-3 border-b border-stone-100 px-4 py-2.5 last:border-b-0 hover:bg-stone-50 transition-colors"
                         >
                             <span className="w-9 shrink-0 text-[11px] font-bold tabular-nums text-stone-400">

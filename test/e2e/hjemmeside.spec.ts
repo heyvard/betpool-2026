@@ -125,3 +125,28 @@ test('neste kampdag viser brukerens tippede kamp', async ({ context, page }) => 
     // Den tippede kampen vises med scoren sin (en-dash, som i index.tsx).
     await expect(page.getByText('2–1')).toBeVisible()
 })
+
+test('kommende kamp lenker til tipping, startet kamp lenker til kampsiden', async ({ context, page }) => {
+    const alice = await seedUser({ firebase_user_id: 'alice', name: 'alice', paid: true })
+
+    const m0 = alleKamper
+        .filter((m) => m.round === 1)
+        .sort((a, b) => +new Date(a.game_start) - +new Date(b.game_start))[0]
+    await seedBet({ user_id: alice.id, match_num: m0.match_num, home_score: 2, away_score: 1 })
+
+    // Kommende kamp (1 time før avspark): kampraden lenker til tippesiden.
+    const enTimeFør = new Date(new Date(m0.game_start).getTime() - 60 * 60 * 1000).toISOString()
+    await loggInn(context, 'alice', enTimeFør)
+    await page.goto('/')
+    await expect(page.getByText('Neste kampdag')).toBeVisible()
+    await page.getByRole('link').filter({ hasText: '2–1' }).click()
+    await expect(page).toHaveURL(/\/my-bets$/)
+
+    // Startet kamp (30 min etter avspark): kampraden lenker til kampsiden.
+    const etterAvspark = new Date(new Date(m0.game_start).getTime() + 30 * 60 * 1000).toISOString()
+    await loggInn(context, 'alice', etterAvspark)
+    await page.goto('/')
+    await expect(page.getByText('Neste kampdag')).toBeVisible()
+    await page.getByRole('link').filter({ hasText: '2–1' }).click()
+    await expect(page).toHaveURL(new RegExp(`/match/${m0.match_num}$`))
+})
