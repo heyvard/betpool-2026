@@ -6,7 +6,7 @@ import { erNorgeKamp } from '../../src/data/matches'
 
 // Ledertavla skal kunne skru av/på poeng fra kamper som pågår. En kamp settes
 // IN_PLAY med et live synket delresultat; «alice» har tippet det eksakt og får
-// foreløpige poeng. Bryteren skal da dukke opp, totalen vise «LIVE +X», og når
+// foreløpige poeng. Bryteren skal da dukke opp, totalen vise «+X», og når
 // den skrus av skal de foreløpige poengene forsvinne fra summen.
 
 const PORT = Number(process.env.TEST_PORT ?? 3100)
@@ -56,13 +56,13 @@ test('foreløpige poeng fra en pågående kamp kan skrus av og på', async ({ co
     await expect(bryter).toHaveAttribute('data-state', 'checked')
 
     // Foreløpige poeng inkludert: gruppespill (vekting 1), alene om eksakt resultat
-    // (×5) + riktig utfall (×1) = 6, merket «LIVE +6».
-    await expect(alicePoeng.getByText(/LIVE \+6/)).toBeVisible()
+    // (×5) + riktig utfall (×1) = 6, merket «+6».
+    await expect(alicePoeng.getByText(/^\+6$/)).toBeVisible()
     await expect(alicePoeng).toContainText('6')
 
     // Skru av pågående kamper: de foreløpige poengene forsvinner fra summen.
     await bryter.click()
     await expect(bryter).toHaveAttribute('data-state', 'unchecked')
-    await expect(alicePoeng.getByText(/LIVE/)).toHaveCount(0)
+    await expect(alicePoeng.getByText(/^\+/)).toHaveCount(0)
     await expect(alicePoeng).toHaveText('0')
 })
