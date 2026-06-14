@@ -1,0 +1,14 @@
+name: Synk resultater
+
+on:
+  schedule:
+    - cron: '*/5 * * * *'
+  workflow_dispatch:
+
+jobs:
+  sync:
+    name: POST /api/cron/sync-scores
+    runs-on: ubuntu-latest
+    steps:
+      - name: Synk resultater
+        run: curl -fsS -X POST "${{ secrets.APP_BASE_URL }}/api/cron/sync-scores" -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}"
