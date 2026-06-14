@@ -11,16 +11,12 @@ import { Switch } from '@/components/ui/switch'
 import classNames from 'classnames'
 import { UseLeagues } from '../queries/useLeagues'
 import { UseLeague } from '../queries/useLeague'
-import { UseUser } from '../queries/useUser'
 import { useValgtLiga } from '../utils/useValgtLiga'
 import { LigaVelger } from '../components/LigaVelger'
 import { PremieKort } from '../components/PremieKort'
 import { LeagueDetail } from '../types/league'
-import { Banknote, Check, Clock } from 'lucide-react'
-import { KopierNummerKnapp } from '../components/KopierNummerKnapp'
 import { Medalje } from '../components/ui/medalje'
 import { useLanguage } from '../i18n/LanguageContext'
-import { tx } from '../i18n/interpolate'
 
 function plassVisning(plass: number): React.ReactNode {
     if (plass === 1 || plass === 2 || plass === 3) return <Medalje plass={plass} size={28} />
@@ -45,7 +41,6 @@ function ordningsverdi(seed: number, userid: string): number {
 const Leaderboard: NextPage = () => {
     const { data, isLoading } = UseAllBets()
     const { data: ligaer } = UseLeagues()
-    const { data: megselv } = UseUser()
     const [valgtLiga, setValgtLiga] = useValgtLiga()
     const { t } = useLanguage()
     // Seed for tilfeldig rangering når alle har 0 poeng – stabil per økt.
@@ -133,7 +128,7 @@ const Leaderboard: NextPage = () => {
     return (
         <div className="space-y-4">
             {mineLigaer.length > 0 && <LigaVelger ligaer={ligaer} valgt={effektivLiga} onVelg={setValgtLiga} />}
-            {ligaDetalj && <LigaBanner liga={ligaDetalj} megId={megselv?.id} />}
+            {ligaDetalj && <LigaBanner liga={ligaDetalj} />}
             {ligaDetalj && (
                 <PremieKort
                     liga={ligaDetalj}
@@ -193,37 +188,10 @@ const Leaderboard: NextPage = () => {
     )
 }
 
-function LigaBanner({ liga, megId }: { liga: LeagueDetail; megId?: string }) {
-    const { data: megselv } = UseUser()
-    const { t } = useLanguage()
-    const megSelv = liga.members.find((m) => m.user_id === megId)
-    const harBetalt = megSelv?.paid ?? false
-
+function LigaBanner({ liga }: { liga: LeagueDetail }) {
     return (
         <div className="bp-card">
-            <div className="flex items-center justify-between gap-3">
-                <h1 className="text-lg font-bold text-stone-900">{liga.name}</h1>
-                <span className={classNames('shrink-0', harBetalt ? 'bp-chip-green' : 'bp-chip-gold')}>
-                    {harBetalt ? <Check className="h-3.5 w-3.5" /> : <Clock className="h-3.5 w-3.5" />}
-                    {harBetalt ? t.ledertavle.harBetalt : t.ledertavle.innbetalingMangler}
-                </span>
-            </div>
-            <p className="mt-0.5 text-xs text-stone-500">{tx(t.ledertavle.ligavert, { navn: liga.owner_name })}</p>
-
-            {liga.innsats != null && (
-                <p className="mt-2 flex items-center gap-1.5 text-sm font-medium text-stone-800">
-                    <Banknote className="h-4 w-4 text-stone-400" />
-                    {tx(t.ledertavle.innsats, { kr: liga.innsats })}
-                </p>
-            )}
-            {liga.betalingsinfo && (
-                <p className="mt-1 whitespace-pre-line text-sm text-stone-600">{liga.betalingsinfo}</p>
-            )}
-            {!harBetalt && liga.innsats != null && megselv && (
-                <div className="mt-3">
-                    <KopierNummerKnapp nummer="91865052" />
-                </div>
-            )}
+            <h1 className="text-lg font-bold text-stone-900">{liga.name}</h1>
         </div>
     )
 }
