@@ -228,7 +228,7 @@
         @apply bg-green-100 text-green-800;
     }
     .bp-chip-live {
-        @apply bg-red-100 text-red-700 px-1.5 text-[10px];
+        @apply bg-amber-100 text-amber-700 px-1.5 text-[10px];
     }
 
     /* Tabulære tall — bruk på score, poeng, leaderboard */
