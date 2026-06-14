@@ -73,7 +73,7 @@ function Layout({ children }: { children: React.ReactNode }) {
         <>
             {erTestAuth() && <TestUserSwitcher />}
             {erTestAuth() && <TestClock />}
-            <div className="px-2 pt-4 pb-[calc(4rem+env(safe-area-inset-bottom))] mx-auto max-w-full sm:max-w-lg md:max-w-2xl">
+            <div className="px-2 pt-[calc(1rem+env(safe-area-inset-top))] pb-[calc(4rem+env(safe-area-inset-bottom))] mx-auto max-w-full sm:max-w-lg md:max-w-2xl">
                 {error && <p className="text-red-500 text-sm">Error useAuthState: {JSON.stringify(error)}</p>}
                 {loading && <LoadingScreen />}
                 {!loading && !user && !erTestAuth() && <SignInScreen />}
