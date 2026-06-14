@@ -13,7 +13,6 @@ import { UseLeagues } from '../queries/useLeagues'
 import { UseLeague } from '../queries/useLeague'
 import { useValgtLiga } from '../utils/useValgtLiga'
 import { LigaVelger } from '../components/LigaVelger'
-import { PremieKort } from '../components/PremieKort'
 import { Medalje } from '../components/ui/medalje'
 import { useLanguage } from '../i18n/LanguageContext'
 
@@ -127,12 +126,6 @@ const Leaderboard: NextPage = () => {
     return (
         <div className="space-y-4">
             {mineLigaer.length > 0 && <LigaVelger ligaer={ligaer} valgt={effektivLiga} onVelg={setValgtLiga} />}
-            {ligaDetalj && (
-                <PremieKort
-                    liga={ligaDetalj}
-                    antallMedlemmer={ligaDetalj.members.filter((m) => m.status === 'medlem').length}
-                />
-            )}
             {harPågående && (
                 <div className="flex justify-end">
                     <Switch checked={visPågående} onCheckedChange={setVisPågående} size="small">
