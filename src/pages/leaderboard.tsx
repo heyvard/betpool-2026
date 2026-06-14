@@ -14,7 +14,6 @@ import { UseLeague } from '../queries/useLeague'
 import { useValgtLiga } from '../utils/useValgtLiga'
 import { LigaVelger } from '../components/LigaVelger'
 import { PremieKort } from '../components/PremieKort'
-import { LeagueDetail } from '../types/league'
 import { Medalje } from '../components/ui/medalje'
 import { useLanguage } from '../i18n/LanguageContext'
 
@@ -128,7 +127,6 @@ const Leaderboard: NextPage = () => {
     return (
         <div className="space-y-4">
             {mineLigaer.length > 0 && <LigaVelger ligaer={ligaer} valgt={effektivLiga} onVelg={setValgtLiga} />}
-            {ligaDetalj && <LigaBanner liga={ligaDetalj} />}
             {ligaDetalj && (
                 <PremieKort
                     liga={ligaDetalj}
@@ -184,14 +182,6 @@ const Leaderboard: NextPage = () => {
                     ))}
                 </Table.Body>
             </Table>
-        </div>
-    )
-}
-
-function LigaBanner({ liga }: { liga: LeagueDetail }) {
-    return (
-        <div className="bp-card">
-            <h1 className="text-lg font-bold text-stone-900">{liga.name}</h1>
         </div>
     )
 }
