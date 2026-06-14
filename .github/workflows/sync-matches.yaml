@@ -11,4 +11,5 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Synk kampoppsett
-        run: curl -fsS -X POST "${{ secrets.APP_BASE_URL }}/api/cron/sync-matches" -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}"
+        run: |
+          curl -fsS -X POST "${{ secrets.APP_BASE_URL }}/api/cron/sync-matches" -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}"
