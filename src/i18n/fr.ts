@@ -86,7 +86,6 @@ const fr: Translations = {
         tippet: 'Parié',
         kickoff: "Coup d'envoi",
         slutt: 'Terminé',
-        venterPaaPoeng: 'en attente de points',
     },
     mineTips: {
         spilteKamper: 'Matchs joués',

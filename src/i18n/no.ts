@@ -82,7 +82,6 @@ const no = {
         tippet: 'Tippet',
         kickoff: 'Kickoff',
         slutt: 'Slutt',
-        venterPaaPoeng: 'venter på poeng',
     },
     mineTips: {
         spilteKamper: 'Spilte kamper',

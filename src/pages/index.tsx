@@ -253,7 +253,11 @@ function NesteKampSeksjon() {
                                                     </span>
                                                 </>
                                             )}
-                                            {pågår && <span className="text-red-700">· {t.hjem.venterPaaPoeng}</span>}
+                                            {pågår && scorer && (
+                                                <span className="animate-pulse font-semibold tabular-nums text-red-700">
+                                                    {scorer.poeng > 0 ? `+${scorer.poeng}` : scorer.poeng}
+                                                </span>
+                                            )}
                                         </p>
                                     )}
                                 </div>
