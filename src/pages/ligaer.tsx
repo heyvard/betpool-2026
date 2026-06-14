@@ -2,14 +2,15 @@ import type { NextPage } from 'next'
 import React, { useState } from 'react'
 import { useRouter } from 'next/router'
 import NextLink from 'next/link'
-import { Link2, Mail, Plus, Users } from 'lucide-react'
+import { Mail, Plus, Search, Users, X } from 'lucide-react'
 
 import { Spinner } from '../components/loading/Spinner'
 import { UseLeagues } from '../queries/useLeagues'
 import { UseUser } from '../queries/useUser'
 import { UseCreateLeague } from '../queries/mutateLeague'
 import { UseRespondInvitation } from '../queries/mutateLeagueMember'
-import { LeagueSummary } from '../types/league'
+import { UseInvitableUsers } from '../queries/useInvitableUsers'
+import { InvitableUser, LeagueSummary } from '../types/league'
 import { LinkPanel } from '@/components/ui/link-panel'
 import { Button } from '@/components/ui/button'
 import { Switch } from '@/components/ui/switch'
@@ -20,6 +21,7 @@ import { useLanguage } from '../i18n/LanguageContext'
 import { tx } from '../i18n/interpolate'
 import { UseHovedliga } from '../queries/useHovedliga'
 import { UseMutateHovedliga } from '../queries/mutateHovedliga'
+import { useAuthedFetch } from '../auth/authedFetch'
 
 const Ligaer: NextPage = () => {
     const { data: ligaer } = UseLeagues()
@@ -37,11 +39,6 @@ const Ligaer: NextPage = () => {
         <div className="space-y-6">
             <h1 className="text-2xl font-bold text-stone-900">{t.ligaer.tittel}</h1>
             <p className="-mt-4 text-sm text-stone-500">{t.ligaer.beskrivelse}</p>
-
-            <div className="flex items-start gap-3 rounded-xl bg-amber-50 px-4 py-3.5 ring-1 ring-amber-200">
-                <Link2 className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" />
-                <p className="text-sm leading-relaxed text-amber-900">{t.ligaer.slikInviterer}</p>
-            </div>
 
             <HovedligaKort iHovedliga={megselv.i_hovedliga} />
 
@@ -153,10 +150,12 @@ function NyLigaSkjema() {
     const router = useRouter()
     const { mutate, isPending, error } = UseCreateLeague()
     const { t } = useLanguage()
+    const authedFetch = useAuthedFetch()
     const [navn, setNavn] = useState('')
     const [innsats, setInnsats] = useState('')
     const [betalingsinfo, setBetalingsinfo] = useState('')
     const [prosenter, setProsenter] = useState<ProsentState>({ forste: '', andre: '', tredje: '' })
+    const [valgtePersoner, setValgtePersoner] = useState<InvitableUser[]>([])
 
     const summer =
         (parseInt(prosenter.forste, 10) || 0) +
@@ -176,7 +175,19 @@ function NyLigaSkjema() {
                 premie_andre_prosent: parseInt(prosenter.andre, 10) || 0,
                 premie_tredje_prosent: parseInt(prosenter.tredje, 10) || 0,
             },
-            { onSuccess: (data) => router.push('/ligaer/' + data.id) },
+            {
+                onSuccess: async (data) => {
+                    await Promise.all(
+                        valgtePersoner.map((p) =>
+                            authedFetch(`/api/v1/leagues/${data.id}/members`, {
+                                method: 'POST',
+                                body: JSON.stringify({ user_id: p.id, status: 'medlem' }),
+                            }),
+                        ),
+                    )
+                    router.push('/ligaer/' + data.id)
+                },
+            },
         )
     }
 
@@ -221,6 +232,7 @@ function NyLigaSkjema() {
                     verdier={prosenter}
                     onChange={(felt, verdi) => setProsenter((p) => ({ ...p, [felt]: verdi }))}
                 />
+                <BrukerVelger valgte={valgtePersoner} onChange={setValgtePersoner} />
                 {error && <p className="text-sm text-red-600">{error.message}</p>}
                 <Button
                     type="submit"
@@ -233,5 +245,97 @@ function NyLigaSkjema() {
                 </Button>
             </form>
         </section>
+    )
+}
+
+function BrukerVelger({ valgte, onChange }: { valgte: InvitableUser[]; onChange: (v: InvitableUser[]) => void }) {
+    const { t } = useLanguage()
+    const { data: brukere } = UseInvitableUsers()
+    const [sok, setSok] = useState('')
+
+    const valgteIder = new Set(valgte.map((p) => p.id))
+
+    const filtrert = (brukere ?? []).filter(
+        (b) => !valgteIder.has(b.id) && b.name.toLowerCase().includes(sok.toLowerCase()),
+    )
+
+    const leggTil = (bruker: InvitableUser) => {
+        onChange([...valgte, bruker])
+        setSok('')
+    }
+
+    const fjern = (id: string) => onChange(valgte.filter((p) => p.id !== id))
+
+    return (
+        <div className="flex flex-col gap-2">
+            <label className="text-sm font-medium text-stone-700">{t.ligaer.inviterPersoner}</label>
+            <p className="text-xs text-stone-500">{t.ligaer.inviterPersonerBeskrivelse}</p>
+
+            {valgte.length > 0 && (
+                <div className="flex flex-wrap gap-1.5">
+                    {valgte.map((p) => (
+                        <span
+                            key={p.id}
+                            className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2.5 py-1 text-xs font-medium text-amber-900"
+                        >
+                            {p.name}
+                            <button
+                                type="button"
+                                onClick={() => fjern(p.id)}
+                                aria-label={tx(t.ligaer.fjernValgt, { navn: p.name })}
+                                className="rounded-full text-amber-700 hover:text-amber-900"
+                            >
+                                <X className="h-3 w-3" />
+                            </button>
+                        </span>
+                    ))}
+                </div>
+            )}
+
+            <div className="relative">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-stone-400" />
+                <input
+                    type="text"
+                    value={sok}
+                    onChange={(e) => setSok(e.target.value)}
+                    placeholder={t.ligaer.sokBruker}
+                    className={cn(
+                        'w-full rounded-lg border border-stone-300 bg-white py-2 pl-9 pr-3 text-sm outline-hidden transition-shadow',
+                        'placeholder:text-stone-400 focus:border-amber-500 focus:ring-2 focus:ring-amber-400',
+                    )}
+                />
+            </div>
+
+            {sok.trim() !== '' && (
+                <div className="max-h-48 overflow-y-auto rounded-lg border border-stone-200 bg-white shadow-sm">
+                    {filtrert.length === 0 ? (
+                        <p className="px-3 py-2 text-sm text-stone-400">{t.ligaer.ingenBrukere}</p>
+                    ) : (
+                        filtrert.map((b) => (
+                            <button
+                                key={b.id}
+                                type="button"
+                                onClick={() => leggTil(b)}
+                                className="flex w-full items-center gap-3 px-3 py-2 text-left text-sm hover:bg-amber-50"
+                            >
+                                {b.picture ? (
+                                    // eslint-disable-next-line @next/next/no-img-element
+                                    <img
+                                        src={b.picture}
+                                        alt=""
+                                        className="h-7 w-7 shrink-0 rounded-full object-cover"
+                                    />
+                                ) : (
+                                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-stone-100 text-xs font-semibold text-stone-500">
+                                        {b.name.charAt(0).toUpperCase()}
+                                    </span>
+                                )}
+                                <span className="truncate font-medium text-stone-900">{b.name}</span>
+                            </button>
+                        ))
+                    )}
+                </div>
+            )}
+        </div>
     )
 }
