@@ -1,4 +1,4 @@
-import { Match } from '../../types/types'
+import { Match, MatchStatus } from '../../types/types'
 import dayjs from 'dayjs'
 import React, { useEffect, useState } from 'react'
 import { hentFlag, hentNorsk } from '../../utils/lag'
@@ -60,9 +60,16 @@ export const MatchView = ({ match }: { match: Match }) => {
     const erEkstraTid = ad?.synced_duration && ad.synced_duration !== 'REGULAR' && ad.synced_home_et !== null
     const erStraffer = ad?.synced_duration === 'PENALTY_SHOOTOUT' && ad.synced_home_pen !== null
 
+    const status = statusVisning(match.status)
+
     return (
         <BpCard testId={`kamp-${match.match_num}`}>
-            <BodyShort spacing>{rundeTilTekst(match.round)}</BodyShort>
+            <div className="flex items-center justify-between gap-2 mb-2">
+                <BodyShort>{rundeTilTekst(match.round)}</BodyShort>
+                <span className={status.chip} data-testid={`status-${match.match_num}`}>
+                    {status.tekst}
+                </span>
+            </div>
 
             <div className="flex items-center gap-2 mb-3">
                 <BodyShort className="font-bold text-xl flex-1">{fixLand(match.home_team)}</BodyShort>
@@ -260,4 +267,30 @@ export const MatchView = ({ match }: { match: Match }) => {
 
 export function fixLand(s: string): string {
     return hentFlag(s) + ' ' + hentNorsk(s)
+}
+
+// Kampstatusen vi har lagret fra football-data-synken, vist som chip slik at
+// scoreadmin ser om kampen er ferdig, pågår eller fortsatt venter — nyttig når
+// man vurderer om en synket score kan stoles på.
+function statusVisning(status: MatchStatus): { tekst: string; chip: string } {
+    switch (status) {
+        case 'IN_PLAY':
+            return { tekst: 'Pågår', chip: 'bp-chip-live' }
+        case 'PAUSED':
+            return { tekst: 'Pause', chip: 'bp-chip-live' }
+        case 'FINISHED':
+            return { tekst: 'Ferdig', chip: 'bp-chip-green' }
+        case 'AWARDED':
+            return { tekst: 'Avgjort', chip: 'bp-chip-green' }
+        case 'SCHEDULED':
+            return { tekst: 'Planlagt', chip: 'bp-chip-blue' }
+        case 'TIMED':
+            return { tekst: 'Ikke startet', chip: 'bp-chip-blue' }
+        case 'SUSPENDED':
+            return { tekst: 'Avbrutt', chip: 'bp-chip-gold' }
+        case 'POSTPONED':
+            return { tekst: 'Utsatt', chip: 'bp-chip-gold' }
+        case 'CANCELLED':
+            return { tekst: 'Avlyst', chip: 'bp-chip-gold' }
+    }
 }
