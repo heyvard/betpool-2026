@@ -73,7 +73,7 @@ function Layout({ children }: { children: React.ReactNode }) {
         <>
             {erTestAuth() && <TestUserSwitcher />}
             {erTestAuth() && <TestClock />}
-            <div className="px-2 pt-4 pb-16 mx-auto max-w-full sm:max-w-lg md:max-w-2xl">
+            <div className="px-2 pt-4 pb-[calc(4rem+env(safe-area-inset-bottom))] mx-auto max-w-full sm:max-w-lg md:max-w-2xl">
                 {error && <p className="text-red-500 text-sm">Error useAuthState: {JSON.stringify(error)}</p>}
                 {loading && <LoadingScreen />}
                 {!loading && !user && !erTestAuth() && <SignInScreen />}
@@ -87,7 +87,11 @@ function Layout({ children }: { children: React.ReactNode }) {
                 <Onboarding onFerdig={() => queryClient.invalidateQueries({ queryKey: ['user-me'] })} />
             )}
 
-            <nav className="fixed bottom-0 left-0 z-50 w-full h-16 flex bg-stone-900 text-stone-300 border-t border-stone-800 shadow-[0_-2px_12px_rgba(0,0,0,0.08)]">
+            {/* iOS Safari maler ikke `position: fixed`-elementer på nytt under
+                treghetsscroll – baren «løsner» og flyter opp i innholdet. Å løfte
+                den til et eget GPU-lag (translateZ/will-change) holder den pinnet.
+                `min-h-16` + safe-area-padding holder den klar av home-indikatoren. */}
+            <nav className="fixed bottom-0 left-0 z-50 w-full min-h-16 flex bg-stone-900 text-stone-300 border-t border-stone-800 shadow-[0_-2px_12px_rgba(0,0,0,0.08)] pb-[env(safe-area-inset-bottom)] [transform:translateZ(0)] [-webkit-backface-visibility:hidden] [backface-visibility:hidden] [will-change:transform]">
                 <NavKnapp url="/" text={t.nav.hjem} icon={<House className="w-5 h-5" />} />
                 <NavKnapp url="/my-bets" text={t.nav.tipp} icon={<ListChecks className="w-5 h-5" />} />
                 <NavKnapp url="/leaderboard" text={t.nav.resultater} icon={<ListOrdered className="w-5 h-5" />} />
@@ -259,6 +263,9 @@ function MyApp({ Component, pageProps }: AppProps) {
         <>
             <Head>
                 <title>Betpool 2026</title>
+                {/* viewport-fit=cover trengs for at env(safe-area-inset-*) skal gi
+                    faktiske verdier på iPhone (ellers er de alltid 0). */}
+                <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
                 <meta name="apple-mobile-web-app-capable" content="yes" />
                 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
                 <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
