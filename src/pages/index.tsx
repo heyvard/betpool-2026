@@ -6,10 +6,11 @@ import React, { useState } from 'react'
 import { getLagSortert, hentFlag, hentNavn } from '../utils/lag'
 import { UseMatches } from '../queries/useMatches'
 import { UseMyBets } from '../queries/useMyBets'
+import { MatchBetMedScore, UseAllBets } from '../queries/useAllBets'
 import dayjs from 'dayjs'
 import NextLink from 'next/link'
 import { useAuthedFetch } from '../auth/authedFetch'
-import { Check, ChevronRight, Clock, Goal, Lock, Trophy, TriangleAlert } from 'lucide-react'
+import { Check, CheckCheck, ChevronRight, Clock, Goal, Lock, Target, Trophy, TriangleAlert, X } from 'lucide-react'
 import { useQueryClient } from '@tanstack/react-query'
 import { useDebouncedCallback } from 'use-debounce'
 import nb from 'dayjs/locale/nb'
@@ -100,10 +101,21 @@ const Home: NextPage = () => {
 
 function NesteKampSeksjon() {
     const { data: bets } = UseMyBets()
+    const { data: alleBets } = UseAllBets()
+    const { data: megselv } = UseUser()
     const { t, locale } = useLanguage()
     const dayjsLocale = locale === 'fr' ? fr : nb
 
     if (!bets) return null
+
+    const mineBetsMedScore = new Map<number, MatchBetMedScore>()
+    if (alleBets && megselv) {
+        for (const bet of alleBets.bets) {
+            if (bet.user_id === megselv.id) {
+                mineBetsMedScore.set(bet.match_num, bet)
+            }
+        }
+    }
 
     // Kamper starter 18:00–06:00 Oslo-tid. Skift 10 timer bakover slik at
     // grensen mellom kampdag og neste kampdag blir kl. 10:00 (morgen) i stedet
@@ -181,49 +193,109 @@ function NesteKampSeksjon() {
                     const tippet = b.home_score != null && b.away_score != null
                     const startet = dayjs(b.game_start).isBefore(nå())
                     const ferdig = erKampFerdig(b.status)
+                    const pågår = startet && !ferdig
+                    const scorer = mineBetsMedScore.get(b.match_num)
+
+                    let stripeKlasse: string
+                    if (pågår) {
+                        stripeKlasse = 'bg-red-500'
+                    } else if (ferdig) {
+                        if (scorer?.riktigResultat) stripeKlasse = 'bg-emerald-500'
+                        else if (scorer?.riktigUtfall) stripeKlasse = 'bg-amber-500'
+                        else stripeKlasse = 'bg-stone-300'
+                    } else {
+                        stripeKlasse = 'bg-amber-200'
+                    }
+
+                    let verdiktIkon: React.ReactNode = null
+                    let poengFarge = 'text-stone-500'
+                    if (ferdig && scorer) {
+                        if (scorer.riktigResultat) {
+                            verdiktIkon = <CheckCheck className="h-3 w-3 text-emerald-700" />
+                            poengFarge = 'text-emerald-700'
+                        } else if (scorer.riktigUtfall) {
+                            verdiktIkon = <Target className="h-3 w-3 text-amber-700" />
+                            poengFarge = 'text-amber-700'
+                        } else {
+                            verdiktIkon = <X className="h-3 w-3 text-stone-500" />
+                        }
+                    }
+
                     return (
                         <NextLink
                             key={b.match_num}
                             href={startet ? '/match/' + b.match_num : '/my-bets'}
-                            className="flex items-center gap-3 border-b border-stone-100 px-4 py-2.5 last:border-b-0 hover:bg-stone-50 transition-colors"
+                            className="flex items-stretch border-b border-stone-100 last:border-b-0 transition-colors hover:bg-stone-50"
                         >
-                            <span className="w-9 shrink-0 text-[11px] font-bold tabular-nums text-stone-400">
-                                {dayjs(b.game_start).format('HH:mm')}
-                            </span>
-                            <span
-                                className={cn(
-                                    'min-w-0 flex-1 truncate text-xs font-semibold',
-                                    startet ? 'text-stone-500' : 'text-stone-900',
-                                )}
-                            >
-                                {hentFlag(b.home_team)} {hentNavn(b.home_team, locale)} – {hentFlag(b.away_team)}{' '}
-                                {hentNavn(b.away_team, locale)}
-                            </span>
-                            {startet &&
-                                (ferdig ? (
-                                    <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-stone-100 px-1.5 py-0.5 text-[10px] font-bold text-stone-500 ring-1 ring-stone-200">
-                                        <Lock className="h-2.5 w-2.5" /> {t.hjem.ferdig}
-                                    </span>
-                                ) : (
-                                    <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-red-50 px-1.5 py-0.5 text-[10px] font-bold text-red-700 ring-1 ring-red-200">
-                                        <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-red-600" />{' '}
-                                        {t.hjem.paagaar}
-                                    </span>
-                                ))}
-                            {tippet ? (
-                                <span
-                                    className={cn(
-                                        'shrink-0 rounded-md px-1.5 py-0.5 text-[11px] font-bold tabular-nums',
-                                        startet ? 'bg-stone-100 text-stone-600' : 'bg-emerald-50 text-emerald-700',
-                                    )}
-                                >
-                                    {b.home_score}–{b.away_score}
+                            <span aria-hidden className={cn('w-[3px] shrink-0 rounded-r', stripeKlasse)} />
+                            <div className="flex min-w-0 flex-1 items-center gap-2 px-3 py-2.5">
+                                <span className="w-8 shrink-0 font-mono text-[11px] tabular-nums text-stone-400">
+                                    {dayjs(b.game_start).format('HH:mm')}
                                 </span>
-                            ) : startet ? (
-                                <span className="shrink-0 text-[11px] font-bold text-stone-400">–</span>
-                            ) : (
-                                <span className="h-4 w-4 shrink-0 rounded border-[1.5px] border-dashed border-stone-300" />
-                            )}
+                                <div className="min-w-0 flex-1">
+                                    <p className="truncate text-[13px] font-bold text-stone-900">
+                                        {hentFlag(b.home_team)} {hentNavn(b.home_team, locale)} –{' '}
+                                        {hentFlag(b.away_team)} {hentNavn(b.away_team, locale)}
+                                    </p>
+                                    {tippet && (
+                                        <p className="mt-1 flex items-center gap-1.5 text-[11px]">
+                                            <span className="text-stone-500">
+                                                {t.hjem.tippet}{' '}
+                                                <span className="font-semibold tabular-nums text-stone-600">
+                                                    {b.home_score}–{b.away_score}
+                                                </span>
+                                            </span>
+                                            {ferdig && scorer && (
+                                                <>
+                                                    {verdiktIkon}
+                                                    <span className={cn('font-semibold tabular-nums', poengFarge)}>
+                                                        {scorer.poeng > 0 ? `+${scorer.poeng}` : scorer.poeng}
+                                                    </span>
+                                                </>
+                                            )}
+                                            {pågår && <span className="text-red-700">· {t.hjem.venterPaaPoeng}</span>}
+                                        </p>
+                                    )}
+                                </div>
+                                <div className="flex min-w-14 shrink-0 flex-col items-end">
+                                    {!startet && (
+                                        <>
+                                            <span className="bp-tabular text-[15px] font-extrabold leading-none text-stone-400">
+                                                {dayjs(b.game_start).format('HH:mm')}
+                                            </span>
+                                            <span className="text-[9px] font-bold uppercase tracking-widest text-stone-400">
+                                                {t.hjem.kickoff}
+                                            </span>
+                                        </>
+                                    )}
+                                    {pågår && (
+                                        <>
+                                            <span className="bp-tabular text-[22px] font-extrabold leading-none text-red-700">
+                                                {scorer ? `${scorer.home_result}–${scorer.away_result}` : '–'}
+                                            </span>
+                                            <span className="mt-0.5 flex items-center gap-1 text-[9px] font-extrabold uppercase text-red-700">
+                                                <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-red-600" />
+                                                {t.hjem.paagaar}
+                                            </span>
+                                        </>
+                                    )}
+                                    {ferdig && (
+                                        <>
+                                            <span
+                                                className={cn(
+                                                    'bp-tabular text-[22px] font-extrabold leading-none',
+                                                    scorer?.riktigResultat ? 'text-emerald-700' : 'text-stone-900',
+                                                )}
+                                            >
+                                                {scorer ? `${scorer.home_result}–${scorer.away_result}` : '–'}
+                                            </span>
+                                            <span className="text-[9px] font-bold uppercase tracking-widest text-stone-400">
+                                                {t.hjem.slutt}
+                                            </span>
+                                        </>
+                                    )}
+                                </div>
+                            </div>
                         </NextLink>
                     )
                 })}

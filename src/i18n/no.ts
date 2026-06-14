@@ -79,6 +79,10 @@ const no = {
         bekreftEndringVinner: 'Er du sikker? Du kan bare endre én gang, og poengene for vinner-tipset halveres.',
         bekreftEndringTopps: 'Er du sikker? Du kan bare endre én gang, og poengene for toppscorer-tipset halveres.',
         lagreEndring: 'Lagre endring',
+        tippet: 'Tippet',
+        kickoff: 'Kickoff',
+        slutt: 'Slutt',
+        venterPaaPoeng: 'venter på poeng',
     },
     mineTips: {
         spilteKamper: 'Spilte kamper',
