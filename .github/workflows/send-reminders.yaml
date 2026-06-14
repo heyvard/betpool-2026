@@ -1,0 +1,15 @@
+name: Send påminnelser om utippede kamper
+
+on:
+  schedule:
+    - cron: '0 10,15 * * *'
+  workflow_dispatch:
+
+jobs:
+  send:
+    name: POST /api/cron/send-evening-reminders
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send påminnelser
+        run: |
+          curl -fsS -X POST "${{ secrets.APP_BASE_URL }}/api/cron/send-evening-reminders" -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}"
