@@ -138,16 +138,19 @@ function SpillerRad({ bet }: { bet: BetMedBruker }) {
             </span>
             <div className="flex items-center gap-[6px] shrink-0">
                 <StatusBadge status={status} />
-                {(status === 'traff' || status === 'bom') && (
-                    <span
-                        className={cn(
-                            'bp-tabular text-[13px] font-extrabold',
-                            status === 'traff' ? 'text-emerald-700' : 'text-stone-400',
-                        )}
-                    >
-                        {status === 'traff' ? `+${bet.poeng}p` : '+0p'}
-                    </span>
-                )}
+                {status === 'traff' &&
+                    (() => {
+                        const base = Math.round(bet.poeng / 2)
+                        return (
+                            <span className="flex items-center gap-[3px] bp-tabular text-[13px] font-extrabold text-emerald-700">
+                                <span className="text-stone-400 font-semibold">+{base}p</span>
+                                <span className="text-stone-300 font-normal">+</span>
+                                <Zap className="w-[11px] h-[11px] text-amber-400 fill-amber-400 shrink-0" />
+                                <span>+{base}p</span>
+                            </span>
+                        )
+                    })()}
+                {status === 'bom' && <span className="bp-tabular text-[13px] font-extrabold text-stone-400">+0p</span>}
             </div>
         </Link>
     )
