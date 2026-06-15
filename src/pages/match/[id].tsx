@@ -51,12 +51,14 @@ function initials(name: string): string {
 function MatchHero({
     match,
     isLive,
+    isPågår,
     isFinished,
     locale,
     t,
 }: {
     match: MatchBetMedScore
     isLive: boolean
+    isPågår: boolean
     isFinished: boolean
     locale: 'no' | 'fr'
     t: Translations
@@ -82,7 +84,7 @@ function MatchHero({
                     <span className="text-[11px] font-bold uppercase tracking-[0.18em] text-white/60">
                         {rundeTilTekst(match.round, locale)}
                     </span>
-                    {isLive ? (
+                    {isPågår ? (
                         <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-red-600 text-white text-[11px] font-bold uppercase tracking-wide">
                             <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
                             {t.hjem.paagaar}
@@ -135,7 +137,10 @@ function MatchHero({
 
             {/* Bottom accent stripe */}
             <div
-                className={cn('h-[3px] w-full', isLive ? 'bg-red-600' : isFinished ? 'bg-amber-500' : 'bg-transparent')}
+                className={cn(
+                    'h-[3px] w-full',
+                    isPågår ? 'bg-red-600' : isFinished ? 'bg-amber-500' : 'bg-transparent',
+                )}
             />
         </div>
     )
@@ -146,13 +151,13 @@ function MatchHero({
 function BetDistribution({
     match,
     myBet,
-    isLive,
+    isPågår,
     isFinished,
     t,
 }: {
     match: MatchBetMedScore
     myBet: BetWithUser | null
-    isLive: boolean
+    isPågår: boolean
     isFinished: boolean
     t: Translations
 }) {
@@ -318,7 +323,7 @@ function BetDistribution({
 
             {/* Footer summary */}
             <div className="border-t border-stone-100 pt-3">
-                {isLive ? (
+                {isPågår ? (
                     <p className="text-xs text-stone-500">{t.spilteKamper.poengBeregnesNaarFerdig}</p>
                 ) : isFinished ? (
                     <div className="flex flex-wrap items-center gap-2">
@@ -610,6 +615,7 @@ const MatchPage: NextPage = () => {
     const isLive = match.foreløpig === true
     const hasResult = match.matchpoeng.utfall !== null
     const isFinished = hasResult && !isLive
+    const isPågår = isLive || (!hasResult && new Date(match.game_start) <= new Date())
 
     const betsWithUser: BetWithUser[] = matchBets.map((a) => ({
         ...a,
@@ -621,8 +627,8 @@ const MatchPage: NextPage = () => {
 
     return (
         <div className="flex flex-col gap-3 pb-8">
-            <MatchHero match={match} isLive={isLive} isFinished={isFinished} locale={locale} t={t} />
-            <BetDistribution match={match} myBet={myBet} isLive={isLive} isFinished={isFinished} t={t} />
+            <MatchHero match={match} isLive={isLive} isPågår={isPågår} isFinished={isFinished} locale={locale} t={t} />
+            <BetDistribution match={match} myBet={myBet} isPågår={isPågår} isFinished={isFinished} t={t} />
             {myBet && <MyBetCard bet={myBet} isLive={isLive} isFinished={isFinished} locale={locale} t={t} />}
             <AllBetsList
                 bets={otherBets}
