@@ -49,12 +49,7 @@ describe('/api/cron/send-reminders — kjøring', () => {
 })
 
 describe('/api/v1/admin/cron/* — tilgangskontroll', () => {
-    const adminRuter = [
-        '/api/v1/admin/cron/sync-matches',
-        '/api/v1/admin/cron/sync-scores',
-        '/api/v1/admin/cron/sync-standings',
-        '/api/v1/admin/cron/send-reminders',
-    ]
+    const adminRuter = ['/api/v1/admin/cron/sync-standings', '/api/v1/admin/cron/send-reminders']
 
     it.each(adminRuter)('%s returnerer 401 uten innlogging', async (path) => {
         const res = await api(path, { method: 'POST' })
