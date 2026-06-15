@@ -46,8 +46,7 @@ function FasitBlokk({ bet }: { bet: MatchBetMedScore }) {
     if (bet.foreløpig) {
         return (
             <div className="flex justify-center">
-                <span className={cn(base, 'bg-[#dc2626] text-white gap-1')}>
-                    <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse shrink-0" />
+                <span className={cn(base, 'bg-[#dc2626] text-white')}>
                     {bet.home_result}–{bet.away_result}
                 </span>
             </div>
@@ -77,8 +76,7 @@ function TippBlokk({ bet, verdikt }: { bet: MatchBetMedScore; verdikt: Verdikt }
     if (bet.foreløpig) {
         return (
             <div className="flex justify-center">
-                <span className={cn(base, 'bg-[#f5f5f4] text-[#57534e] gap-1')}>
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#dc2626] animate-pulse shrink-0" />
+                <span className={cn(base, 'bg-[#f5f5f4] text-[#dc2626]')}>
                     {bet.home_score}–{bet.away_score}
                 </span>
             </div>
