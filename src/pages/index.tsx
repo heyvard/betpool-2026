@@ -325,8 +325,16 @@ function NesteKampSeksjon() {
         )
     }
 
-    const nesteKampDag = iVinduet.length > 0 ? denneDagen : kampDag(dayjs(kommende[0].game_start))
-    const kildeListe = iVinduet.length > 0 ? iVinduet : kommende
+    // Inneværende kampdag er bare «primær» så lenge den fortsatt har kamper som
+    // ikke har startet. En ferdigspilt natt (06:00–10:00, før kampdag-grensen kl.
+    // 10:00) skal ikke stå som «Neste kampdag» – da viser vi neste fremtidige
+    // kampdag i stedet, og natten flyttes til «Natten som var»-seksjonen under.
+    const denneDagenHarKommende = iVinduet.some((b) => dayjs(b.game_start).isAfter(nå()))
+    // Når turneringen er ferdig (ingen fremtidige kamper) beholder vi inneværende
+    // kampdag, både for å unngå `kommende[0]` på tom liste og for å vise siste dag.
+    const brukDenneDagen = denneDagenHarKommende || kommende.length === 0
+    const nesteKampDag = brukDenneDagen ? denneDagen : kampDag(dayjs(kommende[0].game_start))
+    const kildeListe = brukDenneDagen ? iVinduet : kommende
     const kampene = kildeListe.filter((b) => kampDag(dayjs(b.game_start)).isSame(nesteKampDag, 'day'))
 
     const manglerTips = kampene.filter(
@@ -364,7 +372,10 @@ function NesteKampSeksjon() {
                 forrigeKampene = bets
                     .filter((b) => kampDag(dayjs(b.game_start)).isSame(sisteDag, 'day'))
                     .sort((a, b) => dayjs(a.game_start).valueOf() - dayjs(b.game_start).valueOf())
-                const erIGaar = sisteDag.isSame(kampDag(nå()).subtract(1, 'day'), 'day')
+                // Natt-kampene tilhører gårsdagens kalenderdato. Sammenlign mot
+                // kalender-i-går, ikke kampDag(nå) som før 10:00 fortsatt peker på
+                // selve natten (og dermed feilaktig droppet «I går»-etiketten).
+                const erIGaar = sisteDag.isSame(nå().subtract(1, 'day').startOf('day'), 'day')
                 forrigeDatoEtikett = erIGaar
                     ? locale === 'fr'
                         ? 'Hier'
