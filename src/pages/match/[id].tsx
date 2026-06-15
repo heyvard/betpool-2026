@@ -403,9 +403,9 @@ function MyBetCard({
                     </span>
                 </div>
                 {isLive ? (
-                    <span className="inline-flex items-center gap-1.5 rounded-full bg-white px-2.5 py-1 text-xs font-semibold text-red-600 ring-1 ring-stone-200">
-                        <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
-                        {t.spilteKamper.venter}
+                    <span className="bp-tabular inline-flex items-center gap-1.5 rounded-full bg-white px-2.5 py-1 text-xs font-semibold text-stone-700 ring-1 ring-stone-200">
+                        <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse flex-shrink-0" />
+                        {bet.poeng > 0 ? `+${bet.poeng}` : '0'} {t.felles.poeng}
                     </span>
                 ) : isFinished ? (
                     <span className="bp-tabular inline-flex items-center gap-1 rounded-full bg-white px-2.5 py-1 text-xs font-semibold text-stone-700 ring-1 ring-stone-200">
@@ -457,19 +457,16 @@ function MyBetCard({
 // ---------- BetRow ----------
 
 function BetPoengPill({ bet, isLive, isFinished }: { bet: BetWithUser; isLive: boolean; isFinished: boolean }) {
-    if (isLive) {
-        return (
-            <span className="flex items-center gap-1 shrink-0">
-                <span className="w-2 h-2 rounded-full bg-stone-300 animate-pulse" />
-                <span className="bp-tabular text-xs text-stone-400 w-10 text-center">–</span>
-            </span>
-        )
-    }
-    if (!isFinished) return null
+    if (!isLive && !isFinished) return null
+
     if (bet.riktigResultat) {
         return (
             <span className="bp-tabular inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-1 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-200 w-16 justify-center shrink-0">
-                <CheckCheck className="w-3 h-3" />
+                {isLive ? (
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse flex-shrink-0" />
+                ) : (
+                    <CheckCheck className="w-3 h-3" />
+                )}
                 {bet.poeng > 0 ? `+${bet.poeng}` : '0'}
             </span>
         )
@@ -477,14 +474,23 @@ function BetPoengPill({ bet, isLive, isFinished }: { bet: BetWithUser; isLive: b
     if (bet.riktigUtfall) {
         return (
             <span className="bp-tabular inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-1 text-xs font-semibold text-amber-700 ring-1 ring-amber-200 w-16 justify-center shrink-0">
-                <Target className="w-3 h-3" />
+                {isLive ? (
+                    <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse flex-shrink-0" />
+                ) : (
+                    <Target className="w-3 h-3" />
+                )}
                 {bet.poeng > 0 ? `+${bet.poeng}` : '0'}
             </span>
         )
     }
     return (
         <span className="bp-tabular inline-flex items-center gap-1 rounded-full bg-stone-50 px-2 py-1 text-xs font-semibold text-stone-500 ring-1 ring-stone-200 w-16 justify-center shrink-0">
-            <X className="w-3 h-3" />0
+            {isLive ? (
+                <span className="w-1.5 h-1.5 rounded-full bg-stone-400 animate-pulse flex-shrink-0" />
+            ) : (
+                <X className="w-3 h-3" />
+            )}
+            {bet.poeng > 0 ? `+${bet.poeng}` : '0'}
         </span>
     )
 }
@@ -532,7 +538,7 @@ function AllBetsList({
     locale: 'no' | 'fr'
     t: Translations
 }) {
-    const [sortOrder, setSortOrder] = useState<SortOrder>(isFinished ? 'poeng' : 'navn')
+    const [sortOrder, setSortOrder] = useState<SortOrder>(isFinished || isLive ? 'poeng' : 'navn')
 
     const sorted = [...bets].sort((a, b) => {
         if (sortOrder === 'poeng') {
