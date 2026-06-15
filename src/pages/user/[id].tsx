@@ -10,11 +10,13 @@ import { BpCard } from '../../components/Card'
 import { Link } from '@/components/ui/typography'
 import { useLanguage } from '../../i18n/LanguageContext'
 import { RundeSeksjon, Legende } from '../../components/bet/PastBetView'
+import { UseUser } from '../../queries/useUser'
 
 const AVATAR_FARGER = ['bg-rose-400', 'bg-amber-400', 'bg-emerald-500', 'bg-blue-500', 'bg-violet-500']
 
 const Home: NextPage = () => {
     const { data, isLoading } = UseAllBets()
+    const { data: currentUser } = UseUser()
     const { t, locale } = useLanguage()
     const router = useRouter()
     const { id } = router.query
@@ -100,7 +102,13 @@ const Home: NextPage = () => {
 
             {/* Runder (nyeste først) */}
             {runder.map(([runde, bets]) => (
-                <RundeSeksjon key={runde} runde={runde} bets={bets} locale={locale} />
+                <RundeSeksjon
+                    key={runde}
+                    runde={runde}
+                    bets={bets}
+                    locale={locale}
+                    erEgenProfil={currentUser?.id === id}
+                />
             ))}
 
             {/* Legende */}

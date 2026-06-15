@@ -130,6 +130,7 @@ const fr: Translations = {
         seAllesBets: 'Voir les paris de tous',
         kolFasit: 'Résultat',
         kolDitt: 'Pari',
+        kolTipp: 'Pari',
         kolPoeng: 'P',
         poengTotalt: 'Points au total',
         kampIkkeFunnet: 'Aucun pari à afficher pour ce match pour le moment.',

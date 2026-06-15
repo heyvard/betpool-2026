@@ -153,10 +153,12 @@ export function RundeSeksjon({
     runde,
     bets,
     locale,
+    erEgenProfil = true,
 }: {
     runde: number
     bets: MatchBetMedScore[]
     locale: 'no' | 'fr'
+    erEgenProfil?: boolean
 }) {
     const { t } = useLanguage()
     const dayjsLocale = locale === 'fr' ? fr : nb
@@ -182,7 +184,7 @@ export function RundeSeksjon({
                         {t.spilteKamper.kolFasit}
                     </div>
                     <div className="text-[10px] font-bold tracking-[0.14em] uppercase text-[#a8a29e] text-center">
-                        {t.spilteKamper.kolDitt}
+                        {erEgenProfil ? t.spilteKamper.kolDitt : t.spilteKamper.kolTipp}
                     </div>
                     <div className="text-[10px] font-bold tracking-[0.14em] uppercase text-[#a8a29e] text-right">
                         {t.spilteKamper.kolPoeng}
