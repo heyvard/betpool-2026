@@ -2,12 +2,7 @@ import { useMutation } from '@tanstack/react-query'
 
 import { useAuthedFetch } from '../auth/authedFetch'
 
-export type CronJobb =
-    | 'sync'
-    | 'sync-standings'
-    | 'send-reminders'
-    | 'send-vm-start'
-    | 'send-evening-reminders'
+export type CronJobb = 'sync' | 'sync-standings' | 'send-reminders' | 'send-vm-start' | 'send-evening-reminders'
 
 export interface DryRunEndring {
     match_num: number

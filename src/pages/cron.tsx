@@ -121,8 +121,8 @@ function SyncKnapp() {
                 <div className="min-w-0">
                     <p className="text-sm font-medium text-stone-900">Synk kamper og resultater</p>
                     <p className="text-xs text-stone-500">
-                        Én fetch mot football-data.org — oppdaterer kampoppsett (tidspunkt, lag, runde) og live-scores
-                        i samme kjøring.
+                        Én fetch mot football-data.org — oppdaterer kampoppsett (tidspunkt, lag, runde) og live-scores i
+                        samme kjøring.
                     </p>
                 </div>
                 <div className="flex gap-2 shrink-0">

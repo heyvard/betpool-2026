@@ -53,8 +53,16 @@ interface FootballDataScoreResponse {
 // football-data.org og upserter synced_*-kolonner i match_scores.
 // Rører aldri home_score/away_score (manuell) eller use_manual (admin-switch).
 // Med dryRun=true gjøres ingen DB-skriving; returnerer rådata fra API + nåværende DB-tilstand.
-export async function syncScores(client: PoolClient, dryRun?: false, prefetched?: FootballDataMatch[]): Promise<SyncScoresResultat>
-export async function syncScores(client: PoolClient, dryRun: true, prefetched?: FootballDataMatch[]): Promise<DryRunSyncScoresResultat>
+export async function syncScores(
+    client: PoolClient,
+    dryRun?: false,
+    prefetched?: FootballDataMatch[],
+): Promise<SyncScoresResultat>
+export async function syncScores(
+    client: PoolClient,
+    dryRun: true,
+    prefetched?: FootballDataMatch[],
+): Promise<DryRunSyncScoresResultat>
 export async function syncScores(
     client: PoolClient,
     dryRun = false,
