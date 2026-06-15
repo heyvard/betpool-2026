@@ -9,7 +9,6 @@ import { LoadingScreen } from '../components/loading/LoadingScreen'
 import { nå } from '../utils/testClock'
 import { kanHaJoker } from '../data/matches'
 import { fixLand } from '../components/bet/BetView'
-import { hentFlag } from '../utils/lag'
 import { rundeTilTekst } from '../utils/rundeTilTekst'
 import { useLanguage } from '../i18n/LanguageContext'
 
@@ -298,8 +297,7 @@ const JokerbrukPage: NextPage = () => {
                                     {/* Kamp-header */}
                                     <div className="bg-white border-t border-stone-100 px-[18px] py-[8px] flex items-center justify-between">
                                         <span className="text-[12.5px] font-bold text-stone-700">
-                                            {hentFlag(rep.home_team)} {fixLand(rep.home_team, locale)} —{' '}
-                                            {fixLand(rep.away_team, locale)} {hentFlag(rep.away_team)}
+                                            {fixLand(rep.home_team, locale)} — {fixLand(rep.away_team, locale)}
                                         </span>
                                         {resultatNode}
                                     </div>
