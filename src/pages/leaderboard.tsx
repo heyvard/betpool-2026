@@ -1,14 +1,12 @@
 import type { NextPage } from 'next'
 import { useMemo, useState } from 'react'
+import classNames from 'classnames'
+import NextLink from 'next/link'
 
 import { Spinner } from '../components/loading/Spinner'
 import { UseAllBets } from '../queries/useAllBets'
-import NextLink from 'next/link'
 import { calculateLeaderboard, LeaderBoard } from '../components/results/calculateAllScores'
 import { calculateAllBetsExtended, filtrerAllBets } from '../components/results/calculateAllBetsExtended'
-import { Table } from '@/components/ui/table'
-import { Switch } from '@/components/ui/switch'
-import classNames from 'classnames'
 import { UseLeagues } from '../queries/useLeagues'
 import { UseLeague } from '../queries/useLeague'
 import { useValgtLiga } from '../utils/useValgtLiga'
@@ -16,18 +14,10 @@ import { LigaVelger } from '../components/LigaVelger'
 import { Medalje } from '../components/ui/medalje'
 import { useLanguage } from '../i18n/LanguageContext'
 
-function plassVisning(plass: number): React.ReactNode {
-    if (plass === 1 || plass === 2 || plass === 3) return <Medalje plass={plass} size={28} />
-    return <span className="bp-tabular text-sm font-semibold text-stone-600">{plass}</span>
-}
-
 function visningsnavn(navn: string): string {
     return navn.includes('@') ? navn.split('@')[0] : navn
 }
 
-// Stabil «tilfeldig» sorteringsnøkkel for en bruker, bestemt av en seed som
-// settes én gang per økt. Brukes når alle har 0 poeng, slik at rekkefølgen
-// ikke hopper rundt ved hver re-render.
 function ordningsverdi(seed: number, userid: string): number {
     let h = seed | 0
     for (let i = 0; i < userid.length; i++) {
@@ -36,23 +26,171 @@ function ordningsverdi(seed: number, userid: string): number {
     return h
 }
 
+interface AvatarProps {
+    src?: string | null
+    name?: string
+}
+
+const Avatar: React.FC<AvatarProps> = ({ src, name }) => (
+    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-stone-200">
+        {src ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={src} alt={name} className="h-10 w-10 rounded-full object-cover" />
+        ) : (
+            <span className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-500 text-base text-white">
+                {name ? name.charAt(0).toUpperCase() : ''}
+            </span>
+        )}
+    </div>
+)
+
+function LiveBryter({ visPågående, onChange }: { visPågående: boolean; onChange: (v: boolean) => void }) {
+    const { t } = useLanguage()
+    return (
+        <div
+            data-testid="live-bryter"
+            data-state={visPågående ? 'checked' : 'unchecked'}
+            className="flex items-center justify-between bg-white px-[18px] py-[11px]"
+            style={{ borderBottom: '1px solid #e7e5e4' }}
+        >
+            <div className="flex items-center gap-2">
+                <span className="inline-block h-[7px] w-[7px] shrink-0 rounded-full bg-red-600 animate-[ls-dot-pulse_1.8s_ease-in-out_infinite]" />
+                <span className="text-[12px] font-bold text-stone-600">
+                    {visPågående ? t.ledertavle.livePoengTeller : t.ledertavle.livePoengSkjult}
+                </span>
+            </div>
+            <div className="flex items-center rounded-full p-[3px]" style={{ background: '#f5f5f4' }}>
+                <button
+                    type="button"
+                    data-testid="live-bryter-paa"
+                    onClick={() => onChange(true)}
+                    style={{ minHeight: 28 }}
+                    className={classNames(
+                        'rounded-full px-3 text-[12px] font-bold transition-all',
+                        visPågående ? 'bg-white text-stone-900 shadow-[0_1px_2px_rgba(0,0,0,.08)]' : 'text-stone-500',
+                    )}
+                >
+                    {t.ledertavle.paa}
+                </button>
+                <button
+                    type="button"
+                    data-testid="live-bryter-av"
+                    onClick={() => onChange(false)}
+                    style={{ minHeight: 28 }}
+                    className={classNames(
+                        'rounded-full px-3 text-[12px] font-bold transition-all',
+                        !visPågående ? 'bg-white text-stone-900 shadow-[0_1px_2px_rgba(0,0,0,.08)]' : 'text-stone-500',
+                    )}
+                >
+                    {t.ledertavle.av}
+                </button>
+            </div>
+        </div>
+    )
+}
+
+interface LeaderboardRadProps {
+    row: LeaderBoard
+    plass: number
+    index: number
+    alleNull: boolean
+    visPågående: boolean
+    effektivPoeng: (r: LeaderBoard) => number
+}
+
+function LeaderboardRad({ row, plass, index, alleNull, visPågående, effektivPoeng }: LeaderboardRadProps) {
+    const { t } = useLanguage()
+    const erLeder = index === 0 && !alleNull
+    const erTopp3 = plass <= 3
+
+    return (
+        <div
+            data-testid="leaderboard-rad"
+            className="grid items-center px-[18px] py-[11px]"
+            style={{
+                gridTemplateColumns: '42px 1fr auto',
+                gap: '12px',
+                background: erLeder ? 'linear-gradient(90deg,#fffdf5,#fff)' : undefined,
+                borderBottom: '1px solid #f5f5f4',
+                minHeight: 44,
+            }}
+        >
+            {/* Plass */}
+            <div className="flex items-center justify-center">
+                {erTopp3 ? (
+                    <Medalje plass={plass as 1 | 2 | 3} size={30} />
+                ) : (
+                    <span className="bp-tabular w-full text-center text-[15px] font-bold text-stone-400">{plass}</span>
+                )}
+            </div>
+
+            {/* Navn */}
+            <NextLink href={'/user/' + row.userid} className="flex min-w-0 items-center gap-[11px]">
+                <Avatar src={row.picture} name={row.userName} />
+                <div className="min-w-0">
+                    <div
+                        data-testid="leaderboard-naam"
+                        className={classNames(
+                            'truncate text-[14.5px] text-stone-900',
+                            erTopp3 ? 'font-bold' : 'font-semibold',
+                        )}
+                    >
+                        {visningsnavn(row.userName)}
+                    </div>
+                    {!row.paid && (
+                        <span
+                            className="mt-0.5 inline-block text-[9px] font-extrabold uppercase tracking-[.04em] text-amber-700"
+                            style={{
+                                background: '#fef3c7',
+                                border: '1px solid #fde9b3',
+                                padding: '2px 6px',
+                                borderRadius: '999px',
+                            }}
+                        >
+                            {t.ledertavle.ikkeBetalt}
+                        </span>
+                    )}
+                </div>
+            </NextLink>
+
+            {/* Poeng */}
+            <div data-testid="leaderboard-poeng-container" className="flex items-center justify-end gap-[7px]">
+                {visPågående && (row.livePoeng ?? 0) > 0 && (
+                    <span
+                        className="bp-tabular text-[11px] font-extrabold text-red-600"
+                        style={{
+                            background: '#fee2e2',
+                            padding: '2px 7px',
+                            borderRadius: '999px',
+                        }}
+                    >
+                        +{(row.livePoeng ?? 0).toFixed(0)}
+                    </span>
+                )}
+                <span
+                    data-testid="leaderboard-poeng"
+                    className="bp-tabular text-right text-[19px] font-extrabold text-stone-900"
+                    style={{ minWidth: '24px' }}
+                >
+                    {effektivPoeng(row).toFixed(0)}
+                </span>
+            </div>
+        </div>
+    )
+}
+
 const Leaderboard: NextPage = () => {
     const { data, isLoading } = UseAllBets()
     const { data: ligaer } = UseLeagues()
     const [valgtLiga, setValgtLiga] = useValgtLiga()
     const { t } = useLanguage()
-    // Seed for tilfeldig rangering når alle har 0 poeng – stabil per økt.
     const [seed] = useState(() => Math.floor(Math.random() * 0x7fffffff))
-    // Bryter for å inkludere foreløpige poeng fra kamper som pågår. Står på som standard.
     const [visPågående, setVisPågående] = useState(true)
 
     const mineLigaer = (ligaer ?? []).filter((l) => l.my_status === 'medlem')
     const effektivLiga = valgtLiga && mineLigaer.some((l) => l.id === valgtLiga) ? valgtLiga : null
     const { data: ligaDetalj } = UseLeague(effektivLiga)
 
-    // Poeng beregnes populasjonsspesifikt: hovedligaen kun fra hovedligaens
-    // medlemmer, en privat liga fra hovedligaens medlemmer + ligaens egne. Slik
-    // påvirker ikke de som bare er i private ligaer hovedligaens resultater.
     const rader = useMemo<LeaderBoard[]>(() => {
         if (!data) return []
         const raw = data.raw
@@ -81,6 +219,11 @@ const Leaderboard: NextPage = () => {
         return hovedligaTavle
     }, [data, effektivLiga, ligaDetalj])
 
+    const antallHovedliga = useMemo(() => {
+        if (!data) return 0
+        return data.raw.users.filter((u) => u.i_hovedliga !== false).length
+    }, [data])
+
     if (!data || isLoading || !ligaer) {
         return <Spinner />
     }
@@ -90,16 +233,10 @@ const Leaderboard: NextPage = () => {
 
     const lista: LeaderBoard[] = [...rader]
 
-    // Effektiv poengsum gitt bryteren: med pågående kamper teller hele summen,
-    // uten dem trekkes de foreløpige poengene fra.
     const effektivPoeng = (r: LeaderBoard): number => (visPågående ? r.poeng : r.poeng - (r.livePoeng ?? 0))
 
-    // Bryteren vises kun når minst én bruker har foreløpige poeng fra en pågående kamp.
     const harPågående = rader.some((r) => (r.livePoeng ?? 0) !== 0)
 
-    // Når ingen kamper er ferdigspilt har alle 0 poeng. Da gir det ikke mening
-    // at alle deler 1. plass (og får gullmedalje) – ranger i stedet tilfeldig
-    // med unike plasser, slik at bare én får medalje nr. 1.
     const alleNull = lista.length > 0 && lista.every((r) => effektivPoeng(r) === 0)
 
     if (alleNull) {
@@ -124,84 +261,56 @@ const Leaderboard: NextPage = () => {
     }
 
     return (
-        <div className="space-y-4">
-            {mineLigaer.length > 0 && <LigaVelger ligaer={ligaer} valgt={effektivLiga} onVelg={setValgtLiga} />}
-            {harPågående && (
-                <div className="flex justify-end">
-                    <Switch checked={visPågående} onCheckedChange={setVisPågående} size="small">
-                        {t.ledertavle.visPågående}
-                    </Switch>
-                </div>
-            )}
-            <Table>
-                <Table.Header>
-                    <Table.Row>
-                        <Table.HeaderCell align="center">{t.ledertavle.plass}</Table.HeaderCell>
-                        <Table.HeaderCell></Table.HeaderCell>
-                        <Table.HeaderCell>{t.ledertavle.navn}</Table.HeaderCell>
-                        <Table.HeaderCell align="right">{t.ledertavle.poeng}</Table.HeaderCell>
-                    </Table.Row>
-                </Table.Header>
-                <Table.Body>
-                    {lista.map((row, i) => (
-                        <Table.Row key={row.userid}>
-                            <Table.DataCell align="center">{plassVisning(finnFaktiskPlass(i, lista))}</Table.DataCell>
-                            <Table.DataCell align="left">
-                                <NextLink href={'/user/' + row.userid}>
-                                    <Avatar src={row?.picture} name={row.userName} />
-                                </NextLink>
-                            </Table.DataCell>
-                            <Table.DataCell>
-                                <NextLink href={'/user/' + row.userid} className="text-blue-600 hover:underline">
-                                    {visningsnavn(row.userName)}
-                                </NextLink>
-                                {!row.paid && (
-                                    <span className="ml-2 inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-amber-800 ring-1 ring-amber-200">
-                                        {t.ledertavle.ikkeBetalt}
-                                    </span>
-                                )}
-                            </Table.DataCell>
-                            <Table.DataCell align="right" className="pr-4 font-bold">
-                                <span className="inline-flex items-center justify-end gap-1.5 whitespace-nowrap">
-                                    {visPågående && (row.livePoeng ?? 0) > 0 && (
-                                        <span className="bp-chip-live">+{(row.livePoeng ?? 0).toFixed(0)}</span>
-                                    )}
-                                    <span className="bp-tabular">{effektivPoeng(row).toFixed(0)}</span>
-                                </span>
-                            </Table.DataCell>
-                        </Table.Row>
-                    ))}
-                </Table.Body>
-            </Table>
-        </div>
-    )
-}
+        // -mx-2 cancels the layout's px-2 so sections can be edge-to-edge
+        <div className="-mx-2 bg-stone-50">
+            {/* Header */}
+            <div className="bg-white px-[18px] pb-[12px] pt-[18px]" style={{ borderBottom: '1px solid #e7e5e4' }}>
+                <p className="bp-overline text-stone-400">{t.nav.resultater}</p>
+                {mineLigaer.length > 0 ? (
+                    <LigaVelger
+                        ligaer={ligaer}
+                        valgt={effektivLiga}
+                        onVelg={setValgtLiga}
+                        antallHovedliga={antallHovedliga}
+                    />
+                ) : (
+                    <p className="mt-[9px] text-[19px] font-extrabold leading-none tracking-[-0.01em] text-stone-900">
+                        {t.ledertavle.hovedligaen}
+                    </p>
+                )}
+            </div>
 
-interface AvatarProps {
-    src?: string | null
-    name?: string
-    size?: 'small' | 'medium' | 'large'
-}
+            {/* Live-bryter */}
+            {harPågående && <LiveBryter visPågående={visPågående} onChange={setVisPågående} />}
 
-const Avatar: React.FC<AvatarProps> = ({ src, name, size = 'medium' }) => {
-    const getInitials = (name: string) => name.charAt(0).toUpperCase()
+            {/* Kolonneoverskrifter */}
+            <div
+                className="bg-stone-50 px-[18px] pb-[7px] pt-[13px]"
+                style={{
+                    display: 'grid',
+                    gridTemplateColumns: '42px 1fr auto',
+                    gap: '12px',
+                }}
+            >
+                <span className="bp-overline text-center text-stone-400">{t.ledertavle.plass}</span>
+                <span className="bp-overline text-stone-400">{t.ledertavle.navn}</span>
+                <span className="bp-overline text-right text-stone-400">{t.ledertavle.poeng}</span>
+            </div>
 
-    const sizeClasses = {
-        small: 'w-8 h-8 text-sm',
-        medium: 'w-12 h-12 text-lg',
-        large: 'w-16 h-16 text-xl',
-    }
-
-    return (
-        <div className={classNames('flex items-center justify-center bg-stone-200 rounded-full', sizeClasses[size])}>
-            {src ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={src} alt={name} className="rounded-full w-full h-full object-cover" />
-            ) : (
-                <span className="text-white bg-blue-500 rounded-full w-full h-full flex items-center justify-center">
-                    {name ? getInitials(name) : ''}
-                </span>
-            )}
+            {/* Rad-liste */}
+            <div className="bg-white">
+                {lista.map((row, i) => (
+                    <LeaderboardRad
+                        key={row.userid}
+                        row={row}
+                        plass={finnFaktiskPlass(i, lista)}
+                        index={i}
+                        alleNull={alleNull}
+                        visPågående={visPågående}
+                        effektivPoeng={effektivPoeng}
+                    />
+                ))}
+            </div>
         </div>
     )
 }

@@ -166,6 +166,11 @@ const fr: Translations = {
         hovedligaen: '🏆 Ligue principale',
         visPågående: 'Inclure les matchs en cours',
         live: 'LIVE',
+        livePoengTeller: 'Points en direct comptent',
+        livePoengSkjult: 'Points en direct masqués',
+        paa: 'Oui',
+        av: 'Non',
+        deltakere: 'participants',
     },
     regler: {
         tittel: 'Règles',

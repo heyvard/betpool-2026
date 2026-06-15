@@ -18,14 +18,13 @@ async function loggInn(page: Page, bruker: string): Promise<void> {
     await page.context().addCookies([{ name: 'betpool_test_user', value: bruker, url: URL_BASE }])
 }
 
-// Navnene på radene i ledertavla, lest fra navne-lenka i kolonne 3. Vi leser
-// lenketeksten (ikke hele cella) så «Ikke betalt»-merket ikke blander seg inn.
+// Navnene på radene i ledertavla, lest fra data-testid="leaderboard-naam".
 async function synligeNavn(page: Page): Promise<string[]> {
-    const rader = page.locator('tbody tr')
+    const rader = page.locator('[data-testid="leaderboard-rad"]')
     await expect(rader.first()).toBeVisible()
     const ut: string[] = []
     for (let i = 0; i < (await rader.count()); i++) {
-        ut.push((await rader.nth(i).locator('td').nth(2).locator('a').innerText()).trim())
+        ut.push((await rader.nth(i).locator('[data-testid="leaderboard-naam"]').innerText()).trim())
     }
     return ut
 }
@@ -37,7 +36,8 @@ async function hovedligaNavn(page: Page): Promise<string[]> {
 
 async function privatligaNavn(page: Page, ligaNavn: string): Promise<string[]> {
     await page.goto('/leaderboard')
-    await page.locator('#liga-velger').selectOption({ label: ligaNavn })
+    await page.getByTestId('liga-velger-btn').click()
+    await page.getByRole('option', { name: ligaNavn }).click()
     return synligeNavn(page)
 }
 
