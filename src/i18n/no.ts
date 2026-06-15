@@ -162,6 +162,11 @@ const no = {
         hovedligaen: '🏆 Hovedligaen',
         visPågående: 'Inkluder kamper som pågår',
         live: 'LIVE',
+        livePoengTeller: 'Live-poeng teller',
+        livePoengSkjult: 'Live-poeng skjult',
+        paa: 'På',
+        av: 'Av',
+        deltakere: 'deltakere',
     },
     regler: {
         tittel: 'Regler',
