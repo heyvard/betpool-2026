@@ -1,143 +1,221 @@
 import dayjs from 'dayjs'
 import NextLink from 'next/link'
 import { MatchBetMedScore } from '../../queries/useAllBets'
-import { fixLand } from './BetView'
+import { hentFlag, hentNavn } from '../../utils/lag'
 import { rundeTilTekst } from '../../utils/rundeTilTekst'
 import React from 'react'
 import nb from 'dayjs/locale/nb'
 import fr from 'dayjs/locale/fr'
-import { Calendar, CheckCheck, ChevronRight, Flag, Target, X, Zap } from 'lucide-react'
+import { CheckCheck, ChevronRight, Target, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { erNorgeKamp } from '../../data/matches'
 import { useLanguage } from '../../i18n/LanguageContext'
 
-interface StatusStyle {
-    stripe: string
-    badge: string
-    badgeIcon: React.ReactNode
-    bg: string
-    poengTone: string
+type Verdikt = 'resultat' | 'utfall' | 'bom'
+
+function getVerdikt(bet: MatchBetMedScore): Verdikt {
+    if (bet.riktigResultat) return 'resultat'
+    if (bet.riktigUtfall) return 'utfall'
+    return 'bom'
 }
 
-const STATUS: Record<'riktigResultat' | 'riktigUtfall' | 'bom', StatusStyle> = {
-    riktigResultat: {
-        stripe: 'bg-emerald-500',
-        badge: 'bg-emerald-100 text-emerald-800',
-        badgeIcon: <CheckCheck className="w-3 h-3" />,
-        bg: 'bg-emerald-50/40',
-        poengTone: 'bg-amber-100 text-amber-900 ring-amber-200',
+const VERDIKT_STYLE: Record<Verdikt, { tippBg: string; tippText: string; tippRing: string; poengText: string }> = {
+    resultat: {
+        tippBg: 'bg-[#dcfce7]',
+        tippText: 'text-[#15803d]',
+        tippRing: '',
+        poengText: 'text-[#15803d]',
     },
-    riktigUtfall: {
-        stripe: 'bg-amber-500',
-        badge: 'bg-amber-100 text-amber-800',
-        badgeIcon: <Target className="w-3 h-3" />,
-        bg: 'bg-amber-50/30',
-        poengTone: 'bg-amber-100 text-amber-900 ring-amber-200',
+    utfall: {
+        tippBg: 'bg-[#fef3c7]',
+        tippText: 'text-[#92400e]',
+        tippRing: '',
+        poengText: 'text-[#92400e]',
     },
     bom: {
-        stripe: 'bg-stone-300',
-        badge: 'bg-stone-100 text-stone-600',
-        badgeIcon: <X className="w-3 h-3" />,
-        bg: 'bg-white',
-        poengTone: 'bg-stone-100 text-stone-600 ring-stone-200',
+        tippBg: 'bg-[#f5f5f4]',
+        tippText: 'text-[#78716c]',
+        tippRing: 'ring-1 ring-[#e7e5e4]',
+        poengText: 'text-[#78716c]',
     },
 }
 
-function statusStyle(bet: MatchBetMedScore): StatusStyle {
-    if (bet.riktigResultat) return STATUS.riktigResultat
-    if (bet.riktigUtfall) return STATUS.riktigUtfall
-    return STATUS.bom
+function FasitBlokk({ bet }: { bet: MatchBetMedScore }) {
+    const base =
+        'bp-tabular font-mono text-[13px] font-bold rounded-[6px] py-[3px] px-1.5 flex items-center justify-center min-w-[38px]'
+    if (bet.foreløpig) {
+        return (
+            <div className="flex justify-center">
+                <span className={cn(base, 'bg-[#dc2626] text-white gap-1')}>
+                    <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse shrink-0" />
+                    {bet.home_result}–{bet.away_result}
+                </span>
+            </div>
+        )
+    }
+    return (
+        <div className="flex justify-center">
+            <span className={cn(base, 'bg-[#1c1917] text-white')}>
+                {bet.home_result}–{bet.away_result}
+            </span>
+        </div>
+    )
 }
 
-export const PastBetView = ({ bet, matchside, navn }: { bet: MatchBetMedScore; matchside: boolean; navn: string }) => {
-    const { t, locale } = useLanguage()
-    const dayjsLocale = locale === 'fr' ? fr : nb
-    const kampstart = dayjs(bet.game_start)
-    const s = statusStyle(bet)
-    const harPoeng = bet.poeng > 0
+function TippBlokk({ bet, verdikt }: { bet: MatchBetMedScore; verdikt: Verdikt }) {
+    const base =
+        'bp-tabular font-mono text-[13px] font-bold rounded-[6px] py-[3px] px-1.5 flex items-center justify-center min-w-[38px]'
+    const hasScore = bet.home_score !== null && bet.away_score !== null
 
-    const badgeText = bet.riktigResultat
-        ? t.spilteKamper.riktigResultat
-        : bet.riktigUtfall
-          ? t.spilteKamper.riktigUtfall
-          : t.spilteKamper.bom
+    if (!hasScore) {
+        return (
+            <div className="flex justify-center">
+                <span className={cn(base, 'bg-[#f5f5f4] text-[#a8a29e]')}>–</span>
+            </div>
+        )
+    }
+    if (bet.foreløpig) {
+        return (
+            <div className="flex justify-center">
+                <span className={cn(base, 'bg-[#f5f5f4] text-[#57534e] gap-1')}>
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#dc2626] animate-pulse shrink-0" />
+                    {bet.home_score}–{bet.away_score}
+                </span>
+            </div>
+        )
+    }
+    const s = VERDIKT_STYLE[verdikt]
+    return (
+        <div className="flex justify-center">
+            <span className={cn(base, s.tippBg, s.tippText, s.tippRing)}>
+                {bet.home_score}–{bet.away_score}
+            </span>
+        </div>
+    )
+}
+
+export function ResultatRad({ bet, locale }: { bet: MatchBetMedScore; locale: 'no' | 'fr' }) {
+    const { t } = useLanguage()
+    const dayjsLocale = locale === 'fr' ? fr : nb
+    const verdikt = getVerdikt(bet)
+    const s = VERDIKT_STYLE[verdikt]
+    const norgeKamp = erNorgeKamp(bet.home_team, bet.away_team)
+    const harDobling = bet.joker || norgeKamp
+    const homeNavn = hentNavn(bet.home_team, locale)
+    const awayNavn = hentNavn(bet.away_team, locale)
+    const homeFlag = hentFlag(bet.home_team)
+    const awayFlag = hentFlag(bet.away_team)
+    const klokkeslett = dayjs(bet.game_start).locale(dayjsLocale).format('HH:mm')
+    const dobbelTitle = bet.joker ? t.spilteKamper.jokerDobbel : t.spilteKamper.norgeDobbel
+    const poengTekst = bet.poeng > 0 ? `+${bet.poeng}` : `${bet.poeng}`
 
     return (
-        <div className={cn('relative my-4 rounded-xl shadow-xs ring-1 ring-stone-200/70 overflow-hidden', s.bg)}>
-            <span aria-hidden className={cn('absolute left-0 top-0 bottom-0 w-1', s.stripe)} />
-
-            <div className="flex items-center justify-between gap-2 pl-5 pr-4 pt-3 pb-2">
-                <div className="flex items-center gap-2 min-w-0">
-                    <span
-                        className={cn(
-                            'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide',
-                            s.badge,
-                        )}
-                    >
-                        {s.badgeIcon}
-                        {badgeText}
+        <NextLink
+            href={'/match/' + bet.match_num}
+            aria-label={`${t.spilteKamper.seAllesBets} – ${homeNavn} – ${awayNavn}`}
+            className="grid grid-cols-[1fr_46px_46px_30px_12px] gap-2 items-center px-[13px] py-[7px] min-h-[40px] border-t border-[#f0efed] hover:bg-[#fafaf9] active:bg-[#f5f5f4] cursor-pointer transition-colors"
+        >
+            <div className="min-w-0">
+                <div className="flex items-center gap-1 min-w-0">
+                    <span className="text-[12.5px] font-bold text-[#1c1917] leading-tight min-w-0 truncate">
+                        {homeFlag} {homeNavn}
+                        <span className="text-[#d6d3d1]"> – </span>
+                        {awayNavn} {awayFlag}
                     </span>
-                    {matchside ? (
-                        <span className="text-xs font-medium text-stone-700 truncate">{navn}</span>
-                    ) : (
-                        <span className="text-[10px] font-semibold uppercase tracking-wider text-stone-500 truncate">
-                            {rundeTilTekst(bet.round, locale)}
+                    {harDobling && (
+                        <span
+                            title={dobbelTitle}
+                            className="shrink-0 text-[9px] font-bold text-[#92400e] bg-[#fef3c7] rounded-full px-1 py-px leading-none"
+                        >
+                            ×2
                         </span>
                     )}
                 </div>
-                <span className="inline-flex items-center gap-1.5 text-xs text-stone-500 shrink-0">
-                    <Calendar className="w-3.5 h-3.5" />
-                    {kampstart.locale(dayjsLocale).format('ddd D. MMM HH:mm')}
+                <div className="text-[10px] text-[#a8a29e] leading-tight mt-px">{klokkeslett}</div>
+            </div>
+
+            <FasitBlokk bet={bet} />
+            <TippBlokk bet={bet} verdikt={verdikt} />
+
+            <div
+                className={cn(
+                    'bp-tabular text-[13px] font-bold text-right',
+                    bet.foreløpig ? 'text-[#a8a29e]' : s.poengText,
+                )}
+            >
+                {bet.foreløpig ? '–' : poengTekst}
+            </div>
+
+            <ChevronRight className="w-[13px] h-[13px] text-[#cbc9c4]" />
+        </NextLink>
+    )
+}
+
+export function RundeSeksjon({
+    runde,
+    bets,
+    locale,
+}: {
+    runde: number
+    bets: MatchBetMedScore[]
+    locale: 'no' | 'fr'
+}) {
+    const { t } = useLanguage()
+    const dayjsLocale = locale === 'fr' ? fr : nb
+    const rundeNavn = rundeTilTekst(runde, locale).toUpperCase()
+    const rundeSum = bets.filter((b) => !b.foreløpig).reduce((sum, b) => sum + b.poeng, 0)
+    const datoTekst = dayjs(bets[0].game_start).locale(dayjsLocale).format('dd. D. MMMM')
+
+    return (
+        <div>
+            <div className="flex items-baseline justify-between px-4 pt-[15px] pb-[6px]">
+                <span className="text-[10.5px] font-bold tracking-[0.14em] uppercase text-[#a8a29e] whitespace-nowrap">
+                    {rundeNavn}
+                </span>
+                <span className="text-[11px] font-bold text-[#a8a29e] whitespace-nowrap ml-2">
+                    {datoTekst} · <span className="text-[#b45309]">+{rundeSum}</span>
                 </span>
             </div>
 
-            <div className="pl-5 pr-4 border-y border-stone-100 divide-y divide-stone-100 bg-white/40">
-                <ResultRow team={bet.home_team} score={bet.home_score} locale={locale} />
-                <ResultRow team={bet.away_team} score={bet.away_score} locale={locale} />
-            </div>
-
-            <div className="flex items-center justify-between gap-3 pl-5 pr-4 py-3">
-                <div className="flex items-center gap-2 flex-wrap">
-                    <span
-                        className={cn(
-                            'bp-tabular inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold ring-1',
-                            s.poengTone,
-                        )}
-                    >
-                        {harPoeng ? `+${bet.poeng}` : bet.poeng} {t.felles.poeng}
-                    </span>
-                    {bet.joker && (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-1 text-xs font-semibold text-amber-800 ring-1 ring-amber-200">
-                            <Zap className="w-3 h-3 fill-amber-500 text-amber-500" />
-                            {t.spilteKamper.jokerDobbel}
-                        </span>
-                    )}
-                    {erNorgeKamp(bet.home_team, bet.away_team) && (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-red-100 px-2 py-1 text-xs font-semibold text-red-800 ring-1 ring-red-200">
-                            <Flag className="w-3 h-3" />
-                            {t.spilteKamper.norgeDobbel}
-                        </span>
-                    )}
+            <div className="border-t border-b border-[#e7e5e4] bg-white">
+                <div className="grid grid-cols-[1fr_46px_46px_30px_12px] gap-2 items-center px-[13px] pt-[7px] pb-[5px]">
+                    <div />
+                    <div className="text-[10px] font-bold tracking-[0.14em] uppercase text-[#a8a29e] text-center">
+                        {t.spilteKamper.kolFasit}
+                    </div>
+                    <div className="text-[10px] font-bold tracking-[0.14em] uppercase text-[#a8a29e] text-center">
+                        {t.spilteKamper.kolDitt}
+                    </div>
+                    <div className="text-[10px] font-bold tracking-[0.14em] uppercase text-[#a8a29e] text-right">
+                        {t.spilteKamper.kolPoeng}
+                    </div>
+                    <div />
                 </div>
-                {!matchside && (
-                    <NextLink
-                        href={'/match/' + bet.match_num}
-                        className="inline-flex items-center gap-0.5 text-xs font-medium text-amber-700 hover:text-amber-800 transition-colors"
-                    >
-                        {t.spilteKamper.seAllesBets}
-                        <ChevronRight className="w-3.5 h-3.5" />
-                    </NextLink>
-                )}
+
+                {bets.map((bet) => (
+                    <ResultatRad key={`${bet.match_num}-${bet.user_id}`} bet={bet} locale={locale} />
+                ))}
             </div>
         </div>
     )
 }
 
-function ResultRow({ team, score, locale }: { team: string; score: number | null; locale: 'no' | 'fr' }) {
+export function Legende() {
+    const { t } = useLanguage()
     return (
-        <div className="flex items-center justify-between gap-3 py-3">
-            <span className="text-lg font-semibold text-stone-900 truncate">{fixLand(team, locale)}</span>
-            <span className="bp-tabular w-14 text-center text-2xl font-semibold text-stone-900">{score ?? '–'}</span>
+        <div className="flex items-center justify-center gap-4 mt-6 mb-2 text-[11px] text-[#a8a29e]">
+            <span className="flex items-center gap-1">
+                <CheckCheck className="w-3 h-3 text-[#16a34a]" />
+                <span className="text-[#15803d]">{t.spilteKamper.riktigResultat}</span>
+            </span>
+            <span className="flex items-center gap-1">
+                <Target className="w-3 h-3 text-[#f59e0b]" />
+                <span className="text-[#92400e]">{t.spilteKamper.riktigUtfall}</span>
+            </span>
+            <span className="flex items-center gap-1">
+                <X className="w-3 h-3 text-[#d6d3d1]" />
+                <span className="text-[#78716c]">{t.spilteKamper.bom}</span>
+            </span>
         </div>
     )
 }
