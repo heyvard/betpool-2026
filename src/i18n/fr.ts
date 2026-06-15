@@ -86,6 +86,7 @@ const fr: Translations = {
         tippet: 'Parié',
         kickoff: "Coup d'envoi",
         slutt: 'Terminé',
+        nattenSomVar: 'La nuit passée',
     },
     mineTips: {
         spilteKamper: 'Matchs joués',
