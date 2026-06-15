@@ -35,6 +35,7 @@ const fr: Translations = {
         tilbakemelding: 'Donner un avis',
         tilbakemeldinger: 'Retours',
         sprak: 'Langue',
+        jokerbruk: 'Jokers',
     },
     grupper: {
         tittel: 'Groupes',

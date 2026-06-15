@@ -33,6 +33,7 @@ const no = {
         tilbakemelding: 'Gi tilbakemelding',
         tilbakemeldinger: 'Tilbakemeldinger',
         sprak: 'Språk',
+        jokerbruk: 'Jokerbruk',
     },
     grupper: {
         tittel: 'Grupper',
