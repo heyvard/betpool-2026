@@ -13,7 +13,7 @@ import { erTestAuth } from '../utils/erTestAuth'
 import { TestUserSwitcher } from '../components/dev/TestUserSwitcher'
 import { TestClock } from '../components/dev/TestClock'
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu'
-import { BookOpen, Check, House, ListChecks, ListOrdered, Menu } from 'lucide-react'
+import { BookOpen, Check, House, ListChecks, ListOrdered, Menu, Zap } from 'lucide-react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { LoadingScreen } from '../components/loading/LoadingScreen'
 import { PullToRefresh } from '../components/PullToRefresh'
@@ -150,6 +150,15 @@ function Layout({ children }: { children: React.ReactNode }) {
                                 onSelect={() => router.push('/tilbakemelding')}
                             >
                                 {t.nav.tilbakemelding}
+                            </DropdownMenu.Item>
+                            <DropdownMenu.Item
+                                className="px-4 py-2 cursor-pointer hover:bg-amber-50 hover:text-amber-900 outline-hidden"
+                                onSelect={() => router.push('/jokerbruk')}
+                            >
+                                <div className="flex items-center gap-2">
+                                    <Zap className="h-4 w-4 text-amber-500" />
+                                    <span className="font-semibold text-stone-900">{t.nav.jokerbruk}</span>
+                                </div>
                             </DropdownMenu.Item>
                             {me?.scoreadmin && (
                                 <>
