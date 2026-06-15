@@ -150,3 +150,73 @@ test('kommende kamp lenker til tipping, startet kamp lenker til kampsiden', asyn
     await page.getByRole('link').filter({ hasText: '2–1' }).click()
     await expect(page).toHaveURL(new RegExp(`/match/${m0.match_num}$`))
 })
+
+// Morgenvinduet: kampene starter 18:00–06:00, og kampdag-grensen ligger kl. 10:00
+// (10-timers forskyvningen i index.tsx). Mellom 06:00 og 12:00 skal hjemmesiden
+// vise neste kampdag (kveldens kommende kamper) PLUSS «Natten som var» (forrige
+// natts ferdigspilte kamper). Tidligere viste hovedseksjonen feilaktig forrige
+// natt mellom 06:00 og 10:00, og «Natten som var» ble undertrykt.
+//
+// Tz pinnes til UTC for determinisme: «06:00–12:00 norsk tid» i koden er egentlig
+// nettleserens lokaltid, så vi setter den til UTC og bruker kl. 08:00 UTC.
+test.describe(() => {
+    test.use({ timezoneId: 'UTC' })
+
+    const DAG = 86400e3
+    const kampdagNokkel = (ms: number) => Math.floor((ms - 10 * 3600e3) / DAG)
+
+    // Finn de to første påfølgende kampdagene i datasettet (UTC).
+    const kampMs = alleKamper.map((m) => new Date(m.game_start).getTime()).sort((a, b) => a - b)
+    const dagSett = [...new Set(kampMs.map(kampdagNokkel))].sort((a, b) => a - b)
+    let natt = 0
+    let kveld = 0
+    for (let i = 0; i < dagSett.length - 1; i++) {
+        if (dagSett[i + 1] === dagSett[i] + 1) {
+            natt = dagSett[i]
+            kveld = dagSett[i + 1]
+            break
+        }
+    }
+    const nattKamp = alleKamper.find((m) => kampdagNokkel(new Date(m.game_start).getTime()) === natt)!
+    const kveldKamp = alleKamper.find((m) => kampdagNokkel(new Date(m.game_start).getTime()) === kveld)!
+    // Kl. 08:00 UTC morgenen etter natt-kampene: forrige natt er ferdigspilt,
+    // kveldens kamper er fremdeles kommende.
+    const kl0800 = new Date(kveld * DAG + 8 * 3600e3).toISOString()
+
+    test('morgenvindu (08:00): viser «Natten som var» over «Neste kampdag»', async ({ context, page }) => {
+        const alice = await seedUser({ firebase_user_id: 'alice', name: 'alice', paid: true })
+        // Forrige natt 3–1, kveldens kommende kamp 2–0 → unike scorer på siden.
+        await seedBet({ user_id: alice.id, match_num: nattKamp.match_num, home_score: 3, away_score: 1 })
+        await seedBet({ user_id: alice.id, match_num: kveldKamp.match_num, home_score: 2, away_score: 0 })
+        await loggInn(context, 'alice', kl0800)
+
+        await page.goto('/')
+
+        const nattenTittel = page.getByText('Natten som var', { exact: true })
+        const nesteTittel = page.getByText('Neste kampdag', { exact: true })
+        await expect(nattenTittel).toBeVisible()
+        await expect(nesteTittel).toBeVisible()
+
+        // Begge kampene vises, hver under sin seksjon.
+        await expect(page.getByText('3–1')).toBeVisible()
+        await expect(page.getByText('2–0')).toBeVisible()
+
+        // «Natten som var» skal stå øverst.
+        const yNatten = (await nattenTittel.boundingBox())!.y
+        const yNeste = (await nesteTittel.boundingBox())!.y
+        expect(yNatten).toBeLessThan(yNeste)
+    })
+
+    test('ettermiddag (14:00): ingen «Natten som var»', async ({ context, page }) => {
+        const alice = await seedUser({ firebase_user_id: 'alice', name: 'alice', paid: true })
+        await seedBet({ user_id: alice.id, match_num: kveldKamp.match_num, home_score: 2, away_score: 0 })
+        const kl1400 = new Date(kveld * DAG + 14 * 3600e3).toISOString()
+        await loggInn(context, 'alice', kl1400)
+
+        await page.goto('/')
+
+        await expect(page.getByText('Neste kampdag', { exact: true })).toBeVisible()
+        await expect(page.getByText('Natten som var', { exact: true })).toHaveCount(0)
+        await expect(page.getByText('2–0')).toBeVisible()
+    })
+})
