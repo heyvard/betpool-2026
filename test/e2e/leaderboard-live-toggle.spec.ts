@@ -46,23 +46,24 @@ test('foreløpige poeng fra en pågående kamp kan skrus av og på', async ({ co
     await loggInn(context, 'alice')
     await page.goto('/leaderboard')
 
-    const aliceRad = page.locator('tbody tr', { hasText: 'alice' })
-    const alicePoeng = aliceRad.locator('td').last()
+    const aliceRad = page.locator('[data-testid="leaderboard-rad"]', { hasText: 'alice' })
+    const alicePoengContainer = aliceRad.locator('[data-testid="leaderboard-poeng-container"]')
+    const alicePoeng = aliceRad.locator('[data-testid="leaderboard-poeng"]')
     await expect(aliceRad).toBeVisible()
 
     // Bryteren vises fordi det finnes foreløpige poeng, og står PÅ som standard.
-    const bryter = page.getByRole('switch')
+    const bryter = page.getByTestId('live-bryter')
     await expect(bryter).toBeVisible()
     await expect(bryter).toHaveAttribute('data-state', 'checked')
 
     // Foreløpige poeng inkludert: gruppespill (vekting 1), alene om eksakt resultat
     // (×5) + riktig utfall (×1) = 6, merket «+6».
-    await expect(alicePoeng.getByText(/^\+6$/)).toBeVisible()
+    await expect(alicePoengContainer.getByText(/^\+6$/)).toBeVisible()
     await expect(alicePoeng).toContainText('6')
 
     // Skru av pågående kamper: de foreløpige poengene forsvinner fra summen.
-    await bryter.click()
+    await page.getByTestId('live-bryter-av').click()
     await expect(bryter).toHaveAttribute('data-state', 'unchecked')
-    await expect(alicePoeng.getByText(/^\+/)).toHaveCount(0)
+    await expect(alicePoengContainer.getByText(/^\+/)).toHaveCount(0)
     await expect(alicePoeng).toHaveText('0')
 })

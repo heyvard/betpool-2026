@@ -179,14 +179,14 @@ async function settResultatViaUi(page: Page, kamp: Match, hjemme: number, borte:
 
 async function lesLeaderboard(page: Page): Promise<{ navn: string; poeng: string }[]> {
     await page.goto('/leaderboard')
-    const rader = page.locator('tbody tr')
+    const rader = page.locator('[data-testid="leaderboard-rad"]')
     await expect(rader.first()).toBeVisible()
     const ut: { navn: string; poeng: string }[] = []
     for (let i = 0; i < (await rader.count()); i++) {
-        const celler = rader.nth(i).locator('td')
+        const rad = rader.nth(i)
         ut.push({
-            navn: (await celler.nth(2).innerText()).trim(),
-            poeng: (await celler.nth(3).innerText()).trim(),
+            navn: (await rad.locator('[data-testid="leaderboard-naam"]').innerText()).trim(),
+            poeng: (await rad.locator('[data-testid="leaderboard-poeng"]').innerText()).trim(),
         })
     }
     return ut

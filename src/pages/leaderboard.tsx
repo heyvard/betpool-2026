@@ -48,6 +48,8 @@ function LiveBryter({ visPågående, onChange }: { visPågående: boolean; onCha
     const { t } = useLanguage()
     return (
         <div
+            data-testid="live-bryter"
+            data-state={visPågående ? 'checked' : 'unchecked'}
             className="flex items-center justify-between bg-white px-[18px] py-[11px]"
             style={{ borderBottom: '1px solid #e7e5e4' }}
         >
@@ -60,6 +62,7 @@ function LiveBryter({ visPågående, onChange }: { visPågående: boolean; onCha
             <div className="flex items-center rounded-full p-[3px]" style={{ background: '#f5f5f4' }}>
                 <button
                     type="button"
+                    data-testid="live-bryter-paa"
                     onClick={() => onChange(true)}
                     style={{ minHeight: 28 }}
                     className={classNames(
@@ -71,6 +74,7 @@ function LiveBryter({ visPågående, onChange }: { visPågående: boolean; onCha
                 </button>
                 <button
                     type="button"
+                    data-testid="live-bryter-av"
                     onClick={() => onChange(false)}
                     style={{ minHeight: 28 }}
                     className={classNames(
@@ -101,6 +105,7 @@ function LeaderboardRad({ row, plass, index, alleNull, visPågående, effektivPo
 
     return (
         <div
+            data-testid="leaderboard-rad"
             className="grid items-center px-[18px] py-[11px]"
             style={{
                 gridTemplateColumns: '42px 1fr auto',
@@ -124,6 +129,7 @@ function LeaderboardRad({ row, plass, index, alleNull, visPågående, effektivPo
                 <Avatar src={row.picture} name={row.userName} />
                 <div className="min-w-0">
                     <div
+                        data-testid="leaderboard-naam"
                         className={classNames(
                             'truncate text-[14.5px] text-stone-900',
                             erTopp3 ? 'font-bold' : 'font-semibold',
@@ -148,7 +154,7 @@ function LeaderboardRad({ row, plass, index, alleNull, visPågående, effektivPo
             </NextLink>
 
             {/* Poeng */}
-            <div className="flex items-center justify-end gap-[7px]">
+            <div data-testid="leaderboard-poeng-container" className="flex items-center justify-end gap-[7px]">
                 {visPågående && (row.livePoeng ?? 0) > 0 && (
                     <span
                         className="bp-tabular text-[11px] font-extrabold text-red-600"
@@ -162,6 +168,7 @@ function LeaderboardRad({ row, plass, index, alleNull, visPågående, effektivPo
                     </span>
                 )}
                 <span
+                    data-testid="leaderboard-poeng"
                     className="bp-tabular text-right text-[19px] font-extrabold text-stone-900"
                     style={{ minWidth: '24px' }}
                 >

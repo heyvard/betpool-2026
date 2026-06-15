@@ -44,6 +44,7 @@ export function LigaVelger({
             <div className="relative">
                 <button
                     type="button"
+                    data-testid="liga-velger-btn"
                     onClick={() => setÅpen((v) => !v)}
                     aria-expanded={åpen}
                     aria-haspopup="listbox"
