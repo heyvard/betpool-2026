@@ -106,7 +106,6 @@ function KampSeksjonPanel({
     kampene,
     mineBetsMedScore,
     seksjonTittel,
-    datoEtikett,
     kampdag,
     visStatusChip,
     bunntekst,
@@ -116,7 +115,6 @@ function KampSeksjonPanel({
     kampene: Bet[]
     mineBetsMedScore: Map<number, MatchBetMedScore>
     seksjonTittel: string
-    datoEtikett: string
     kampdag: dayjs.Dayjs
     visStatusChip: boolean
     bunntekst: string
@@ -131,9 +129,8 @@ function KampSeksjonPanel({
 
     return (
         <div className="space-y-2">
-            <div className="flex items-center justify-between px-1">
+            <div className="px-1">
                 <h2 className="text-sm font-bold text-stone-900">{seksjonTittel}</h2>
-                <span className="text-xs capitalize text-stone-500">{datoEtikett}</span>
             </div>
 
             <div className="overflow-hidden rounded-xl bg-white shadow-xs ring-1 ring-stone-200/70">
@@ -284,7 +281,6 @@ function NesteKampSeksjon() {
     const { data: alleBets } = UseAllBets()
     const { data: megselv } = UseUser()
     const { t, locale } = useLanguage()
-    const dayjsLocale = locale === 'fr' ? fr : nb
 
     if (!bets) return null
 
@@ -342,23 +338,10 @@ function NesteKampSeksjon() {
     ).length
     const altTippet = manglerTips === 0
 
-    const erIDag = nesteKampDag.isSame(kampDag(nå()), 'day')
-    const erIMorgen = nesteKampDag.isSame(kampDag(nå()).add(1, 'day'), 'day')
-    const datoEtikett = erIDag
-        ? locale === 'fr'
-            ? "Aujourd'hui"
-            : 'I dag'
-        : erIMorgen
-          ? locale === 'fr'
-              ? 'Demain'
-              : 'I morgen'
-          : nesteKampDag.locale(dayjsLocale).format('dddd D. MMM')
-
     // Morgenvindu 06:00–12:00: vis også forrige kampdag (natten som var)
     const erIMorgenvindu = nå().hour() >= 6 && nå().hour() < 12
     let forrigeKampDag: dayjs.Dayjs | null = null
     let forrigeKampene: Bet[] = []
-    let forrigeDatoEtikett = ''
 
     if (erIMorgenvindu) {
         const spilte = bets
@@ -372,15 +355,6 @@ function NesteKampSeksjon() {
                 forrigeKampene = bets
                     .filter((b) => kampDag(dayjs(b.game_start)).isSame(sisteDag, 'day'))
                     .sort((a, b) => dayjs(a.game_start).valueOf() - dayjs(b.game_start).valueOf())
-                // Natt-kampene tilhører gårsdagens kalenderdato. Sammenlign mot
-                // kalender-i-går, ikke kampDag(nå) som før 10:00 fortsatt peker på
-                // selve natten (og dermed feilaktig droppet «I går»-etiketten).
-                const erIGaar = sisteDag.isSame(nå().subtract(1, 'day').startOf('day'), 'day')
-                forrigeDatoEtikett = erIGaar
-                    ? locale === 'fr'
-                        ? 'Hier'
-                        : 'I går'
-                    : sisteDag.locale(dayjsLocale).format('dddd D. MMM')
             }
         }
     }
@@ -392,7 +366,6 @@ function NesteKampSeksjon() {
                     kampene={forrigeKampene}
                     mineBetsMedScore={mineBetsMedScore}
                     seksjonTittel={t.hjem.nattenSomVar}
-                    datoEtikett={forrigeDatoEtikett}
                     kampdag={forrigeKampDag}
                     visStatusChip={false}
                     bunntekst={t.hjem.seAlleTips}
@@ -404,7 +377,6 @@ function NesteKampSeksjon() {
                 kampene={kampene}
                 mineBetsMedScore={mineBetsMedScore}
                 seksjonTittel={t.hjem.nesteKampdag}
-                datoEtikett={datoEtikett}
                 kampdag={nesteKampDag}
                 visStatusChip={true}
                 bunntekst={altTippet ? t.hjem.seAlleTips : manglerTips === 1 ? t.hjem.tippeKampen : t.hjem.tippeKampene}
