@@ -73,12 +73,14 @@ const handler = async function handler(opts: ApiHandlerOpts): Promise<void> {
             if (new Date(jsonMatch.game_start) >= now) return null
             const score = scoreMap.get(b.match_num)
             const resultat = score ? resolveActiveScore(score) : { home_score: null, away_score: null }
-            // Foreløpig = kampen pågår ennå, OG resultatet som teller kommer fra en
-            // live synk (synced_*, ikke admin-satt manuelt). Et manuelt resultat er
-            // autoritativt og regnes som endelig uansett kampstatus.
-            const resultatFraSynk =
-                !!score && !score.use_manual && score.synced_home_ft !== null && score.synced_away_ft !== null
-            const foreløpig = erKampPågående(jsonMatch.status) && resultatFraSynk
+            // Foreløpig: kampen pågår ennå og resultatet er ikke manuelt satt som endelig.
+            // Et manuelt resultat er autoritativt uansett kampstatus.
+            // For TIMED-kamper (startet, men API ikke oppdatert til IN_PLAY ennå) settes
+            // home_result/away_result til 0-0 som standard slik at klienten ikke trenger
+            // å sjekke game_start selv.
+            const foreløpig = erKampPågående(jsonMatch.status) && !score?.use_manual
+            const homeResult = resultat.home_score ?? (foreløpig ? 0 : null)
+            const awayResult = resultat.away_score ?? (foreløpig ? 0 : null)
             return {
                 user_id: b.user_id,
                 match_num: b.match_num,
@@ -88,8 +90,8 @@ const handler = async function handler(opts: ApiHandlerOpts): Promise<void> {
                 round: jsonMatch.round,
                 home_score: b.home_score,
                 away_score: b.away_score,
-                home_result: resultat.home_score,
-                away_result: resultat.away_score,
+                home_result: homeResult,
+                away_result: awayResult,
                 joker: b.joker,
                 foreløpig,
             }
