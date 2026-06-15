@@ -1,6 +1,7 @@
 import type { NextPage } from 'next'
 import { Spinner } from '../../components/loading/Spinner'
 import { useRouter } from 'next/router'
+import NextLink from 'next/link'
 import { UseAllBets, MatchBetMedScore, OtherUser } from '../../queries/useAllBets'
 import React, { useState } from 'react'
 import { hentFlag, hentNavn } from '../../utils/lag'
@@ -500,7 +501,10 @@ function BetRow({ bet, isLive, isFinished }: { bet: BetWithUser; isLive: boolean
     const hasScore = bet.home_score !== null && bet.away_score !== null
 
     return (
-        <div className="flex items-center gap-3 px-4 py-2.5 min-h-[44px]">
+        <NextLink
+            href={`/user/${bet.user.id}`}
+            className="flex items-center gap-3 px-4 py-2.5 min-h-[44px] hover:bg-stone-50 active:bg-stone-100 transition-colors"
+        >
             <div
                 className={cn(
                     'w-[30px] h-[30px] rounded-full flex items-center justify-center text-[11px] font-bold flex-shrink-0',
@@ -517,7 +521,7 @@ function BetRow({ bet, isLive, isFinished }: { bet: BetWithUser; isLive: boolean
                 {hasScore ? `${bet.home_score}–${bet.away_score}` : '–'}
             </span>
             <BetPoengPill bet={bet} isLive={isLive} isFinished={isFinished} />
-        </div>
+        </NextLink>
     )
 }
 
