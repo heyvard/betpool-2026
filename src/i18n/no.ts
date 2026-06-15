@@ -82,6 +82,7 @@ const no = {
         tippet: 'Tippet',
         kickoff: 'Kickoff',
         slutt: 'Slutt',
+        nattenSomVar: 'Natten som var',
     },
     mineTips: {
         spilteKamper: 'Spilte kamper',

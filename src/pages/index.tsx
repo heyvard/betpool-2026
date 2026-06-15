@@ -26,7 +26,10 @@ import { LinkPanel } from '@/components/ui/link-panel'
 import { cn } from '@/lib/utils'
 import { User } from '../types/user'
 import { useLanguage } from '../i18n/LanguageContext'
+import type { Locale } from '../i18n/LanguageContext'
+import type { Translations } from '../i18n/no'
 import { tx } from '../i18n/interpolate'
+import type { Bet } from '../types/types'
 
 function fixLandMedLocale(s: string, locale: 'no' | 'fr') {
     if (s === 'To be announced') return 'TBA'
@@ -99,94 +102,55 @@ const Home: NextPage = () => {
     )
 }
 
-function NesteKampSeksjon() {
-    const { data: bets } = UseMyBets()
-    const { data: alleBets } = UseAllBets()
-    const { data: megselv } = UseUser()
-    const { t, locale } = useLanguage()
+function KampSeksjonPanel({
+    kampene,
+    mineBetsMedScore,
+    seksjonTittel,
+    datoEtikett,
+    kampdag,
+    visStatusChip,
+    bunntekst,
+    locale,
+    t,
+}: {
+    kampene: Bet[]
+    mineBetsMedScore: Map<number, MatchBetMedScore>
+    seksjonTittel: string
+    datoEtikett: string
+    kampdag: dayjs.Dayjs
+    visStatusChip: boolean
+    bunntekst: string
+    locale: Locale
+    t: Translations
+}) {
     const dayjsLocale = locale === 'fr' ? fr : nb
-
-    if (!bets) return null
-
-    const mineBetsMedScore = new Map<number, MatchBetMedScore>()
-    if (alleBets && megselv) {
-        for (const bet of alleBets.bets) {
-            if (bet.user_id === megselv.id) {
-                mineBetsMedScore.set(bet.match_num, bet)
-            }
-        }
-    }
-
-    // Kamper starter 18:00–06:00 Oslo-tid. Skift 10 timer bakover slik at
-    // grensen mellom kampdag og neste kampdag blir kl. 10:00 (morgen) i stedet
-    // for midnatt – ellers havner natt-kamper (01:00–06:00 Oslo) på feil dag.
-    // Startede/ferdige kamper blir dermed stående til kl. 10:00 dagen etter.
-    const kampDag = (t: dayjs.Dayjs) => t.subtract(10, 'hour').startOf('day')
-
-    const kommende = bets
-        .filter((b) => dayjs(b.game_start).isAfter(nå()))
-        .sort((a, b) => dayjs(a.game_start).valueOf() - dayjs(b.game_start).valueOf())
-
-    const denneDagen = kampDag(nå())
-    const iVinduet = bets
-        .filter((b) => kampDag(dayjs(b.game_start)).isSame(denneDagen, 'day'))
-        .sort((a, b) => dayjs(a.game_start).valueOf() - dayjs(b.game_start).valueOf())
-
-    if (iVinduet.length === 0 && kommende.length === 0) {
-        return (
-            <NextLink passHref legacyBehavior href="/my-bets">
-                <LinkPanel>
-                    <span className="flex flex-col">
-                        <span className="text-base font-semibold text-stone-900">{t.hjem.ingenFlereKamper}</span>
-                        <span className="text-xs text-stone-500">{t.hjem.vmSnartOver}</span>
-                    </span>
-                </LinkPanel>
-            </NextLink>
-        )
-    }
-
-    const nesteKampDag = iVinduet.length > 0 ? denneDagen : kampDag(dayjs(kommende[0].game_start))
-    const kildeListe = iVinduet.length > 0 ? iVinduet : kommende
-    const kampene = kildeListe.filter((b) => kampDag(dayjs(b.game_start)).isSame(nesteKampDag, 'day'))
-
     const manglerTips = kampene.filter(
         (b) => dayjs(b.game_start).isAfter(nå()) && (b.home_score == null || b.away_score == null),
     ).length
     const altTippet = manglerTips === 0
 
-    const erIDag = nesteKampDag.isSame(kampDag(nå()), 'day')
-    const erIMorgen = nesteKampDag.isSame(kampDag(nå()).add(1, 'day'), 'day')
-    const datoEtikett = erIDag
-        ? locale === 'fr'
-            ? "Aujourd'hui"
-            : 'I dag'
-        : erIMorgen
-          ? locale === 'fr'
-              ? 'Demain'
-              : 'I morgen'
-          : nesteKampDag.locale(dayjsLocale).format('dddd D. MMM')
-
     return (
         <div className="space-y-2">
             <div className="flex items-center justify-between px-1">
-                <h2 className="text-sm font-bold text-stone-900">{t.hjem.nesteKampdag}</h2>
+                <h2 className="text-sm font-bold text-stone-900">{seksjonTittel}</h2>
                 <span className="text-xs capitalize text-stone-500">{datoEtikett}</span>
             </div>
 
             <div className="overflow-hidden rounded-xl bg-white shadow-xs ring-1 ring-stone-200/70">
                 <div className="flex items-center justify-between border-b border-stone-100 px-4 py-2.5">
                     <span className="text-[10px] font-bold uppercase tracking-wider text-stone-500">
-                        {nesteKampDag.locale(dayjsLocale).format('dddd D. MMMM')}
+                        {kampdag.locale(dayjsLocale).format('dddd D. MMMM')}
                     </span>
-                    {altTippet ? (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-0.5 text-[10px] font-bold text-emerald-700 ring-1 ring-emerald-200">
-                            <Check className="h-2.5 w-2.5" /> {t.hjem.altTippet}
-                        </span>
-                    ) : (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-0.5 text-[10px] font-bold text-amber-800 ring-1 ring-amber-200">
-                            {tx(t.hjem.manglerTips, { n: manglerTips })}
-                        </span>
-                    )}
+                    {visStatusChip &&
+                        (altTippet ? (
+                            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-0.5 text-[10px] font-bold text-emerald-700 ring-1 ring-emerald-200">
+                                <Check className="h-2.5 w-2.5" /> {t.hjem.altTippet}
+                            </span>
+                        ) : (
+                            <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-0.5 text-[10px] font-bold text-amber-800 ring-1 ring-amber-200">
+                                {tx(t.hjem.manglerTips, { n: manglerTips })}
+                            </span>
+                        ))}
                 </div>
 
                 {kampene.map((b) => {
@@ -309,8 +273,133 @@ function NesteKampSeksjon() {
                 href="/my-bets"
                 className="block text-center text-sm font-semibold text-amber-700 hover:text-amber-800"
             >
-                {altTippet ? t.hjem.seAlleTips : manglerTips === 1 ? t.hjem.tippeKampen : t.hjem.tippeKampene}
+                {bunntekst}
             </NextLink>
+        </div>
+    )
+}
+
+function NesteKampSeksjon() {
+    const { data: bets } = UseMyBets()
+    const { data: alleBets } = UseAllBets()
+    const { data: megselv } = UseUser()
+    const { t, locale } = useLanguage()
+    const dayjsLocale = locale === 'fr' ? fr : nb
+
+    if (!bets) return null
+
+    const mineBetsMedScore = new Map<number, MatchBetMedScore>()
+    if (alleBets && megselv) {
+        for (const bet of alleBets.bets) {
+            if (bet.user_id === megselv.id) {
+                mineBetsMedScore.set(bet.match_num, bet)
+            }
+        }
+    }
+
+    // Kamper starter 18:00–06:00 Oslo-tid. Skift 10 timer bakover slik at
+    // grensen mellom kampdag og neste kampdag blir kl. 10:00 (morgen) i stedet
+    // for midnatt – ellers havner natt-kamper (01:00–06:00 Oslo) på feil dag.
+    // Startede/ferdige kamper blir dermed stående til kl. 10:00 dagen etter.
+    const kampDag = (d: dayjs.Dayjs) => d.subtract(10, 'hour').startOf('day')
+
+    const kommende = bets
+        .filter((b) => dayjs(b.game_start).isAfter(nå()))
+        .sort((a, b) => dayjs(a.game_start).valueOf() - dayjs(b.game_start).valueOf())
+
+    const denneDagen = kampDag(nå())
+    const iVinduet = bets
+        .filter((b) => kampDag(dayjs(b.game_start)).isSame(denneDagen, 'day'))
+        .sort((a, b) => dayjs(a.game_start).valueOf() - dayjs(b.game_start).valueOf())
+
+    if (iVinduet.length === 0 && kommende.length === 0) {
+        return (
+            <NextLink passHref legacyBehavior href="/my-bets">
+                <LinkPanel>
+                    <span className="flex flex-col">
+                        <span className="text-base font-semibold text-stone-900">{t.hjem.ingenFlereKamper}</span>
+                        <span className="text-xs text-stone-500">{t.hjem.vmSnartOver}</span>
+                    </span>
+                </LinkPanel>
+            </NextLink>
+        )
+    }
+
+    const nesteKampDag = iVinduet.length > 0 ? denneDagen : kampDag(dayjs(kommende[0].game_start))
+    const kildeListe = iVinduet.length > 0 ? iVinduet : kommende
+    const kampene = kildeListe.filter((b) => kampDag(dayjs(b.game_start)).isSame(nesteKampDag, 'day'))
+
+    const manglerTips = kampene.filter(
+        (b) => dayjs(b.game_start).isAfter(nå()) && (b.home_score == null || b.away_score == null),
+    ).length
+    const altTippet = manglerTips === 0
+
+    const erIDag = nesteKampDag.isSame(kampDag(nå()), 'day')
+    const erIMorgen = nesteKampDag.isSame(kampDag(nå()).add(1, 'day'), 'day')
+    const datoEtikett = erIDag
+        ? locale === 'fr'
+            ? "Aujourd'hui"
+            : 'I dag'
+        : erIMorgen
+          ? locale === 'fr'
+              ? 'Demain'
+              : 'I morgen'
+          : nesteKampDag.locale(dayjsLocale).format('dddd D. MMM')
+
+    // Morgenvindu 06:00–12:00: vis også forrige kampdag (natten som var)
+    const erIMorgenvindu = nå().hour() >= 6 && nå().hour() < 12
+    let forrigeKampDag: dayjs.Dayjs | null = null
+    let forrigeKampene: Bet[] = []
+    let forrigeDatoEtikett = ''
+
+    if (erIMorgenvindu) {
+        const spilte = bets
+            .filter((b) => dayjs(b.game_start).isBefore(nå()))
+            .sort((a, b) => dayjs(b.game_start).valueOf() - dayjs(a.game_start).valueOf())
+
+        if (spilte.length > 0) {
+            const sisteDag = kampDag(dayjs(spilte[0].game_start))
+            if (!sisteDag.isSame(nesteKampDag, 'day')) {
+                forrigeKampDag = sisteDag
+                forrigeKampene = bets
+                    .filter((b) => kampDag(dayjs(b.game_start)).isSame(sisteDag, 'day'))
+                    .sort((a, b) => dayjs(a.game_start).valueOf() - dayjs(b.game_start).valueOf())
+                const erIGaar = sisteDag.isSame(kampDag(nå()).subtract(1, 'day'), 'day')
+                forrigeDatoEtikett = erIGaar
+                    ? locale === 'fr'
+                        ? 'Hier'
+                        : 'I går'
+                    : sisteDag.locale(dayjsLocale).format('dddd D. MMM')
+            }
+        }
+    }
+
+    return (
+        <div className="space-y-4">
+            {forrigeKampDag && forrigeKampene.length > 0 && (
+                <KampSeksjonPanel
+                    kampene={forrigeKampene}
+                    mineBetsMedScore={mineBetsMedScore}
+                    seksjonTittel={t.hjem.nattenSomVar}
+                    datoEtikett={forrigeDatoEtikett}
+                    kampdag={forrigeKampDag}
+                    visStatusChip={false}
+                    bunntekst={t.hjem.seAlleTips}
+                    locale={locale}
+                    t={t}
+                />
+            )}
+            <KampSeksjonPanel
+                kampene={kampene}
+                mineBetsMedScore={mineBetsMedScore}
+                seksjonTittel={t.hjem.nesteKampdag}
+                datoEtikett={datoEtikett}
+                kampdag={nesteKampDag}
+                visStatusChip={true}
+                bunntekst={altTippet ? t.hjem.seAlleTips : manglerTips === 1 ? t.hjem.tippeKampen : t.hjem.tippeKampene}
+                locale={locale}
+                t={t}
+            />
         </div>
     )
 }
