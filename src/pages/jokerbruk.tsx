@@ -1,5 +1,6 @@
 import type { NextPage } from 'next'
 import dayjs from 'dayjs'
+import Link from 'next/link'
 import { Zap } from 'lucide-react'
 import { useMemo } from 'react'
 
@@ -122,7 +123,8 @@ function StatusBadge({ status }: { status: JokerStatus }) {
 function SpillerRad({ bet }: { bet: BetMedBruker }) {
     const status = jokerStatus(bet)
     return (
-        <div
+        <Link
+            href={`/user/${bet.user_id}`}
             className={cn(
                 'bg-white border-t border-stone-100',
                 'pl-9 pr-[18px] py-[7px]',
@@ -147,7 +149,7 @@ function SpillerRad({ bet }: { bet: BetMedBruker }) {
                     </span>
                 )}
             </div>
-        </div>
+        </Link>
     )
 }
 
@@ -295,12 +297,15 @@ const JokerbrukPage: NextPage = () => {
                             return (
                                 <div key={matchNum}>
                                     {/* Kamp-header */}
-                                    <div className="bg-white border-t border-stone-100 px-[18px] py-[8px] flex items-center justify-between">
+                                    <Link
+                                        href={`/match/${matchNum}`}
+                                        className="bg-white border-t border-stone-100 px-[18px] py-[8px] flex items-center justify-between"
+                                    >
                                         <span className="text-[12.5px] font-bold text-stone-700">
                                             {fixLand(rep.home_team, locale)} — {fixLand(rep.away_team, locale)}
                                         </span>
                                         {resultatNode}
-                                    </div>
+                                    </Link>
 
                                     {/* Spillerrader */}
                                     {bets.map((bet) => (
@@ -318,15 +323,16 @@ const JokerbrukPage: NextPage = () => {
                                 </p>
                                 <div className="flex flex-wrap gap-[6px]">
                                     {ikkebrukt.map((u) => (
-                                        <div
+                                        <Link
                                             key={u.userId}
+                                            href={`/user/${u.userId}`}
                                             className="flex items-center gap-[6px] bg-stone-100 rounded-full py-1 pl-[5px] pr-[10px]"
                                         >
                                             <Avatar src={u.picture} name={u.userName} size={22} />
                                             <span className="text-[12px] font-semibold text-stone-500">
                                                 {visningsnavn(u.userName)}
                                             </span>
-                                        </div>
+                                        </Link>
                                     ))}
                                 </div>
                             </div>
