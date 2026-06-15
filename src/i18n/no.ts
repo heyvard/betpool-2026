@@ -34,6 +34,7 @@ const no = {
         tilbakemeldinger: 'Tilbakemeldinger',
         sprak: 'Språk',
         jokerbruk: 'Jokerbruk',
+        admin: 'Admin',
     },
     grupper: {
         tittel: 'Grupper',
