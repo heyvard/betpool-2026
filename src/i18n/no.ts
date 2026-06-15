@@ -126,6 +126,7 @@ const no = {
         seAllesBets: 'Se alles bets',
         kolFasit: 'Fasit',
         kolDitt: 'Ditt',
+        kolTipp: 'Tipp',
         kolPoeng: 'P',
         poengTotalt: 'Poeng totalt',
         kampIkkeFunnet: 'Ingen tips å vise for denne kampen ennå.',
