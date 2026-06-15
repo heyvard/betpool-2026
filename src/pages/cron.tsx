@@ -4,8 +4,8 @@ import React from 'react'
 import { UseUser } from '../queries/useUser'
 import {
     UseMutateAdminCron,
-    UseDryRunSyncMatches,
-    UseDryRunSyncScores,
+    UseMutateAdminSync,
+    UseDryRunSync,
     UseDryRunSendReminders,
     UseDryRunSendVmStart,
     VmStartDryRunBruker,
@@ -16,7 +16,7 @@ import {
     EttermiddagsVarselDryRunBruker,
 } from '../queries/mutateAdminCron'
 import { Button } from '@/components/ui/button'
-import { RefreshCw, Bell, Calendar, Eye, Trophy, ListOrdered } from 'lucide-react'
+import { RefreshCw, Bell, Eye, Trophy, ListOrdered } from 'lucide-react'
 
 function formaterFeltVerdi(felt: string, verdi: string | number | null): string {
     if (verdi === null) return 'null'
@@ -104,25 +104,25 @@ function DryRunScoreKampRad({ kamp }: { kamp: DryRunScoreKamp }) {
     )
 }
 
-function SyncScoresKnapp() {
-    const { mutate, isPending, data, error, isSuccess } = UseMutateAdminCron('sync-scores')
+function SyncKnapp() {
+    const { mutate, isPending, data, error, isSuccess } = UseMutateAdminSync()
     const {
         mutate: dryMutate,
         isPending: dryPending,
         data: dryData,
         error: dryError,
         isSuccess: drySuccess,
-    } = UseDryRunSyncScores()
+    } = UseDryRunSync()
     const [visJson, setVisJson] = React.useState(false)
 
     return (
         <div className="flex flex-col gap-2 py-3 first:pt-0 last:pb-0">
             <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
-                    <p className="text-sm font-medium text-stone-900">Synk resultater</p>
+                    <p className="text-sm font-medium text-stone-900">Synk kamper og resultater</p>
                     <p className="text-xs text-stone-500">
-                        Henter live-scores fra football-data.org for pågående, nylig ferdige, og kamper der kampstart
-                        har passert.
+                        Én fetch mot football-data.org — oppdaterer kampoppsett (tidspunkt, lag, runde) og live-scores
+                        i samme kjøring.
                     </p>
                 </div>
                 <div className="flex gap-2 shrink-0">
@@ -148,21 +148,16 @@ function SyncScoresKnapp() {
             </div>
             {isSuccess && data && (
                 <p className="text-xs text-green-700 bg-green-50 rounded-lg px-3 py-1.5">
-                    {`hentet: ${data.hentet} · oppdatert: ${data.oppdatert}`}
+                    {`hentet: ${data.hentet} · kamper oppdatert: ${data.kamper.oppdatert} · scores oppdatert: ${data.scores.oppdatert}`}
                 </p>
             )}
             {error && (
                 <p className="text-xs text-red-700 bg-red-50 rounded-lg px-3 py-1.5">Kunne ikke lagre — prøv igjen.</p>
             )}
             {drySuccess && dryData && (
-                <div className="text-xs bg-blue-50 rounded-lg px-3 py-2 space-y-1.5">
+                <div className="text-xs bg-blue-50 rounded-lg px-3 py-2 space-y-2">
                     <div className="flex items-center justify-between gap-2">
-                        <p className="font-medium text-blue-800">
-                            Dry run: {dryData.hentet} fra API ({dryData.relevante} relevante) —{' '}
-                            {dryData.oppdatert === 0
-                                ? 'ingen ville blitt oppdatert'
-                                : `${dryData.oppdatert} ville blitt oppdatert`}
-                        </p>
+                        <p className="font-medium text-blue-800">Dry run</p>
                         <button
                             className="shrink-0 font-mono text-[10px] text-blue-600 hover:text-blue-800"
                             onClick={() => setVisJson((v) => !v)}
@@ -176,100 +171,37 @@ function SyncScoresKnapp() {
                         </pre>
                     ) : (
                         <>
-                            {dryData.kamper.length > 0 && (
-                                <ul className="space-y-0.5">
-                                    {dryData.kamper.map((k) => (
-                                        <DryRunScoreKampRad key={k.match_num} kamp={k} />
-                                    ))}
-                                </ul>
-                            )}
-                            {dryData.kamper.length === 0 && <p className="text-blue-600">Ingen kamper fra API.</p>}
+                            <div>
+                                <p className="font-medium text-blue-700 mb-0.5">
+                                    Kampoppsett — {dryData.kamper.hentet} hentet,{' '}
+                                    {dryData.kamper.oppdatert === 0
+                                        ? 'ingen endringer'
+                                        : `${dryData.kamper.oppdatert} ville blitt oppdatert`}
+                                </p>
+                                {dryData.kamper.endringer && dryData.kamper.endringer.length > 0 && (
+                                    <ul className="space-y-0.5 text-blue-700">
+                                        {dryData.kamper.endringer.map((e) => (
+                                            <DryRunEndringRad key={e.match_num} endring={e} />
+                                        ))}
+                                    </ul>
+                                )}
+                            </div>
+                            <div>
+                                <p className="font-medium text-blue-700 mb-0.5">
+                                    Scores — {dryData.scores.hentet} fra API ({dryData.scores.relevante} relevante),{' '}
+                                    {dryData.scores.oppdatert === 0
+                                        ? 'ingen ville blitt oppdatert'
+                                        : `${dryData.scores.oppdatert} ville blitt oppdatert`}
+                                </p>
+                                {dryData.scores.kamper.length > 0 && (
+                                    <ul className="space-y-0.5">
+                                        {dryData.scores.kamper.map((k) => (
+                                            <DryRunScoreKampRad key={k.match_num} kamp={k} />
+                                        ))}
+                                    </ul>
+                                )}
+                            </div>
                         </>
-                    )}
-                </div>
-            )}
-            {dryError && (
-                <p className="text-xs text-red-700 bg-red-50 rounded-lg px-3 py-1.5">Kunne ikke lagre — prøv igjen.</p>
-            )}
-        </div>
-    )
-}
-
-function SyncMatchesKnapp() {
-    const { mutate, isPending, data, error, isSuccess } = UseMutateAdminCron('sync-matches')
-    const {
-        mutate: dryMutate,
-        isPending: dryPending,
-        data: dryData,
-        error: dryError,
-        isSuccess: drySuccess,
-    } = UseDryRunSyncMatches()
-    const [visJson, setVisJson] = React.useState(false)
-
-    return (
-        <div className="flex flex-col gap-2 py-3 first:pt-0 last:pb-0">
-            <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
-                    <p className="text-sm font-medium text-stone-900">Synk kampoppsett</p>
-                    <p className="text-xs text-stone-500">
-                        Henter kampoppsett (tidspunkt, lag, runde) fra football-data.org.
-                    </p>
-                </div>
-                <div className="flex gap-2 shrink-0">
-                    <Button
-                        variant="ghost"
-                        size="small"
-                        loading={dryPending}
-                        icon={<Eye className="h-4 w-4" />}
-                        onClick={() => dryMutate()}
-                    >
-                        Dry run
-                    </Button>
-                    <Button
-                        variant="outline"
-                        size="small"
-                        loading={isPending}
-                        icon={<Calendar className="h-4 w-4" />}
-                        onClick={() => mutate()}
-                    >
-                        Kjør
-                    </Button>
-                </div>
-            </div>
-            {isSuccess && data && (
-                <p className="text-xs text-green-700 bg-green-50 rounded-lg px-3 py-1.5">
-                    {`hentet: ${data.hentet} · oppdatert: ${data.oppdatert}`}
-                </p>
-            )}
-            {error && (
-                <p className="text-xs text-red-700 bg-red-50 rounded-lg px-3 py-1.5">Kunne ikke lagre — prøv igjen.</p>
-            )}
-            {drySuccess && dryData && (
-                <div className="text-xs bg-blue-50 rounded-lg px-3 py-2 space-y-1.5">
-                    <div className="flex items-center justify-between gap-2">
-                        <p className="font-medium text-blue-800">
-                            Dry run: {dryData.hentet} kamper hentet —{' '}
-                            {dryData.oppdatert === 0 ? 'ingen endringer' : `${dryData.oppdatert} ville blitt oppdatert`}
-                        </p>
-                        <button
-                            className="shrink-0 font-mono text-[10px] text-blue-600 hover:text-blue-800"
-                            onClick={() => setVisJson((v) => !v)}
-                        >
-                            {visJson ? 'Skjul JSON' : 'Vis JSON'}
-                        </button>
-                    </div>
-                    {visJson ? (
-                        <pre className="max-h-96 overflow-x-auto rounded bg-white p-2 text-[10px] text-stone-700">
-                            {JSON.stringify(dryData, null, 2)}
-                        </pre>
-                    ) : (
-                        dryData.endringer.length > 0 && (
-                            <ul className="space-y-0.5 text-blue-700">
-                                {dryData.endringer.map((e) => (
-                                    <DryRunEndringRad key={e.match_num} endring={e} />
-                                ))}
-                            </ul>
-                        )
                     )}
                 </div>
             )}
@@ -563,8 +495,7 @@ const CronPage: NextPage = () => {
             <h1 className="text-2xl font-bold text-stone-900">Cron-jobber</h1>
             <div className="bp-card">
                 <div className="divide-y divide-stone-100">
-                    <SyncScoresKnapp />
-                    <SyncMatchesKnapp />
+                    <SyncKnapp />
                     <SyncStandingsKnapp />
                     <SendPåminnelserKnapp />
                     <SendEttermiddagsVarselKnapp />

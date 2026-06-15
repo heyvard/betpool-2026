@@ -3,8 +3,7 @@ import { useMutation } from '@tanstack/react-query'
 import { useAuthedFetch } from '../auth/authedFetch'
 
 export type CronJobb =
-    | 'sync-scores'
-    | 'sync-matches'
+    | 'sync'
     | 'sync-standings'
     | 'send-reminders'
     | 'send-vm-start'
@@ -71,24 +70,35 @@ export function UseMutateAdminCron(jobb: CronJobb) {
     })
 }
 
-export function UseDryRunSyncMatches() {
+export interface DryRunSyncResultat {
+    kamper: DryRunSyncMatchesResultat
+    scores: DryRunSyncScoresResultat
+}
+
+export interface SyncAllAdminResultat {
+    hentet: number
+    kamper: { hentet: number; oppdatert: number }
+    scores: { hentet: number; oppdatert: number }
+}
+
+export function UseMutateAdminSync() {
     const authedFetch = useAuthedFetch()
     return useMutation({
         mutationFn: async () => {
-            const response = await authedFetch('/api/v1/admin/cron/sync-matches?dryRun=true', { method: 'POST' })
+            const response = await authedFetch('/api/v1/admin/cron/sync', { method: 'POST' })
             if (!response.ok) throw new Error(`Serverfeil: ${response.status}`)
-            return response.json() as Promise<DryRunSyncMatchesResultat>
+            return response.json() as Promise<SyncAllAdminResultat>
         },
     })
 }
 
-export function UseDryRunSyncScores() {
+export function UseDryRunSync() {
     const authedFetch = useAuthedFetch()
     return useMutation({
         mutationFn: async () => {
-            const response = await authedFetch('/api/v1/admin/cron/sync-scores?dryRun=true', { method: 'POST' })
+            const response = await authedFetch('/api/v1/admin/cron/sync?dryRun=true', { method: 'POST' })
             if (!response.ok) throw new Error(`Serverfeil: ${response.status}`)
-            return response.json() as Promise<DryRunSyncScoresResultat>
+            return response.json() as Promise<DryRunSyncResultat>
         },
     })
 }
