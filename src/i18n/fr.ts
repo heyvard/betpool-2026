@@ -36,6 +36,7 @@ const fr: Translations = {
         tilbakemeldinger: 'Retours',
         sprak: 'Langue',
         jokerbruk: 'Jokers',
+        admin: 'Admin',
     },
     grupper: {
         tittel: 'Groupes',

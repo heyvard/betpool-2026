@@ -13,7 +13,7 @@ import { erTestAuth } from '../utils/erTestAuth'
 import { TestUserSwitcher } from '../components/dev/TestUserSwitcher'
 import { TestClock } from '../components/dev/TestClock'
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu'
-import { BookOpen, Check, House, ListChecks, ListOrdered, Menu, Zap } from 'lucide-react'
+import { BookOpen, Check, ChevronRight, House, ListChecks, ListOrdered, Menu, Settings, Zap } from 'lucide-react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { LoadingScreen } from '../components/loading/LoadingScreen'
 import { PullToRefresh } from '../components/PullToRefresh'
@@ -160,61 +160,78 @@ function Layout({ children }: { children: React.ReactNode }) {
                                     <span className="font-semibold text-stone-900">{t.nav.jokerbruk}</span>
                                 </div>
                             </DropdownMenu.Item>
-                            {me?.scoreadmin && (
+                            {(me?.scoreadmin || me?.superadmin || me?.paymentadmin) && (
                                 <>
-                                    <DropdownMenu.Item
-                                        className="px-4 py-2 cursor-pointer hover:bg-stone-50 outline-hidden text-stone-700"
-                                        onSelect={() => router.push('/sluttspill')}
-                                    >
-                                        {t.nav.redigerSluttspill}
-                                    </DropdownMenu.Item>
-                                    <DropdownMenu.Item
-                                        className="px-4 py-2 cursor-pointer hover:bg-stone-50 outline-hidden text-stone-700"
-                                        onSelect={() => router.push('/resultatservice')}
-                                    >
-                                        {t.nav.redigerResultater}
-                                    </DropdownMenu.Item>
+                                    <DropdownMenu.Separator className="my-1 h-px bg-stone-200" />
+                                    <DropdownMenu.Sub>
+                                        <DropdownMenu.SubTrigger className="flex items-center justify-between w-full px-4 py-2 cursor-pointer hover:bg-stone-50 outline-hidden text-stone-700 data-[state=open]:bg-stone-50">
+                                            <div className="flex items-center gap-2">
+                                                <Settings className="h-4 w-4 text-stone-400" />
+                                                <span>{t.nav.admin}</span>
+                                            </div>
+                                            <ChevronRight className="h-4 w-4 text-stone-400" />
+                                        </DropdownMenu.SubTrigger>
+                                        <DropdownMenu.Portal>
+                                            <DropdownMenu.SubContent
+                                                sideOffset={4}
+                                                className="z-50 min-w-44 rounded-xl bg-white shadow-xl ring-1 ring-stone-200 py-1.5 text-sm"
+                                            >
+                                                {me?.scoreadmin && (
+                                                    <>
+                                                        <DropdownMenu.Item
+                                                            className="px-4 py-2 cursor-pointer hover:bg-stone-50 outline-hidden text-stone-700"
+                                                            onSelect={() => router.push('/sluttspill')}
+                                                        >
+                                                            {t.nav.redigerSluttspill}
+                                                        </DropdownMenu.Item>
+                                                        <DropdownMenu.Item
+                                                            className="px-4 py-2 cursor-pointer hover:bg-stone-50 outline-hidden text-stone-700"
+                                                            onSelect={() => router.push('/resultatservice')}
+                                                        >
+                                                            {t.nav.redigerResultater}
+                                                        </DropdownMenu.Item>
+                                                    </>
+                                                )}
+                                                {(me?.superadmin || me?.paymentadmin) && (
+                                                    <DropdownMenu.Item
+                                                        className="px-4 py-2 cursor-pointer hover:bg-stone-50 outline-hidden text-stone-700"
+                                                        onSelect={() => router.push('/innbetaling')}
+                                                    >
+                                                        {t.nav.innbetaling}
+                                                    </DropdownMenu.Item>
+                                                )}
+                                                {me?.superadmin && (
+                                                    <>
+                                                        <DropdownMenu.Item
+                                                            className="px-4 py-2 cursor-pointer hover:bg-stone-50 outline-hidden text-stone-700"
+                                                            onSelect={() => router.push('/brukere')}
+                                                        >
+                                                            {t.nav.brukere}
+                                                        </DropdownMenu.Item>
+                                                        <DropdownMenu.Item
+                                                            className="px-4 py-2 cursor-pointer hover:bg-stone-50 outline-hidden text-stone-700"
+                                                            onSelect={() => router.push('/admin-ligaer')}
+                                                        >
+                                                            {t.nav.adminLigaer}
+                                                        </DropdownMenu.Item>
+                                                        <DropdownMenu.Item
+                                                            className="px-4 py-2 cursor-pointer hover:bg-stone-50 outline-hidden text-stone-700"
+                                                            onSelect={() => router.push('/cron')}
+                                                        >
+                                                            {t.nav.cron}
+                                                        </DropdownMenu.Item>
+                                                        <DropdownMenu.Item
+                                                            className="px-4 py-2 cursor-pointer hover:bg-stone-50 outline-hidden text-stone-700"
+                                                            onSelect={() => router.push('/tilbakemeldinger')}
+                                                        >
+                                                            {t.nav.tilbakemeldinger}
+                                                        </DropdownMenu.Item>
+                                                    </>
+                                                )}
+                                            </DropdownMenu.SubContent>
+                                        </DropdownMenu.Portal>
+                                    </DropdownMenu.Sub>
                                 </>
-                            )}
-                            {(me?.superadmin || me?.paymentadmin) && (
-                                <DropdownMenu.Item
-                                    className="px-4 py-2 cursor-pointer hover:bg-stone-50 outline-hidden text-stone-700"
-                                    onSelect={() => router.push('/innbetaling')}
-                                >
-                                    {t.nav.innbetaling}
-                                </DropdownMenu.Item>
-                            )}
-                            {me?.superadmin && (
-                                <DropdownMenu.Item
-                                    className="px-4 py-2 cursor-pointer hover:bg-stone-50 outline-hidden text-stone-700"
-                                    onSelect={() => router.push('/brukere')}
-                                >
-                                    {t.nav.brukere}
-                                </DropdownMenu.Item>
-                            )}
-                            {me?.superadmin && (
-                                <DropdownMenu.Item
-                                    className="px-4 py-2 cursor-pointer hover:bg-stone-50 outline-hidden text-stone-700"
-                                    onSelect={() => router.push('/admin-ligaer')}
-                                >
-                                    {t.nav.adminLigaer}
-                                </DropdownMenu.Item>
-                            )}
-                            {me?.superadmin && (
-                                <DropdownMenu.Item
-                                    className="px-4 py-2 cursor-pointer hover:bg-stone-50 outline-hidden text-stone-700"
-                                    onSelect={() => router.push('/cron')}
-                                >
-                                    {t.nav.cron}
-                                </DropdownMenu.Item>
-                            )}
-                            {me?.superadmin && (
-                                <DropdownMenu.Item
-                                    className="px-4 py-2 cursor-pointer hover:bg-stone-50 outline-hidden text-stone-700"
-                                    onSelect={() => router.push('/tilbakemeldinger')}
-                                >
-                                    {t.nav.tilbakemeldinger}
-                                </DropdownMenu.Item>
                             )}
                             <DropdownMenu.Separator className="my-1 h-px bg-stone-200" />
                             <DropdownMenu.Label className="px-4 py-1 text-xs font-medium text-stone-400">
