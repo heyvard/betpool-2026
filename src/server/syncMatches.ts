@@ -32,23 +32,33 @@ interface FootballDataResponse {
 // så `synced_at` reflekterer reelle endringer. Rører ikke `match_scores` —
 // resultater og team-override er manuell sannhet.
 // Med dryRun=true gjøres ingen DB-skriving; returnerer hva som ville blitt endret.
-export async function syncMatches(client: PoolClient, dryRun = false): Promise<SyncResultat> {
+export async function syncMatches(
+    client: PoolClient,
+    dryRun = false,
+    prefetched?: FootballDataMatch[],
+): Promise<SyncResultat> {
     console.log(`[sync-matches] starter${dryRun ? ' (dry run)' : ''}`)
-    const token = process.env.FOOTBALL_DATA_TOKEN
-    if (!token) {
-        throw new Error('Mangler FOOTBALL_DATA_TOKEN')
+
+    let råKamper: FootballDataMatch[]
+    if (prefetched) {
+        råKamper = prefetched
+    } else {
+        const token = process.env.FOOTBALL_DATA_TOKEN
+        if (!token) {
+            throw new Error('Mangler FOOTBALL_DATA_TOKEN')
+        }
+        const url = `${BASE_URL}/competitions/${COMPETITION}/matches?season=${SEASON}`
+        console.log(`[sync-matches] henter kampoppsett fra football-data.org (${COMPETITION} ${SEASON})`)
+        const res = await fetch(url, { headers: { 'X-Auth-Token': token } })
+        if (!res.ok) {
+            const body = await res.text()
+            throw new Error(`football-data.org svarte ${res.status} ${res.statusText}: ${body}`)
+        }
+        const body = (await res.json()) as FootballDataResponse
+        råKamper = body.matches ?? []
     }
 
-    const url = `${BASE_URL}/competitions/${COMPETITION}/matches?season=${SEASON}`
-    console.log(`[sync-matches] henter kampoppsett fra football-data.org (${COMPETITION} ${SEASON})`)
-    const res = await fetch(url, { headers: { 'X-Auth-Token': token } })
-    if (!res.ok) {
-        const body = await res.text()
-        throw new Error(`football-data.org svarte ${res.status} ${res.statusText}: ${body}`)
-    }
-
-    const body = (await res.json()) as FootballDataResponse
-    const kamper = (body.matches ?? []).map(transformerKamp)
+    const kamper = råKamper.map(transformerKamp)
     console.log(`[sync-matches] mottok ${kamper.length} kamper fra API`)
 
     if (dryRun) {

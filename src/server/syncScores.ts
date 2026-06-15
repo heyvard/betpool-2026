@@ -53,31 +53,35 @@ interface FootballDataScoreResponse {
 // football-data.org og upserter synced_*-kolonner i match_scores.
 // Rører aldri home_score/away_score (manuell) eller use_manual (admin-switch).
 // Med dryRun=true gjøres ingen DB-skriving; returnerer rådata fra API + nåværende DB-tilstand.
-export async function syncScores(client: PoolClient, dryRun?: false): Promise<SyncScoresResultat>
-export async function syncScores(client: PoolClient, dryRun: true): Promise<DryRunSyncScoresResultat>
+export async function syncScores(client: PoolClient, dryRun?: false, prefetched?: FootballDataMatch[]): Promise<SyncScoresResultat>
+export async function syncScores(client: PoolClient, dryRun: true, prefetched?: FootballDataMatch[]): Promise<DryRunSyncScoresResultat>
 export async function syncScores(
     client: PoolClient,
     dryRun = false,
+    prefetched?: FootballDataMatch[],
 ): Promise<SyncScoresResultat | DryRunSyncScoresResultat> {
     console.log(`[sync-scores] starter${dryRun ? ' (dry run)' : ''}`)
-    const token = process.env.FOOTBALL_DATA_TOKEN
-    if (!token) throw new Error('Mangler FOOTBALL_DATA_TOKEN')
 
-    const url =
-        `${BASE_URL}/competitions/${COMPETITION}/matches` +
-        `?season=${SEASON}&status=IN_PLAY,PAUSED,FINISHED,TIMED,SCHEDULED`
-    console.log(`[sync-scores] henter fra football-data.org (${COMPETITION} ${SEASON})`)
-
-    const res = await fetch(url, { headers: { 'X-Auth-Token': token } })
-    if (!res.ok) {
-        const body = await res.text()
-        throw new Error(`football-data.org svarte ${res.status}: ${body}`)
+    let alleKamper: FootballDataMatch[]
+    if (prefetched) {
+        alleKamper = prefetched
+    } else {
+        const token = process.env.FOOTBALL_DATA_TOKEN
+        if (!token) throw new Error('Mangler FOOTBALL_DATA_TOKEN')
+        const url =
+            `${BASE_URL}/competitions/${COMPETITION}/matches` +
+            `?season=${SEASON}&status=IN_PLAY,PAUSED,FINISHED,TIMED,SCHEDULED`
+        console.log(`[sync-scores] henter fra football-data.org (${COMPETITION} ${SEASON})`)
+        const res = await fetch(url, { headers: { 'X-Auth-Token': token } })
+        if (!res.ok) {
+            const body = await res.text()
+            throw new Error(`football-data.org svarte ${res.status}: ${body}`)
+        }
+        const body = (await res.json()) as FootballDataScoreResponse
+        alleKamper = body.matches ?? []
     }
 
-    const body = (await res.json()) as FootballDataScoreResponse
     const now = Date.now()
-
-    const alleKamper = body.matches ?? []
 
     // Hent gjeldende DB-tilstand for kampene API-et kjenner til. Brukes både til
     // catch-up (se erRelevant) og til dry-run-rapporten.
