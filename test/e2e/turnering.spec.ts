@@ -1,6 +1,6 @@
 import { test, expect, type BrowserContext, type Locator, type Page } from '@playwright/test'
 
-import { seedBet, seedUser, truncateAll } from '../support/db'
+import { seedBet, seedUser, setMatchStatus, truncateAll } from '../support/db'
 import { testKamper } from '../support/matches'
 import { erNorgeKamp } from '../../src/data/matches'
 import type { Match } from '../../src/types/types'
@@ -272,6 +272,9 @@ test('full gjennomspilling: tipping, tid fremover, resultater og leaderboard', a
         await page.goto('/resultatservice')
         for (const o of runde1) {
             await settResultatViaUi(page, o.kamp, o.resultat.hjemme, o.resultat.borte)
+            // Som i produksjon: kampen er ferdigspilt (football-data → FINISHED),
+            // så poengene er endelige (ikke foreløpige/live).
+            await setMatchStatus(o.kamp.match_num, 'FINISHED')
         }
     })
 
@@ -291,6 +294,7 @@ test('full gjennomspilling: tipping, tid fremover, resultater og leaderboard', a
         await page.goto('/resultatservice')
         for (const o of runde2) {
             await settResultatViaUi(page, o.kamp, o.resultat.hjemme, o.resultat.borte)
+            await setMatchStatus(o.kamp.match_num, 'FINISHED')
         }
     })
 
@@ -317,6 +321,7 @@ test('full gjennomspilling: tipping, tid fremover, resultater og leaderboard', a
         await page.goto('/resultatservice')
         for (const o of runde4) {
             await settResultatViaUi(page, o.kamp, o.resultat.hjemme, o.resultat.borte)
+            await setMatchStatus(o.kamp.match_num, 'FINISHED')
         }
     })
 

@@ -73,15 +73,11 @@ const handler = async function handler(opts: ApiHandlerOpts): Promise<void> {
             if (new Date(jsonMatch.game_start) >= now) return null
             const score = scoreMap.get(b.match_num)
             const resultat = score ? resolveActiveScore(score) : { home_score: null, away_score: null }
-            const erPågående = erKampPågående(jsonMatch.status)
-            // Live synket delresultat (hverken manuelt satt eller ferdigstilt).
-            const resultatFraSynk =
-                !!score && !score.use_manual && score.synced_home_ft !== null && score.synced_away_ft !== null
-            // Ingen score-rad, eller ingen score-verdi av noe slag → kampen har startet
-            // men vi mangler resultat (typisk TIMED). Settes til 0-0 og foreløpig=true
-            // slik at klienten slipper å sjekke game_start selv.
-            const ingenResultatSatt = !score || (score.home_score === null && score.synced_home_ft === null)
-            const foreløpig = erPågående && (resultatFraSynk || ingenResultatSatt)
+            // Mens kampen pågår er poengene foreløpige (live) — uavhengig av om
+            // resultatet er synket fra football-data.org, satt manuelt av en
+            // scoreadmin, eller ikke satt ennå (typisk TIMED → 0-0). Først når
+            // kampen er ferdig (FINISHED/AWARDED) regnes poengene som endelige.
+            const foreløpig = erKampPågående(jsonMatch.status)
             const homeResult = resultat.home_score ?? (foreløpig ? 0 : null)
             const awayResult = resultat.away_score ?? (foreløpig ? 0 : null)
             return {

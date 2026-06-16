@@ -87,6 +87,24 @@ export async function seedSyncedScore(matchNum: number, home: number, away: numb
     )
 }
 
+// Legger inn en manuelt satt score i match_scores — som om en scoreadmin satte
+// resultatet for hånd. use_manual blir true. På en pågående kamp skal poengene
+// fortsatt regnes som foreløpige (live).
+export async function seedManualScore(matchNum: number, home: number, away: number): Promise<void> {
+    await withDb((c) =>
+        c.query(
+            `INSERT INTO match_scores (match_num, home_score, away_score, use_manual, created_at, updated_at)
+             VALUES ($1,$2,$3,true,now(),now())
+             ON CONFLICT (match_num) DO UPDATE SET
+               home_score = EXCLUDED.home_score,
+               away_score = EXCLUDED.away_score,
+               use_manual = true,
+               updated_at = now()`,
+            [matchNum, home, away],
+        ),
+    )
+}
+
 export async function seedUser(overrides: Partial<SeedUser> = {}): Promise<SeedUser & { id: string }> {
     const fid = overrides.firebase_user_id ?? `user-${Math.random().toString(36).slice(2, 8)}`
     const u: SeedUser = {
