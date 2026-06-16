@@ -18,7 +18,6 @@ export function UseSendPush() {
         mutationFn: async (payload: SendPushPayload) => {
             const response = await authedFetch('/api/v1/admin/send-push', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload),
             })
             if (!response.ok) throw new Error(`Serverfeil: ${response.status}`)
