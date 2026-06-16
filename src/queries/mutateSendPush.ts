@@ -2,7 +2,7 @@ import { useMutation } from '@tanstack/react-query'
 import { useAuthedFetch } from '../auth/authedFetch'
 
 export interface SendPushPayload {
-    userId: string | 'alle'
+    userId: string
     title: string
     body: string
     url?: string
@@ -10,7 +10,6 @@ export interface SendPushPayload {
 
 export interface SendPushResultat {
     sendt: number
-    brukere?: number
 }
 
 export function UseSendPush() {

@@ -89,13 +89,7 @@ function InnstillingsRad({
     )
 }
 
-function PushSkjema({
-    mottaker,
-    onFerdig,
-}: {
-    mottaker: string | 'alle'
-    onFerdig?: (resultat: SendPushResultat) => void
-}) {
+function PushSkjema({ mottaker, onFerdig }: { mottaker: string; onFerdig?: () => void }) {
     const [tittel, setTittel] = useState('')
     const [melding, setMelding] = useState('')
     const [url, setUrl] = useState('')
@@ -109,20 +103,18 @@ function PushSkjema({
             {
                 onSuccess: (resultat) => {
                     setSuksess(resultat)
-                    onFerdig?.(resultat)
+                    onFerdig?.()
                 },
             },
         )
     }
 
     if (suksess) {
-        const tekst =
-            mottaker === 'alle'
-                ? `Sendt til ${suksess.brukere ?? '?'} brukere (${suksess.sendt} enheter).`
-                : `Sendt til ${suksess.sendt} enhet${suksess.sendt !== 1 ? 'er' : ''}.`
         return (
             <div className="flex items-center justify-between rounded-lg bg-green-50 px-3 py-2 text-sm text-green-700">
-                <span>{tekst}</span>
+                <span>
+                    Sendt til {suksess.sendt} enhet{suksess.sendt !== 1 ? 'er' : ''}.
+                </span>
                 <button
                     onClick={() => {
                         setSuksess(null)
@@ -553,7 +545,6 @@ function BrukerTabell({ brukere, me }: { brukere: UserForAdmin[]; me: User }) {
 const Brukere: NextPage = () => {
     const { data } = UseUsers()
     const { data: me } = UseUser()
-    const [visPushTilAlle, setVisPushTilAlle] = useState(false)
 
     if (!data || !me) {
         return <Spinner />
@@ -561,25 +552,7 @@ const Brukere: NextPage = () => {
 
     return (
         <div className="space-y-3">
-            <div className="flex items-center justify-between">
-                <h1 className="text-2xl font-bold text-stone-900">Brukere</h1>
-                {me.superadmin && (
-                    <Button
-                        variant="outline"
-                        size="small"
-                        icon={<Bell className="h-4 w-4" />}
-                        onClick={() => setVisPushTilAlle((v) => !v)}
-                    >
-                        Send push til alle
-                    </Button>
-                )}
-            </div>
-            {me.superadmin && visPushTilAlle && (
-                <div className="bp-card space-y-2">
-                    <p className="bp-overline">Send push til alle aktive brukere</p>
-                    <PushSkjema mottaker="alle" onFerdig={() => setVisPushTilAlle(false)} />
-                </div>
-            )}
+            <h1 className="text-2xl font-bold text-stone-900">Brukere</h1>
             <BrukerTabell brukere={data} me={me} />
         </div>
     )
