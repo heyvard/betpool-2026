@@ -1,11 +1,8 @@
-import dayjs from 'dayjs'
 import NextLink from 'next/link'
 import { MatchBetMedScore } from '../../queries/useAllBets'
 import { hentFlag, hentNavn } from '../../utils/lag'
 import { rundeTilTekst } from '../../utils/rundeTilTekst'
 import React from 'react'
-import nb from 'dayjs/locale/nb'
-import fr from 'dayjs/locale/fr'
 import { CheckCheck, ChevronRight, Target, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { erNorgeKamp } from '../../data/matches'
@@ -94,7 +91,6 @@ function TippBlokk({ bet, verdikt }: { bet: MatchBetMedScore; verdikt: Verdikt }
 
 export function ResultatRad({ bet, locale }: { bet: MatchBetMedScore; locale: 'no' | 'fr' }) {
     const { t } = useLanguage()
-    const dayjsLocale = locale === 'fr' ? fr : nb
     const verdikt = getVerdikt(bet)
     const s = VERDIKT_STYLE[verdikt]
     const norgeKamp = erNorgeKamp(bet.home_team, bet.away_team)
@@ -103,7 +99,6 @@ export function ResultatRad({ bet, locale }: { bet: MatchBetMedScore; locale: 'n
     const awayNavn = hentNavn(bet.away_team, locale)
     const homeFlag = hentFlag(bet.home_team)
     const awayFlag = hentFlag(bet.away_team)
-    const klokkeslett = dayjs(bet.game_start).locale(dayjsLocale).format('HH:mm')
     const dobbelTitle = bet.joker ? t.spilteKamper.jokerDobbel : t.spilteKamper.norgeDobbel
     const poengTekst = bet.poeng > 0 ? `+${bet.poeng}` : `${bet.poeng}`
 
@@ -129,7 +124,6 @@ export function ResultatRad({ bet, locale }: { bet: MatchBetMedScore; locale: 'n
                         </span>
                     )}
                 </div>
-                <div className="text-[10px] text-[#a8a29e] leading-tight mt-px">{klokkeslett}</div>
             </div>
 
             <FasitBlokk bet={bet} />
