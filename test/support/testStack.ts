@@ -66,6 +66,12 @@ export async function startTestStack(): Promise<TestStack> {
         NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID ?? '0000000000',
         NEXT_PUBLIC_FIREBASE_APP_ID: process.env.NEXT_PUBLIC_FIREBASE_APP_ID ?? '1:0000000000:web:test',
         CRON_SECRET: process.env.CRON_SECRET ?? 'test-cron-secret',
+        // Test-VAPID-nøkler slik at push-endepunkter kan kjøres i integrasjonstester.
+        // Produksjonsnøkler overstyrer hvis de er satt.
+        NEXT_PUBLIC_VAPID_PUBLIC_KEY:
+            process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ??
+            'BL6heX9yGXwOe1I8HnihlQXt4VQmeyPUZ4nVGyXbXT0m4wcaEPB_0jRLsRXVKTP43b7SvWbmRSfLsX65O6j94Mo',
+        VAPID_PRIVATE_KEY: process.env.VAPID_PRIVATE_KEY ?? '-Y78Bu_1GE8B1j34oFL_69gAPdPPZq5kHLGd9gIcxmc',
     }
 
     // Kjør knex-migrasjonene mot PGlite — IN-PROCESS, ikke via knex-CLI.
