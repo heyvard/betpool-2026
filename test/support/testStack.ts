@@ -72,6 +72,8 @@ export async function startTestStack(): Promise<TestStack> {
             process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ??
             'BL6heX9yGXwOe1I8HnihlQXt4VQmeyPUZ4nVGyXbXT0m4wcaEPB_0jRLsRXVKTP43b7SvWbmRSfLsX65O6j94Mo',
         VAPID_PRIVATE_KEY: process.env.VAPID_PRIVATE_KEY ?? '-Y78Bu_1GE8B1j34oFL_69gAPdPPZq5kHLGd9gIcxmc',
+        // Tillat selvsignerte sertifikater i integrasjonstester (push-mock bruker HTTPS med egensignert cert).
+        NODE_TLS_REJECT_UNAUTHORIZED: '0',
     }
 
     // Kjør knex-migrasjonene mot PGlite — IN-PROCESS, ikke via knex-CLI.
