@@ -28,6 +28,7 @@ const fr: Translations = {
         redigerSluttspill: 'Modifier phases finales',
         redigerResultater: 'Modifier résultats',
         brukere: 'Utilisateurs',
+        sendPush: 'Envoyer push',
         cron: 'Tâches planifiées',
         adminLigaer: 'Ligues privées',
         innbetaling: 'Paiements',
