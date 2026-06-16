@@ -3,13 +3,15 @@ import { Spinner } from '../components/loading/Spinner'
 import React, { useState, useMemo } from 'react'
 import { UseUsers } from '../queries/useUsers'
 import { UseMutateUser, UseSletteUser } from '../queries/mutateUser'
+import { UseSendPush, SendPushResultat } from '../queries/mutateSendPush'
+import { TextField } from '@/components/ui/text-field'
 import { UseUser } from '../queries/useUser'
 import { UserForAdmin } from '../types/types'
 import { User } from '../types/user'
 import { Switch } from '@/components/ui/switch'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
-import { ChevronDown, ChevronUp, ChevronsUpDown, Trash2, Search, X } from 'lucide-react'
+import { ChevronDown, ChevronUp, ChevronsUpDown, Trash2, Search, X, Bell, Send } from 'lucide-react'
 import {
     useReactTable,
     getCoreRowModel,
@@ -87,9 +89,100 @@ function InnstillingsRad({
     )
 }
 
+function PushSkjema({
+    mottaker,
+    onFerdig,
+}: {
+    mottaker: string | 'alle'
+    onFerdig?: (resultat: SendPushResultat) => void
+}) {
+    const [tittel, setTittel] = useState('')
+    const [melding, setMelding] = useState('')
+    const [url, setUrl] = useState('')
+    const [suksess, setSuksess] = useState<SendPushResultat | null>(null)
+    const { mutate, isPending, isError, reset } = UseSendPush()
+
+    function send() {
+        if (!tittel.trim() || !melding.trim()) return
+        mutate(
+            { userId: mottaker, title: tittel, body: melding, url: url || undefined },
+            {
+                onSuccess: (resultat) => {
+                    setSuksess(resultat)
+                    onFerdig?.(resultat)
+                },
+            },
+        )
+    }
+
+    if (suksess) {
+        const tekst =
+            mottaker === 'alle'
+                ? `Sendt til ${suksess.brukere ?? '?'} brukere (${suksess.sendt} enheter).`
+                : `Sendt til ${suksess.sendt} enhet${suksess.sendt !== 1 ? 'er' : ''}.`
+        return (
+            <div className="flex items-center justify-between rounded-lg bg-green-50 px-3 py-2 text-sm text-green-700">
+                <span>{tekst}</span>
+                <button
+                    onClick={() => {
+                        setSuksess(null)
+                        setTittel('')
+                        setMelding('')
+                        setUrl('')
+                        reset()
+                    }}
+                    className="text-xs underline"
+                >
+                    Send en til
+                </button>
+            </div>
+        )
+    }
+
+    return (
+        <div className="space-y-2 rounded-lg bg-white p-3 ring-1 ring-stone-200">
+            <TextField
+                label="Tittel"
+                size="small"
+                value={tittel}
+                onChange={(e) => setTittel(e.target.value)}
+                placeholder="VM Betpool"
+            />
+            <TextField
+                label="Melding"
+                size="small"
+                value={melding}
+                onChange={(e) => setMelding(e.target.value)}
+                placeholder="Husk å tippe kampene i dag!"
+            />
+            <TextField
+                label="URL (valgfritt)"
+                size="small"
+                value={url}
+                onChange={(e) => setUrl(e.target.value)}
+                placeholder="/my-bets"
+            />
+            <div className="flex items-center gap-2 pt-1">
+                <Button
+                    variant="default"
+                    size="small"
+                    loading={isPending}
+                    disabled={!tittel.trim() || !melding.trim()}
+                    icon={<Send className="h-3.5 w-3.5" />}
+                    onClick={send}
+                >
+                    Send
+                </Button>
+                {isError && <span className="text-xs text-red-600">Kunne ikke lagre — prøv igjen.</span>}
+            </div>
+        </div>
+    )
+}
+
 function ExpandertRad({ user, me }: { user: UserForAdmin; me: User }) {
     const { mutate, isPending } = UseMutateUser(user.id)
     const { mutate: slettBruker, isPending: isPendingSletting, error: sletteError } = UseSletteUser(user.id)
+    const [visPushSkjema, setVisPushSkjema] = useState(false)
 
     const sistBett = user.last_bet_at ? formaterTidspunkt(user.last_bet_at) : null
     const nesteutippet = user.earliest_unbet_match ? formaterTidspunkt(user.earliest_unbet_match) : null
@@ -169,6 +262,21 @@ function ExpandertRad({ user, me }: { user: UserForAdmin; me: User }) {
                             </Button>
                             {sletteError != null && (
                                 <p className="mt-1 text-xs text-red-700">Kunne ikke lagre — prøv igjen.</p>
+                            )}
+                        </div>
+                    )}
+                    {user.device_count > 0 && (
+                        <div className="pt-2 space-y-2">
+                            <Button
+                                variant="ghost"
+                                size="small"
+                                icon={<Bell className="h-4 w-4" />}
+                                onClick={() => setVisPushSkjema((v) => !v)}
+                            >
+                                Send push
+                            </Button>
+                            {visPushSkjema && (
+                                <PushSkjema mottaker={user.id} onFerdig={() => setVisPushSkjema(false)} />
                             )}
                         </div>
                     )}
@@ -445,6 +553,7 @@ function BrukerTabell({ brukere, me }: { brukere: UserForAdmin[]; me: User }) {
 const Brukere: NextPage = () => {
     const { data } = UseUsers()
     const { data: me } = UseUser()
+    const [visPushTilAlle, setVisPushTilAlle] = useState(false)
 
     if (!data || !me) {
         return <Spinner />
@@ -452,7 +561,25 @@ const Brukere: NextPage = () => {
 
     return (
         <div className="space-y-3">
-            <h1 className="text-2xl font-bold text-stone-900">Brukere</h1>
+            <div className="flex items-center justify-between">
+                <h1 className="text-2xl font-bold text-stone-900">Brukere</h1>
+                {me.superadmin && (
+                    <Button
+                        variant="outline"
+                        size="small"
+                        icon={<Bell className="h-4 w-4" />}
+                        onClick={() => setVisPushTilAlle((v) => !v)}
+                    >
+                        Send push til alle
+                    </Button>
+                )}
+            </div>
+            {me.superadmin && visPushTilAlle && (
+                <div className="bp-card space-y-2">
+                    <p className="bp-overline">Send push til alle aktive brukere</p>
+                    <PushSkjema mottaker="alle" onFerdig={() => setVisPushTilAlle(false)} />
+                </div>
+            )}
             <BrukerTabell brukere={data} me={me} />
         </div>
     )
