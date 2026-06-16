@@ -1,5 +1,5 @@
 import { api, førsteMatchNum, seedUser, truncateAll, withDb } from './helpers'
-import { seedBet } from '../support/db'
+import { seedBet, seedManualScore, setMatchStatus } from '../support/db'
 
 beforeEach(truncateAll)
 
@@ -121,5 +121,38 @@ describe('tipping', () => {
         const body = await res.json()
         const bet = body.bets.find((b: { match_num: number }) => b.match_num === matchNum)
         expect(bet).toMatchObject({ home_result: 4, away_result: 1 })
+    })
+
+    it('GET /api/v1/bets markerer manuelt satt score på en pågående kamp som foreløpig', async () => {
+        const alice = await seedUser({ firebase_user_id: 'alice', name: 'Alice' })
+        const matchNum = await førsteMatchNum()
+        await seedBet({ user_id: alice.id, match_num: matchNum, home_score: 2, away_score: 1 })
+
+        // Kampen pågår, og en scoreadmin har satt resultatet manuelt (use_manual = true).
+        await setMatchStatus(matchNum, 'IN_PLAY')
+        await seedManualScore(matchNum, 2, 1)
+
+        const res = await api('/api/v1/bets', { user: 'alice', clock: '2030-01-01T00:00:00Z' })
+        expect(res.status).toBe(200)
+        const body = await res.json()
+        const bet = body.bets.find((b: { match_num: number }) => b.match_num === matchNum)
+        // Resultatet brukes, men poengene er foreløpige siden kampen ikke er ferdig.
+        expect(bet).toMatchObject({ home_result: 2, away_result: 1, foreløpig: true })
+    })
+
+    it('GET /api/v1/bets markerer manuelt satt score på en ferdigspilt kamp som endelig', async () => {
+        const alice = await seedUser({ firebase_user_id: 'alice', name: 'Alice' })
+        const matchNum = await førsteMatchNum()
+        await seedBet({ user_id: alice.id, match_num: matchNum, home_score: 2, away_score: 1 })
+
+        // Kampen er ferdig, og resultatet er satt manuelt.
+        await setMatchStatus(matchNum, 'FINISHED')
+        await seedManualScore(matchNum, 2, 1)
+
+        const res = await api('/api/v1/bets', { user: 'alice', clock: '2030-01-01T00:00:00Z' })
+        expect(res.status).toBe(200)
+        const body = await res.json()
+        const bet = body.bets.find((b: { match_num: number }) => b.match_num === matchNum)
+        expect(bet).toMatchObject({ home_result: 2, away_result: 1, foreløpig: false })
     })
 })
