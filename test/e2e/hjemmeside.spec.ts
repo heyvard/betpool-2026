@@ -207,6 +207,28 @@ test.describe(() => {
         expect(yNatten).toBeLessThan(yNeste)
     })
 
+    // Natt-hullet: VM-kampene spilles 18:00–06:00, så siste nattkamp kan sparke i
+    // gang langt før kl. 06:00. Da demoteres inneværende kampdag fra «Neste kampdag»
+    // til morgendagens kamper. Tidligere slo «Natten som var» først inn kl. 06:00,
+    // så de nettopp startede nattkampene forsvant helt i vinduet ~03:00–06:00.
+    // Nå skal de fortsatt vises som «Natten som var».
+    test('natt (kl. 04:00): nettopp startet natt vises som «Natten som var»', async ({ context, page }) => {
+        const alice = await seedUser({ firebase_user_id: 'alice', name: 'alice', paid: true })
+        await seedBet({ user_id: alice.id, match_num: nattKamp.match_num, home_score: 3, away_score: 1 })
+        await seedBet({ user_id: alice.id, match_num: kveldKamp.match_num, home_score: 2, away_score: 0 })
+
+        // Kl. 04:00 morgenen etter natt-kampene (kampdag-nøkkel «kveld» starter
+        // egentlig kl. 10:00, så kl. 04:00 ligger fortsatt i «natt»-kampdagen, men
+        // etter at natt-kampene har startet). Dette er midt i det gamle hullet.
+        const kl0400 = new Date(kveld * DAG + 4 * 3600e3).toISOString()
+        await loggInn(context, 'alice', kl0400)
+
+        await page.goto('/')
+
+        await expect(page.getByText('Natten som var', { exact: true })).toBeVisible()
+        await expect(page.getByText('3–1')).toBeVisible()
+    })
+
     test('ettermiddag (14:00): ingen «Natten som var»', async ({ context, page }) => {
         const alice = await seedUser({ firebase_user_id: 'alice', name: 'alice', paid: true })
         await seedBet({ user_id: alice.id, match_num: kveldKamp.match_num, home_score: 2, away_score: 0 })

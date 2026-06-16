@@ -338,24 +338,31 @@ function NesteKampSeksjon() {
     ).length
     const altTippet = manglerTips === 0
 
-    // Morgenvindu 06:00–12:00: vis også forrige kampdag (natten som var)
-    const erIMorgenvindu = nå().hour() >= 6 && nå().hour() < 12
+    // «Natten som var»: den siste kampdagen med kamper som har startet, vist så
+    // lenge den er forskjellig fra primær-seksjonen og fortsatt er «fersk». En
+    // kampdag er aktiv fra kl. 10:00 til kl. 10:00 dagen etter (10-timers
+    // forskyvningen over); vi viser den i tillegg helt frem til kl. 12:00
+    // (kampdag + 36 t) som en kort morgen-hale.
+    //
+    // Vinduet var tidligere låst til klokkeslett 06:00–12:00. Siden VM-kampene
+    // spilles 18:00–06:00 norsk tid, ble inneværende kampdag demotert idet siste
+    // kamp sparket i gang (ofte 02:00–05:00), mens «Natten som var» først slo inn
+    // kl. 06:00 – så nettopp spilte/pågående nattkamper forsvant helt i mellomtiden.
     let forrigeKampDag: dayjs.Dayjs | null = null
     let forrigeKampene: Bet[] = []
 
-    if (erIMorgenvindu) {
-        const spilte = bets
-            .filter((b) => dayjs(b.game_start).isBefore(nå()))
-            .sort((a, b) => dayjs(b.game_start).valueOf() - dayjs(a.game_start).valueOf())
+    const spilte = bets
+        .filter((b) => dayjs(b.game_start).isBefore(nå()))
+        .sort((a, b) => dayjs(b.game_start).valueOf() - dayjs(a.game_start).valueOf())
 
-        if (spilte.length > 0) {
-            const sisteDag = kampDag(dayjs(spilte[0].game_start))
-            if (!sisteDag.isSame(nesteKampDag, 'day')) {
-                forrigeKampDag = sisteDag
-                forrigeKampene = bets
-                    .filter((b) => kampDag(dayjs(b.game_start)).isSame(sisteDag, 'day'))
-                    .sort((a, b) => dayjs(a.game_start).valueOf() - dayjs(b.game_start).valueOf())
-            }
+    if (spilte.length > 0) {
+        const sisteDag = kampDag(dayjs(spilte[0].game_start))
+        const visesTil = sisteDag.add(36, 'hour')
+        if (!sisteDag.isSame(nesteKampDag, 'day') && nå().isBefore(visesTil)) {
+            forrigeKampDag = sisteDag
+            forrigeKampene = bets
+                .filter((b) => kampDag(dayjs(b.game_start)).isSame(sisteDag, 'day'))
+                .sort((a, b) => dayjs(a.game_start).valueOf() - dayjs(b.game_start).valueOf())
         }
     }
 
