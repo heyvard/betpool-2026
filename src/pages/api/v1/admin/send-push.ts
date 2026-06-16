@@ -12,7 +12,7 @@ const handler = async function ({ req, user, res, client }: ApiHandlerOpts): Pro
         return
     }
 
-    const { userId, title, body, url } = req.body as {
+    const { userId, title, body, url } = JSON.parse(req.body as string) as {
         userId: string
         title: string
         body: string
