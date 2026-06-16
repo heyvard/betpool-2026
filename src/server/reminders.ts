@@ -100,16 +100,16 @@ function ettermiddagsTekster(language: string, antall: number): { title: string;
 }
 
 async function hentMorgendagensKamper(client: PoolClient): Promise<Match[]> {
-    // Kampdag-vindu kl. 12:00 i morgen → kl. 12:00 overimorgen Oslo-tid,
-    // slik at natt-kamper (01:00–06:00 Oslo) inkluderes i riktig kampdag.
-    const iMorgenKampDagStart = dayjs().tz(OSLO).add(1, 'day').startOf('day').add(12, 'hour')
-    const iMorgenKampDagSlutt = iMorgenKampDagStart.add(1, 'day')
+    // Vindu: nå → nå + 24 timer. Vi varsler kun om kamper som ennå ikke har
+    // startet og som starter innen ett døgn fra kjøretidspunktet.
+    const nå = dayjs()
+    const vinduSlutt = nå.add(24, 'hour')
 
-    console.log(`[send-reminders] kampdag-vindu: ${iMorgenKampDagStart.format()} → ${iMorgenKampDagSlutt.format()}`)
+    console.log(`[send-reminders] vindu: ${nå.format()} → ${vinduSlutt.format()}`)
 
     return (await hentKamper(client)).filter((m) => {
         const kampstart = dayjs(m.game_start)
-        return !kampstart.isBefore(iMorgenKampDagStart) && kampstart.isBefore(iMorgenKampDagSlutt)
+        return !kampstart.isBefore(nå) && kampstart.isBefore(vinduSlutt)
     })
 }
 

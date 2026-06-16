@@ -13,11 +13,11 @@ const hentKamperMock = hentKamper as jest.Mock
 const sendPushMock = sendPushTilBruker as jest.Mock
 
 // Fastsatt "nå": 2026-06-09T12:00:00Z (Oslo = 14:00 CEST).
-// Kampdag-vindu for i morgen: 2026-06-10T10:00:00Z → 2026-06-11T10:00:00Z.
+// 24-timersvindu for påminnelser: 2026-06-09T12:00:00Z → 2026-06-10T12:00:00Z.
 const FASTSATT_NÅ = new Date('2026-06-09T12:00:00Z')
-const KAMP_I_MORGEN = '2026-06-10T14:00:00Z' // innenfor kampdag-vinduet
-const KAMP_I_DAG = '2026-06-09T14:00:00Z' // utenfor vinduet
-const KAMP_OVERMORGEN = '2026-06-11T14:00:00Z' // utenfor vinduet
+const KAMP_I_MORGEN = '2026-06-10T10:00:00Z' // 22 t frem, innenfor 24-timersvinduet
+const KAMP_ALLEREDE_STARTET = '2026-06-09T10:00:00Z' // 2 t siden, utenfor vinduet
+const KAMP_ETTER_24T = '2026-06-10T14:00:00Z' // 26 t frem, utenfor vinduet (jf. bugg-rapport)
 
 // For ettermiddagsvarsel: kamp som ikke har startet ennå i dag
 // Nå er 2026-06-09T12:00:00Z (Oslo 14:00)
@@ -56,13 +56,24 @@ beforeEach(() => {
 
 // --- sendPåminnelser ---
 
-it('returnerer tidlig når det ikke er kamper i morgen', async () => {
-    hentKamperMock.mockResolvedValue([lagMatch(1, KAMP_I_DAG), lagMatch(2, KAMP_OVERMORGEN)])
+it('returnerer tidlig når det ikke er kamper innen 24 timer', async () => {
+    hentKamperMock.mockResolvedValue([lagMatch(1, KAMP_ALLEREDE_STARTET), lagMatch(2, KAMP_ETTER_24T)])
 
     const resultat = await sendPåminnelser(mockClient as any)
 
     expect(resultat).toEqual({ kamperIMorgen: 0, brukereVarslet: 0 })
     expect(mockClient.query).not.toHaveBeenCalled()
+    expect(sendPushMock).not.toHaveBeenCalled()
+})
+
+it('varsler ikke om natt-kamp som starter mer enn 24 timer frem (jf. bugg-rapport)', async () => {
+    // En kamp 26 t frem (f.eks. 04:00 to netter senere) skal ikke utløse varsel,
+    // selv om den faller på neste kalenderdøgn.
+    hentKamperMock.mockResolvedValue([lagMatch(300, KAMP_ETTER_24T)])
+
+    const resultat = await sendPåminnelser(mockClient as any)
+
+    expect(resultat).toEqual({ kamperIMorgen: 0, brukereVarslet: 0 })
     expect(sendPushMock).not.toHaveBeenCalled()
 })
 
