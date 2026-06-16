@@ -161,10 +161,8 @@ export function RundeSeksjon({
     erEgenProfil?: boolean
 }) {
     const { t } = useLanguage()
-    const dayjsLocale = locale === 'fr' ? fr : nb
     const rundeNavn = rundeTilTekst(runde, locale).toUpperCase()
     const rundeSum = bets.filter((b) => !b.foreløpig).reduce((sum, b) => sum + b.poeng, 0)
-    const datoTekst = dayjs(bets[0].game_start).locale(dayjsLocale).format('dd. D. MMMM')
 
     return (
         <div>
@@ -173,7 +171,7 @@ export function RundeSeksjon({
                     {rundeNavn}
                 </span>
                 <span className="text-[11px] font-bold text-[#a8a29e] whitespace-nowrap ml-2">
-                    {datoTekst} · <span className="text-[#b45309]">+{rundeSum}</span>
+                    <span className="text-[#b45309]">+{rundeSum}</span>
                 </span>
             </div>
 

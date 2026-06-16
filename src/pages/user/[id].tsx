@@ -27,7 +27,7 @@ const Home: NextPage = () => {
 
     const userBets = data.bets
         .filter((a) => a.user_id == id)
-        .sort((a, b) => dayjs(a.game_start).unix() - dayjs(b.game_start).unix())
+        .sort((a, b) => dayjs(b.game_start).unix() - dayjs(a.game_start).unix())
 
     const totalPoeng = userBets.filter((b) => !b.foreløpig).reduce((sum, b) => sum + b.poeng, 0)
 
