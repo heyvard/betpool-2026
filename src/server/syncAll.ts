@@ -48,3 +48,21 @@ export async function syncAll(client: PoolClient): Promise<SyncAllResultat> {
 
     return { hentet: kamper.length, kamper: matchResultat, scores: scoresResultat, standings }
 }
+
+export interface SyncLiveResultat {
+    hentet: number
+    kamper: SyncResultat
+    scores: SyncScoresResultat
+}
+
+// Lettvekts-synk for den hyppige live-stien: ÉT football-data-kall som dekker
+// både kampoppsett og scores. Ekskluderer standings (eget, tregere API-kall som
+// fortsatt dekkes av 5-min-cronen) for å holde oss innenfor rate-limiten.
+export async function syncLive(client: PoolClient): Promise<SyncLiveResultat> {
+    const kamper = await hentKamperFraApi()
+
+    const matchResultat = await syncMatches(client, false, kamper)
+    const scoresResultat = await syncScores(client, false, kamper)
+
+    return { hentet: kamper.length, kamper: matchResultat, scores: scoresResultat }
+}
