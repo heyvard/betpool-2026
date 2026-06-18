@@ -30,6 +30,7 @@ import type { Locale } from '../i18n/LanguageContext'
 import type { Translations } from '../i18n/no'
 import { tx } from '../i18n/interpolate'
 import type { Bet } from '../types/types'
+import { KampMinuttEtikett } from '../components/match/LiveMinutt'
 
 function fixLandMedLocale(s: string, locale: 'no' | 'fr') {
     if (s === 'To be announced') return 'TBA'
@@ -247,9 +248,14 @@ function KampSeksjonPanel({
                                             <span className="bp-tabular text-[22px] font-extrabold leading-none text-red-700">
                                                 {scorer ? `${scorer.home_result}–${scorer.away_result}` : '–'}
                                             </span>
-                                            <span className="mt-0.5 flex items-center gap-1 text-[9px] font-extrabold uppercase text-red-700">
+                                            <span className="bp-tabular mt-0.5 flex items-center gap-1 text-[9px] font-extrabold uppercase text-red-700">
                                                 <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-red-600" />
-                                                {t.hjem.paagaar}
+                                                <KampMinuttEtikett
+                                                    gameStart={b.game_start}
+                                                    status={b.status}
+                                                    pauseTekst={t.spilteKamper.pause}
+                                                    fallbackTekst={t.hjem.paagaar}
+                                                />
                                             </span>
                                         </>
                                     )}

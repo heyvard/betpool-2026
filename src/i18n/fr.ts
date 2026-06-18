@@ -148,6 +148,7 @@ const fr: Translations = {
         alleTips: 'Tous les paris',
         sluttresultat: 'Score final',
         liveResultat: 'Score en direct',
+        pause: 'Mi-temps',
         hvaFolkTippet: 'Ce que les gens ont parié',
         hjemme: 'Domicile',
         borte: 'Extérieur',

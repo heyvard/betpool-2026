@@ -143,6 +143,7 @@ const no = {
         alleTips: 'Alle tips',
         sluttresultat: 'Sluttresultat',
         liveResultat: 'Live-resultat',
+        pause: 'Pause',
         hvaFolkTippet: 'Hva folk tippet',
         hjemme: 'Hjemme',
         borte: 'Borte',
