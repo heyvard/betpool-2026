@@ -59,8 +59,9 @@ export function stageTilRunde(stage: string, matchday: number | null): number {
 
 export function gruppeTilTekst(group: string | null): string | undefined {
     if (!group) return undefined
-    // "GROUP_A" -> "Group A"
-    const bokstav = group.replace('GROUP_', '')
+    // football-data bruker "GROUP_A" på matches-endepunktet, men "Group A" på
+    // standings-endepunktet. Normaliser begge til "Group A".
+    const bokstav = group.replace(/^group[_ ]/i, '').trim()
     return `Group ${bokstav}`
 }
 
