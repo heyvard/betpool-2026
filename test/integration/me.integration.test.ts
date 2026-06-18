@@ -32,7 +32,15 @@ describe('/api/v1/me', () => {
 
     it('PUT oppdaterer winner', async () => {
         await seedUser({ firebase_user_id: 'alice', name: 'Alice' })
-        const put = await api('/api/v1/me', { user: 'alice', method: 'PUT', body: { winner: 'Brazil' } })
+        // Vinner kan kun settes i første runde-vinduet (før 2. gruppespillsrunde).
+        // Pinn klokka til før VM, ellers avvises oppdateringen når testen kjøres
+        // etter at vinduet faktisk har stengt (jf. erIFørsteRundeMed).
+        const put = await api('/api/v1/me', {
+            user: 'alice',
+            method: 'PUT',
+            body: { winner: 'Brazil' },
+            clock: '2026-06-01T12:00:00Z',
+        })
         expect(put.status).toBe(200)
 
         const me = await (await api('/api/v1/me', { user: 'alice' })).json()
