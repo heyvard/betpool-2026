@@ -15,6 +15,8 @@ import { finnUtfall, Utfall } from '../../components/results/matchScoreCalculato
 import { fixLand } from '../../components/bet/BetView'
 import { erNorgeKamp } from '../../data/matches'
 import type { Translations } from '../../i18n/no'
+import { useKampKlokke } from '../../components/match/LiveMinutt'
+import { formaterKampMinutt } from '../../utils/kampklokke'
 
 type BetWithUser = MatchBetMedScore & { user: OtherUser }
 type SortOrder = 'poeng' | 'navn' | 'skor'
@@ -65,6 +67,11 @@ function MatchHero({
     t: Translations
 }) {
     const hasScore = match.home_result !== '' && match.away_result !== ''
+    // Klientberegnet matchklokke — viser løpende minutt («63'»), «45+/90+» rundt
+    // overgangene, eller «Pause». Faller tilbake til «Pågår» rett etter avspark.
+    const klokke = useKampKlokke(match.game_start)
+    const minuttTekst = formaterKampMinutt(klokke)
+    const liveTekst = klokke.type === 'pause' ? t.spilteKamper.pause : (minuttTekst ?? t.hjem.paagaar)
     return (
         <div
             className="relative rounded-[18px] overflow-hidden"
@@ -86,9 +93,9 @@ function MatchHero({
                         {rundeTilTekst(match.round, locale)}
                     </span>
                     {isPågår ? (
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-red-600 text-white text-[11px] font-bold uppercase tracking-wide">
+                        <span className="bp-tabular inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-red-600 text-white text-[11px] font-bold uppercase tracking-wide">
                             <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
-                            {t.hjem.paagaar}
+                            {liveTekst}
                         </span>
                     ) : isFinished ? (
                         <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/20 text-white text-[11px] font-bold uppercase tracking-wide">
