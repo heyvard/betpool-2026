@@ -199,3 +199,77 @@ describe('/api/v1/admin/send-push — sending', () => {
         expect(await abonnementTelling(bob.id)).toBe(1)
     })
 })
+
+describe('/api/v1/admin/send-push-alle — tilgangskontroll', () => {
+    it('returnerer 401 uten innlogging', async () => {
+        const res = await api('/api/v1/admin/send-push-alle', { method: 'POST' })
+        expect(res.status).toBe(401)
+    })
+
+    it('returnerer 403 for vanlig bruker', async () => {
+        await seedUser({ firebase_user_id: 'vanlig' })
+        const res = await api('/api/v1/admin/send-push-alle', {
+            user: 'vanlig',
+            method: 'POST',
+            body: { title: 'T', body: 'B' },
+        })
+        expect(res.status).toBe(403)
+    })
+
+    it('returnerer 405 for GET', async () => {
+        await seedUser({ firebase_user_id: 'super', superadmin: true })
+        const res = await api('/api/v1/admin/send-push-alle', { user: 'super' })
+        expect(res.status).toBe(405)
+    })
+})
+
+describe('/api/v1/admin/send-push-alle — validering', () => {
+    it('returnerer 400 når title mangler', async () => {
+        await seedUser({ firebase_user_id: 'super', superadmin: true })
+        const res = await api('/api/v1/admin/send-push-alle', {
+            user: 'super',
+            method: 'POST',
+            body: { body: 'B' },
+        })
+        expect(res.status).toBe(400)
+    })
+
+    it('returnerer 400 når body mangler', async () => {
+        await seedUser({ firebase_user_id: 'super', superadmin: true })
+        const res = await api('/api/v1/admin/send-push-alle', {
+            user: 'super',
+            method: 'POST',
+            body: { title: 'T' },
+        })
+        expect(res.status).toBe(400)
+    })
+})
+
+describe('/api/v1/admin/send-push-alle — kringkasting', () => {
+    it('sender til alle med generelle varsler på, men hopper over dem som har skrudd det av', async () => {
+        await seedUser({ firebase_user_id: 'super', superadmin: true })
+        const alice = await seedUser({ firebase_user_id: 'alice' })
+        const bob = await seedUser({ firebase_user_id: 'bob' })
+        const carol = await seedUser({ firebase_user_id: 'carol' })
+
+        // Carol har skrudd av generelle varsler.
+        await withDb((c) => c.query(`UPDATE users SET notif_general = false WHERE id = $1`, [carol.id]))
+
+        await seedPushSub(alice.id, '/alice')
+        await seedPushSub(bob.id, '/bob')
+        await seedPushSub(carol.id, '/carol')
+
+        const res = await api('/api/v1/admin/send-push-alle', {
+            user: 'super',
+            method: 'POST',
+            body: { title: 'Siste sjanse', body: 'I dag lukker vinner og toppscorer.' },
+        })
+        expect(res.status).toBe(200)
+
+        // Mock-serveren returnerer 410 → abonnementene det ble forsøkt sendt til
+        // slettes. Alice og bob skal være forsøkt (slettet), carol skal stå urørt.
+        expect(await abonnementTelling(alice.id)).toBe(0)
+        expect(await abonnementTelling(bob.id)).toBe(0)
+        expect(await abonnementTelling(carol.id)).toBe(1)
+    })
+})

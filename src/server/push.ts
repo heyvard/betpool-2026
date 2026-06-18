@@ -64,3 +64,36 @@ export async function sendPushTilBruker(client: PoolClient, userId: string, payl
     }
     return sendt
 }
+
+export interface KringkastingResultat {
+    brukere: number
+    enheter: number
+}
+
+// Kringkaster et varsel til alle aktive brukere som har skrudd på generelle
+// varsler (notif_general) og har minst ett push-abonnement. Returnerer antall
+// brukere som faktisk fikk varselet og totalt antall enheter.
+export async function sendPushTilAlle(client: PoolClient, payload: PushPayload): Promise<KringkastingResultat> {
+    konfigurer()
+
+    const brukere = (
+        await client.query<{ id: string }>(
+            `SELECT DISTINCT u.id
+             FROM users u
+             INNER JOIN push_subscriptions ps ON ps.user_id = u.id
+             WHERE u.active = true AND u.notif_general = true`,
+        )
+    ).rows
+
+    let brukereVarslet = 0
+    let enheter = 0
+    for (const bruker of brukere) {
+        const sendt = await sendPushTilBruker(client, bruker.id, payload)
+        if (sendt > 0) {
+            brukereVarslet++
+            enheter += sendt
+        }
+    }
+    console.log(`[send-push-alle] kringkastet til ${brukereVarslet} brukere (${enheter} enheter)`)
+    return { brukere: brukereVarslet, enheter }
+}

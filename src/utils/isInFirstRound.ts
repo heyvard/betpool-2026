@@ -2,6 +2,7 @@ import dayjs from 'dayjs'
 import { PoolClient } from 'pg'
 
 import { serverNå } from './testClock'
+import { ENDREVINDU_AKTIVERT } from './fristDatoer'
 
 // Frist-datoene utledes fra kampprogrammet i databasen:
 // - forsteRunde: starten på andre gruppespillsrunde (round=2) — fristen for å
@@ -38,6 +39,8 @@ export function erIFørsteRundeMed(frister: Frister, req: CookieReq): boolean {
 }
 
 export function erIEndrevinduMed(frister: Frister, req: CookieReq): boolean {
+    // Midlertidig avslått — se ENDREVINDU_AKTIVERT i fristDatoer.ts.
+    if (!ENDREVINDU_AKTIVERT) return false
     const tidspunkt = dayjs(serverNå(req))
     return !frister.forsteRunde.isAfter(tidspunkt) && frister.endrevinduSlutt.isAfter(tidspunkt)
 }

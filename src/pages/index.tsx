@@ -52,10 +52,19 @@ const Home: NextPage = () => {
     const frister = beregnFrister(matches)
     const laast = erEtterFørsteRunde(frister, nå())
     const endrevindu = erIEndrevindu(frister, nå())
+    const lukkerIDag = !laast && frister.forsteRunde != null && frister.forsteRunde.isSame(nå(), 'day')
 
     return (
         <div className="space-y-4">
             <VarslerHint />
+            {lukkerIDag && (
+                <Alert variant="warning">
+                    <span className="flex items-start gap-2 font-medium">
+                        <Clock className="mt-0.5 h-4 w-4 shrink-0" />
+                        {t.hjem.vinnerToppsLukkerIDag}
+                    </span>
+                </Alert>
+            )}
             {snartKamper.map((k) => (
                 <NextLink
                     key={k.match_num}
