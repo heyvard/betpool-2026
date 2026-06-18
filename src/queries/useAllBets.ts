@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 
 import { useAuthedFetch } from '../auth/authedFetch'
+import { LIVE_SYNC_INTERVAL_SEKUNDER } from '../utils/liveSync'
 import { MatchPoeng } from '../components/results/matchScoreCalculator'
 import { calculateAllBetsExtended } from '../components/results/calculateAllBetsExtended'
 
@@ -83,5 +84,16 @@ export function UseAllBets() {
             // privat liga) uten et nytt API-kall.
             return { ...calculateAllBetsExtended(allBets), raw: allBets }
         },
+
+        // Poll så live-scoren oppdateres mens en kamp pågår. Kun da finnes det
+        // foreløpige bets, så ellers faller vi tilbake til 60s — nok til å fange
+        // at en kamp starter, men sparer Neon-compute og football-data-kall i de
+        // lange idle-periodene. refetchIntervalInBackground = false → polling
+        // pauses når fanen er skjult.
+        refetchInterval: (query) => {
+            const harLive = query.state.data?.raw?.bets?.some((b) => b.foreløpig)
+            return harLive ? LIVE_SYNC_INTERVAL_SEKUNDER * 1000 : 60_000
+        },
+        refetchIntervalInBackground: false,
     })
 }

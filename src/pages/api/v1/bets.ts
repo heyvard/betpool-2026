@@ -4,6 +4,7 @@ import { serverNå } from '../../../utils/testClock'
 import { auth } from '../../../auth/authHandler'
 import { hentKamper, erKampPågående } from '../../../data/matches'
 import { resolveActiveScore } from '../../../data/matchScore'
+import { maybeSyncLive } from '../../../server/syncAll'
 
 const handler = async function handler(opts: ApiHandlerOpts): Promise<void> {
     const { req, res, user, client } = opts
@@ -11,6 +12,11 @@ const handler = async function handler(opts: ApiHandlerOpts): Promise<void> {
         res.status(401).end()
         return
     }
+
+    // Match-siden poller kun dette endepunktet, så live-synken må også kunne
+    // trigges herfra. Deler synk-slottet med /api/v1/matches via sync_state, så
+    // football-data.org treffes uansett maks én gang per 15s globalt.
+    await maybeSyncLive(client)
 
     interface BetRow {
         user_id: string

@@ -2,8 +2,7 @@ import { ApiHandlerOpts } from '../../../types/apiHandlerOpts'
 import { auth } from '../../../auth/authHandler'
 import { hentKamper } from '../../../data/matches'
 import { resolveActiveScore } from '../../../data/matchScore'
-import { LIVE_SYNC_INTERVAL_SEKUNDER } from '../../../utils/liveSync'
-import { syncLive } from '../../../server/syncAll'
+import { maybeSyncLive } from '../../../server/syncAll'
 import { MatchAdminData } from '../../../types/types'
 
 interface ScoreRow {
@@ -31,25 +30,8 @@ const handler = async function handler(opts: ApiHandlerOpts): Promise<void> {
     }
 
     // Klient-trigget live-synk: poller henter denne hvert 15s mens appen er
-    // oppe. Vi "claimer" et synk-slot atomisk slik at football-data.org treffes
-    // maks én gang per 15s-vindu globalt (uavhengig av antall klienter/
-    // serverless-instanser). Kun forespørselen som vinner UPDATE-en synker;
-    // resten leser bare fersk DB-data under.
-    try {
-        const claim = await client.query(
-            `UPDATE sync_state SET live_synced_at = now()
-             WHERE id = 'live'
-               AND live_synced_at < now() - ($1 * interval '1 second')
-             RETURNING live_synced_at`,
-            [LIVE_SYNC_INTERVAL_SEKUNDER],
-        )
-        if (claim.rowCount === 1) {
-            await syncLive(client)
-        }
-    } catch (e) {
-        // Ikke la en synk-feil velte klient-kallet — vi returnerer DB-data uansett.
-        console.error('live-synk feilet', e)
-    }
+    // oppe. Throttlet globalt via den delte sync_state-raden (se maybeSyncLive).
+    await maybeSyncLive(client)
 
     const scores = (
         await client.query<ScoreRow>(
