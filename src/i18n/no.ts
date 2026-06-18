@@ -29,6 +29,7 @@ const no = {
         sendPush: 'Send push',
         cron: 'Cron-jobber',
         spillere: 'Spillere',
+        toppscorerFiks: 'Fiks toppscorer',
         standingsDebug: 'Standings-debug',
         adminLigaer: 'Private ligaer',
         innbetaling: 'Innbetalinger',

@@ -31,6 +31,7 @@ const fr: Translations = {
         sendPush: 'Envoyer push',
         cron: 'Tâches planifiées',
         spillere: 'Joueurs',
+        toppscorerFiks: 'Corriger buteur',
         standingsDebug: 'Débogage classement',
         adminLigaer: 'Ligues privées',
         innbetaling: 'Paiements',

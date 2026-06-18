@@ -98,6 +98,21 @@ export interface GroupStanding {
     table: StandingRow[]
 }
 
+// Én bruker slik /toppscorer-fiks viser dem: brukerens fritekst-toppscorer
+// (kilden som skal tolkes) sammen med den strukturerte koblingen til en spiller.
+export interface ToppscorerFiksBruker {
+    id: string
+    name: string
+    /** Brukerens egen fritekst (users.topscorer). Kan være tom/null. */
+    topscorer: string | null
+    /** Strukturert kobling (users.topscorer_player_id) — null før den er fikset. */
+    topscorer_player_id: number | null
+    /** Oppslått spillernavn for den koblede spilleren, hvis satt. */
+    player_name: string | null
+    /** Tre-bokstavskoden til den koblede spillerens landslag, hvis satt. */
+    player_team_tla: string | null
+}
+
 export interface UserForAdmin {
     id: string
     name: string
