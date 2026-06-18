@@ -3,7 +3,6 @@ import { PoolClient } from 'pg'
 import { FootballDataMatch } from '../data/footballDataMatch'
 import { syncMatches, SyncResultat } from './syncMatches'
 import { syncScores, SyncScoresResultat } from './syncScores'
-import { syncStandings } from './syncStandings'
 
 const BASE_URL = 'https://api.football-data.org/v4'
 const COMPETITION = 'WC'
@@ -26,7 +25,6 @@ export interface SyncAllResultat {
     hentet: number
     kamper: SyncResultat
     scores: SyncScoresResultat
-    standings: unknown
 }
 
 // Én API-kall mot football-data.org; delegerer deretter til syncMatches og
@@ -38,15 +36,7 @@ export async function syncAll(client: PoolClient): Promise<SyncAllResultat> {
     const matchResultat = await syncMatches(client, false, kamper)
     const scoresResultat = await syncScores(client, false, kamper)
 
-    let standings: unknown
-    try {
-        standings = await syncStandings(client)
-    } catch (e) {
-        console.error('sync-standings feilet', e)
-        standings = { error: 'standings-synk feilet' }
-    }
-
-    return { hentet: kamper.length, kamper: matchResultat, scores: scoresResultat, standings }
+    return { hentet: kamper.length, kamper: matchResultat, scores: scoresResultat }
 }
 
 export interface SyncLiveResultat {
@@ -56,8 +46,8 @@ export interface SyncLiveResultat {
 }
 
 // Lettvekts-synk for den hyppige live-stien: ÉT football-data-kall som dekker
-// både kampoppsett og scores. Ekskluderer standings (eget, tregere API-kall som
-// fortsatt dekkes av 5-min-cronen) for å holde oss innenfor rate-limiten.
+// både kampoppsett og scores. (Gruppetabellene hentes separat og rett gjennom
+// av /api/v1/standings, ikke her.)
 export async function syncLive(client: PoolClient): Promise<SyncLiveResultat> {
     const kamper = await hentKamperFraApi()
 
