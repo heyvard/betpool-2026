@@ -66,6 +66,20 @@ export interface Match {
     adminData?: MatchAdminData
 }
 
+export interface Spiller {
+    id: number
+    name: string
+    first_name: string | null
+    last_name: string | null
+    position: string | null
+    date_of_birth: string | null
+    nationality: string | null
+    shirt_number: number | null
+    team_tla: string
+    team_id: number | null
+    team_name: string | null
+}
+
 export interface StandingRow {
     team_tla: string
     position: number
