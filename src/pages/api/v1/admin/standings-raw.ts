@@ -62,9 +62,10 @@ const handler = async function handler(opts: ApiHandlerOpts): Promise<void> {
         return
     }
 
-    // ?season= for å overstyre. Default henter vi to varianter: med season=2026
-    // (slik koden gjør i dag) og uten season-parameter (docs sier standings bare
-    // finnes for «current season» — season-paramet kan være det som feiler).
+    // ?season= for å overstyre. Default henter vi to varianter for å vise
+    // forskjellen: uten season-parameter (det produksjon bruker — gir per-gruppe-
+    // tabeller, type TOTAL, group "Group A") og med season=2026 (gir bare én
+    // samlet GROUP_STAGE-tabell med group: null — derfor ble gruppene borte).
     const season = typeof req.query.season === 'string' ? req.query.season : null
 
     const varianter = season

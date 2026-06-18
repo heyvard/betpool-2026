@@ -3,7 +3,6 @@ import { GroupStanding, StandingRow } from '../types/types'
 
 const BASE_URL = 'https://api.football-data.org/v4'
 const COMPETITION = 'WC'
-const SEASON = '2026'
 
 // Kort in-memory-cache så gruppetabellene ikke hentes på nytt for hver sidelast.
 // football-data free tier tillater bare 10 kall/min; modul-scope overlever
@@ -50,7 +49,11 @@ export async function hentStandings(): Promise<GroupStanding[]> {
         throw new Error('Mangler FOOTBALL_DATA_TOKEN')
     }
 
-    const url = `${BASE_URL}/competitions/${COMPETITION}/standings?season=${SEASON}`
+    // NB: IKKE send ?season=… her. Med season-parameter svarer football-data med
+    // én samlet GROUP_STAGE-tabell (group: null) i stedet for én tabell per
+    // gruppe — da blir gruppene borte. Uten parameteren defaulter den til
+    // gjeldende sesong og gir per-gruppe-tabellene (type TOTAL, group "Group A").
+    const url = `${BASE_URL}/competitions/${COMPETITION}/standings`
     const res = await fetch(url, { headers: { 'X-Auth-Token': token } })
     if (!res.ok) {
         const body = await res.text()
