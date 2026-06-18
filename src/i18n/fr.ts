@@ -30,6 +30,7 @@ const fr: Translations = {
         brukere: 'Utilisateurs',
         sendPush: 'Envoyer push',
         cron: 'Tâches planifiées',
+        standingsDebug: 'Débogage classement',
         adminLigaer: 'Ligues privées',
         innbetaling: 'Paiements',
         innstillinger: 'Réglages',
