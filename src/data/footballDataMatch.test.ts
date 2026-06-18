@@ -1,4 +1,11 @@
-import { FootballDataMatch, normaliserTla, normaliserStatus, stageTilRunde, transformerKamp } from './footballDataMatch'
+import {
+    FootballDataMatch,
+    gruppeTilTekst,
+    normaliserTla,
+    normaliserStatus,
+    stageTilRunde,
+    transformerKamp,
+} from './footballDataMatch'
 
 const baseKamp: FootballDataMatch = {
     id: 123,
@@ -58,6 +65,22 @@ describe('normaliserStatus', () => {
 
     it('faller tilbake til TIMED for null', () => {
         expect(normaliserStatus(null)).toBe('TIMED')
+    })
+})
+
+describe('gruppeTilTekst', () => {
+    it('returnerer undefined for null', () => {
+        expect(gruppeTilTekst(null)).toBeUndefined()
+    })
+
+    it('mapper matches-formatet "GROUP_A" til "Group A"', () => {
+        expect(gruppeTilTekst('GROUP_A')).toBe('Group A')
+        expect(gruppeTilTekst('GROUP_L')).toBe('Group L')
+    })
+
+    it('mapper standings-formatet "Group A" til "Group A"', () => {
+        expect(gruppeTilTekst('Group A')).toBe('Group A')
+        expect(gruppeTilTekst('Group L')).toBe('Group L')
     })
 })
 
