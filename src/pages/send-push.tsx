@@ -5,6 +5,7 @@ import { UseUsers } from '../queries/useUsers'
 import { UseUser } from '../queries/useUser'
 import { UserForAdmin } from '../types/types'
 import { PushSkjema } from '../components/admin/PushSkjema'
+import { PushAlleSkjema } from '../components/admin/PushAlleSkjema'
 import { Search, X, ChevronLeft, Bell, BellOff } from 'lucide-react'
 
 function initialer(navn: string): string {
@@ -51,7 +52,9 @@ function Velger({ brukere, onVelg }: { brukere: UserForAdmin[]; onVelg: (user: U
 
     return (
         <div className="space-y-3">
-            <p className="text-sm text-stone-600">Velg hvem du vil sende en push-melding til.</p>
+            <PushAlleSkjema />
+
+            <p className="text-sm text-stone-600">Eller velg hvem du vil sende en push-melding til.</p>
 
             <div className="relative">
                 <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-stone-400" />

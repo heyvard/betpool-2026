@@ -52,6 +52,7 @@ const no = {
     hjem: {
         kampStarterKl: '{{home}} vs {{away}} starter kl {{tid}}',
         dineVmTips: 'Dine VM-tips',
+        vinnerToppsLukkerIDag: 'Siste sjanse! I dag lukker muligheten for å tippe vinner og toppscorer.',
         vmIGangLaast: 'VM er i gang — vinner og toppscorer er låst.',
         kanEndresFremTil: 'Kan endres frem til {{dato}}.',
         ingenFlereKamper: 'Ingen flere kamper',

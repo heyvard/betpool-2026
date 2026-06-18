@@ -31,7 +31,14 @@ export function erEtterFørsteRunde(frister: Frister, tidspunkt: dayjs.Dayjs): b
     return frister.forsteRunde != null && !frister.forsteRunde.isAfter(tidspunkt)
 }
 
+// Endrevinduet (endre vinner/toppscorer én gang etter runde 1 mot halverte
+// poeng) er midlertidig avslått. Funksjonen åpnes manuelt om noen dager — sett
+// flagget til true for å skru den på igjen. Brukes både her (klient) og av
+// `erIEndrevinduMed` i isInFirstRound.ts (server).
+export const ENDREVINDU_AKTIVERT = false
+
 export function erIEndrevindu(frister: Frister, tidspunkt: dayjs.Dayjs): boolean {
+    if (!ENDREVINDU_AKTIVERT) return false
     return (
         erEtterFørsteRunde(frister, tidspunkt) &&
         frister.endrevinduSlutt != null &&

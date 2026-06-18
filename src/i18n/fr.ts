@@ -54,6 +54,8 @@ const fr: Translations = {
     hjem: {
         kampStarterKl: '{{home}} vs {{away}} commence à {{tid}}h',
         dineVmTips: 'Vos paris CM',
+        vinnerToppsLukkerIDag:
+            'Dernière chance ! La possibilité de parier sur le champion et le meilleur buteur ferme aujourd’hui.',
         vmIGangLaast: 'La CM est en cours — champion et buteur verrouillés.',
         kanEndresFremTil: "Modifiable jusqu'au {{dato}}.",
         ingenFlereKamper: 'Plus de matchs',

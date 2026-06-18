@@ -25,3 +25,28 @@ export function UseSendPush() {
         },
     })
 }
+
+export interface SendPushAllePayload {
+    title: string
+    body: string
+    url?: string
+}
+
+export interface SendPushAlleResultat {
+    brukere: number
+    enheter: number
+}
+
+export function UseSendPushAlle() {
+    const authedFetch = useAuthedFetch()
+    return useMutation({
+        mutationFn: async (payload: SendPushAllePayload) => {
+            const response = await authedFetch('/api/v1/admin/send-push-alle', {
+                method: 'POST',
+                body: JSON.stringify(payload),
+            })
+            if (!response.ok) throw new Error(`Serverfeil: ${response.status}`)
+            return response.json() as Promise<SendPushAlleResultat>
+        },
+    })
+}
