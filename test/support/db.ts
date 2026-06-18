@@ -14,7 +14,9 @@ export async function withDb<T>(fn: (client: Client) => Promise<T>): Promise<T> 
 }
 
 export async function truncateAll(): Promise<void> {
-    await withDb((c) => c.query('TRUNCATE users, bets, chat, feedback, match_scores, leagues, league_members CASCADE'))
+    await withDb((c) =>
+        c.query('TRUNCATE users, bets, chat, feedback, match_scores, leagues, league_members, players CASCADE'),
+    )
 }
 
 // Et reelt match_num fra `matches`-tabellen (football-data sin id). `match_num`

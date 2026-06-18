@@ -15,8 +15,9 @@ import {
     DryRunBruker,
     EttermiddagsVarselDryRunBruker,
 } from '../queries/mutateAdminCron'
+import { UseMutateSyncPlayers } from '../queries/mutateSyncPlayers'
 import { Button } from '@/components/ui/button'
-import { RefreshCw, Bell, Eye, Trophy } from 'lucide-react'
+import { RefreshCw, Bell, Eye, Trophy, Users } from 'lucide-react'
 
 function formaterFeltVerdi(felt: string, verdi: string | number | null): string {
     if (verdi === null) return 'null'
@@ -448,6 +449,43 @@ function SendVmStartKnapp() {
     )
 }
 
+function SyncSpillereKnapp() {
+    const { mutate, isPending, data, error, isSuccess } = UseMutateSyncPlayers()
+
+    return (
+        <div className="flex flex-col gap-2 py-3 first:pt-0 last:pb-0">
+            <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                    <p className="text-sm font-medium text-stone-900">Synk spillere</p>
+                    <p className="text-xs text-stone-500">
+                        Engangsjobb: henter alle truppene fra football-data.org til databasen. Grunnlag for strukturert
+                        toppscorer-data.
+                    </p>
+                </div>
+                <div className="flex gap-2 shrink-0">
+                    <Button
+                        variant="outline"
+                        size="small"
+                        loading={isPending}
+                        icon={<Users className="h-4 w-4" />}
+                        onClick={() => mutate()}
+                    >
+                        Kjør
+                    </Button>
+                </div>
+            </div>
+            {isSuccess && data && (
+                <p className="text-xs text-green-700 bg-green-50 rounded-lg px-3 py-1.5">
+                    {`hentet: ${data.hentet} spillere · oppdatert: ${data.oppdatert} · lag: ${data.lag}`}
+                </p>
+            )}
+            {error && (
+                <p className="text-xs text-red-700 bg-red-50 rounded-lg px-3 py-1.5">Kunne ikke lagre — prøv igjen.</p>
+            )}
+        </div>
+    )
+}
+
 const CronPage: NextPage = () => {
     const { data: me } = UseUser()
 
@@ -459,6 +497,7 @@ const CronPage: NextPage = () => {
             <div className="bp-card">
                 <div className="divide-y divide-stone-100">
                     <SyncKnapp />
+                    <SyncSpillereKnapp />
                     <SendPåminnelserKnapp />
                     <SendEttermiddagsVarselKnapp />
                     <SendVmStartKnapp />
