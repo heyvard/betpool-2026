@@ -2,6 +2,7 @@ import type { NextPage } from 'next'
 import { useMemo, useState } from 'react'
 import classNames from 'classnames'
 import NextLink from 'next/link'
+import { ChevronRight, TrendingUp } from 'lucide-react'
 
 import { Spinner } from '../components/loading/Spinner'
 import { UseAllBets } from '../queries/useAllBets'
@@ -237,6 +238,10 @@ const Leaderboard: NextPage = () => {
 
     const harPågående = rader.some((r) => (r.livePoeng ?? 0) !== 0)
 
+    // «Se utvikling» vises så lenge minst én kamp er ferdigspilt (ikke-foreløpig).
+    const harSpilteKamper = data.raw.bets.some((b) => !b.foreløpig)
+    const historikkHref = effektivLiga ? `/historikk?liga=${effektivLiga}` : '/historikk'
+
     const alleNull = lista.length > 0 && lista.every((r) => effektivPoeng(r) === 0)
 
     if (alleNull) {
@@ -282,6 +287,22 @@ const Leaderboard: NextPage = () => {
 
             {/* Live-bryter */}
             {harPågående && <LiveBryter visPågående={visPågående} onChange={setVisPågående} />}
+
+            {/* Se utvikling-knapp */}
+            {harSpilteKamper && (
+                <div className="flex justify-end bg-stone-50 px-[18px] pt-[12px]">
+                    <NextLink
+                        href={historikkHref}
+                        data-testid="se-utvikling"
+                        className="inline-flex items-center gap-[5px] text-[12.5px] font-bold text-amber-700"
+                        style={{ minHeight: 28 }}
+                    >
+                        <TrendingUp size={14} />
+                        {t.historikk.seUtvikling}
+                        <ChevronRight size={13} />
+                    </NextLink>
+                </div>
+            )}
 
             {/* Kolonneoverskrifter */}
             <div
