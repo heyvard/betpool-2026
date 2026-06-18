@@ -15,31 +15,12 @@ import { calculateAllBetsExtended, filtrerAllBets } from '../components/results/
 import { erKampFerdig } from '../data/matches'
 import { useValgtLiga } from '../utils/useValgtLiga'
 import { useLanguage } from '../i18n/LanguageContext'
-import { tx } from '../i18n/interpolate'
 import { cn } from '@/lib/utils'
 import { avatarFarge, byggHistorikk, HistorikkDeltaker, HistorikkSerie, velgTegnedeSerier } from '../lib/byggHistorikk'
 import { BumpChart } from '../components/historikk/BumpChart'
 
 function visningsnavn(navn: string): string {
     return navn.includes('@') ? navn.split('@')[0] : navn
-}
-
-function Avatar({ src, name, farge, size = 34 }: { src?: string | null; name: string; farge: string; size?: number }) {
-    return (
-        <div className="shrink-0 overflow-hidden rounded-full" style={{ width: size, height: size }}>
-            {src ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={src} alt={name} className="h-full w-full object-cover" />
-            ) : (
-                <span
-                    className="flex h-full w-full items-center justify-center font-bold text-white"
-                    style={{ background: farge, fontSize: size * 0.42 }}
-                >
-                    {name ? name.charAt(0).toUpperCase() : ''}
-                </span>
-            )}
-        </div>
-    )
 }
 
 const Historikk: NextPage = () => {
@@ -74,7 +55,6 @@ const Historikk: NextPage = () => {
 
         let populasjon: Set<string>
         let deltakere: HistorikkDeltaker[]
-        let pictures = new Map<string, string | null>()
 
         if (effektivLiga && ligaDetalj) {
             populasjon = new Set(hovedligaIds)
@@ -82,11 +62,9 @@ const Historikk: NextPage = () => {
             deltakere = ligaDetalj.members
                 .filter((m) => m.status === 'medlem')
                 .map((m) => ({ userid: m.user_id, navn: m.name }))
-            ligaDetalj.members.forEach((m) => pictures.set(m.user_id, m.picture))
         } else {
             populasjon = new Set(hovedligaIds)
             deltakere = raw.users.filter((u) => u.i_hovedliga !== false).map((u) => ({ userid: u.id, navn: u.name }))
-            raw.users.forEach((u) => pictures.set(u.id, u.picture))
         }
 
         const populasjonsBets = filtrerAllBets(raw, populasjon)
@@ -110,7 +88,7 @@ const Historikk: NextPage = () => {
             },
             { idag: t.historikk.idag, kampdag: t.historikk.kampdag },
         )
-        return { ...h, pictures }
+        return h
     }, [data, matches, ligaDetalj, effektivLiga, t.historikk.idag, t.historikk.kampdag])
 
     // Brukerens eksplisitte valg. Default-markeringen utledes (uten effekt)
@@ -177,20 +155,6 @@ const Historikk: NextPage = () => {
     const sokTreff = sok.trim() ? serier.filter((s) => s.navn.toLowerCase().includes(sok.trim().toLowerCase())) : []
     const erStorLiga = serier.length > tegnede.length
 
-    const klatret = markert ? markert.ranks[0] - markert.ranks[sisteIdx] : 0
-    const pilleTekst =
-        klatret > 0
-            ? tx(t.historikk.klatret, { n: klatret })
-            : klatret < 0
-              ? tx(t.historikk.falt, { n: -klatret })
-              : t.historikk.uendret
-    const pilleStil =
-        klatret > 0
-            ? { color: '#15803d', background: '#dcfce7' }
-            : klatret < 0
-              ? { color: '#dc2626', background: '#fee2e2' }
-              : { color: '#a8a29e', background: '#f5f5f4' }
-
     const folgDeler = t.historikk.folg.split('{{navn}}')
 
     // Chips: ved søk vises treffene, ellers de tegnede seriene (topp + meg).
@@ -240,45 +204,6 @@ const Historikk: NextPage = () => {
                     )}
                 </div>
             </div>
-
-            {/* Markert-kort */}
-            {markert && (
-                <div className="px-[14px] pt-[12px]">
-                    <div
-                        className="flex items-center justify-between bg-white"
-                        style={{ border: '1px solid #e7e5e4', borderRadius: 14, padding: '11px 14px' }}
-                    >
-                        <div className="flex min-w-0 items-center gap-[11px]">
-                            <Avatar
-                                src={historikk.pictures.get(markert.userid)}
-                                name={markert.navn}
-                                farge={markert.farge}
-                            />
-                            <div className="min-w-0">
-                                <div className="truncate text-[14px] font-bold text-stone-900">{markert.navn}</div>
-                                <div className="bp-tabular text-[11px] text-stone-500">
-                                    {tx(t.historikk.startetNa, {
-                                        start: markert.ranks[0],
-                                        na: markert.ranks[sisteIdx],
-                                    })}
-                                </div>
-                            </div>
-                        </div>
-                        <span
-                            className="bp-tabular shrink-0"
-                            style={{
-                                ...pilleStil,
-                                fontSize: 12,
-                                fontWeight: 800,
-                                borderRadius: 999,
-                                padding: '4px 10px',
-                            }}
-                        >
-                            {pilleTekst}
-                        </span>
-                    </div>
-                </div>
-            )}
 
             {/* Deltaker-velger */}
             <div className="px-[14px] pb-[24px] pt-[16px]">
