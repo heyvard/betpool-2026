@@ -1,6 +1,6 @@
 import { test, expect, type BrowserContext } from '@playwright/test'
 
-import { seedBet, seedUser, truncateAll, withDb } from '../support/db'
+import { seedBet, seedPlayer, seedUser, truncateAll, withDb } from '../support/db'
 import { testKamper } from '../support/matches'
 
 // Hovedfeltene på hjemmesiden (/) for de første dagene: sette VM-vinner og
@@ -35,6 +35,7 @@ test.beforeEach(async () => {
 
 test('vinner og toppscorer kan settes og lagres i åpen periode', async ({ context, page }) => {
     await seedUser({ firebase_user_id: 'alice', name: 'alice', paid: true })
+    await seedPlayer({ id: 20, name: 'Erling Haaland', team_tla: 'NOR' })
     await loggInn(context, 'alice', FØR_TURNERING)
 
     await page.goto('/')
@@ -50,18 +51,20 @@ test('vinner og toppscorer kan settes og lagres i åpen periode', async ({ conte
     await vinnerKort.getByRole('combobox', { name: 'Velg verdensmester' }).selectOption('ARG')
     await expect(vinnerKort.getByText('Lagret')).toBeVisible()
 
-    // Toppscorer skrives som fritekst; lagres debouncet (~600 ms).
-    await toppscorerKort.locator('#topscorer-input').fill('Erling Haaland')
+    // Toppscorer velges strukturert fra spillervelgeren: åpne, søk, klikk treff.
+    await toppscorerKort.getByRole('button', { name: 'Skriv navn' }).click()
+    await toppscorerKort.getByPlaceholder('Søk spiller …').fill('Haaland')
+    await toppscorerKort.getByRole('button', { name: /Erling Haaland/ }).click()
     await expect(toppscorerKort.getByText('Lagret')).toBeVisible()
 
     // Verifiser at det faktisk er lagret i DB.
     const lagret = await withDb((c) =>
-        c.query<{ winner: string; topscorer: string }>(
-            'SELECT winner, topscorer FROM users WHERE firebase_user_id = $1',
+        c.query<{ winner: string; topscorer_player_id: number }>(
+            'SELECT winner, topscorer_player_id FROM users WHERE firebase_user_id = $1',
             ['alice'],
         ),
     )
-    expect(lagret.rows[0]).toMatchObject({ winner: 'ARG', topscorer: 'Erling Haaland' })
+    expect(lagret.rows[0]).toMatchObject({ winner: 'ARG', topscorer_player_id: 20 })
 })
 
 test('betalingsvarsel vises for ubetalt hovedliga-bruker', async ({ context, page }) => {
@@ -83,12 +86,13 @@ test('betalingsvarsel skjules når brukeren har betalt', async ({ context, page 
 })
 
 test('vinner og toppscorer er låst når VM er i gang', async ({ context, page }) => {
+    await seedPlayer({ id: 20, name: 'Erling Haaland', team_tla: 'NOR' })
     await seedUser({
         firebase_user_id: 'alice',
         name: 'alice',
         paid: true,
         winner: 'ARG',
-        topscorer: 'Erling Haaland',
+        topscorer_player_id: 20,
     })
     await loggInn(context, 'alice', ETTER_ENDREVINDU)
 
@@ -99,7 +103,7 @@ test('vinner og toppscorer er låst når VM er i gang', async ({ context, page }
 
     // Ingen redigerbare kontroller igjen.
     await expect(page.getByRole('combobox', { name: 'Velg verdensmester' })).toHaveCount(0)
-    await expect(page.locator('#topscorer-input')).toHaveCount(0)
+    await expect(page.getByPlaceholder('Søk spiller …')).toHaveCount(0)
 
     // De valgte verdiene vises fortsatt (ARG → «Argentina»).
     await expect(page.getByText('Argentina')).toBeVisible()

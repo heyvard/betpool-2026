@@ -1,6 +1,6 @@
 import { test, expect, type BrowserContext, type Page } from '@playwright/test'
 
-import { seedUser, truncateAll } from '../support/db'
+import { seedUser, seedPlayer, truncateAll } from '../support/db'
 import { testKamper } from '../support/matches'
 
 // Kjernegarantien for de første dagene: ingen ser andres VM-vinner eller
@@ -38,12 +38,13 @@ test.beforeEach(async () => {
     await truncateAll()
     // bob har tippet; alice er innlogget tilskuer.
     await seedUser({ firebase_user_id: 'alice', name: 'alice', paid: true })
+    await seedPlayer({ id: 21, name: 'Kylian Mbappé', team_tla: 'FRA' })
     await seedUser({
         firebase_user_id: 'bob',
         name: 'bob',
         paid: true,
         winner: 'ARG',
-        topscorer: 'Kylian Mbappé',
+        topscorer_player_id: 21,
     })
 })
 

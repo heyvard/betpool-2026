@@ -2,6 +2,10 @@ import { expect } from '@jest/globals'
 import { calculateAllBetsExtended, regnUtBonuspoeng } from './calculateAllBetsExtended'
 import { AllBets, MatchBet, OtherUser } from '../../queries/useAllBets'
 
+// Fasiten (turneringens toppscorer) er normalt tom. Lås den til spiller-id 42 her
+// så vi kan teste den strukturerte toppscorer-bonusen og halveringen.
+jest.mock('./topscorer', () => ({ topscorerPlayerIds: [42] }))
+
 function bet(opts: {
     user: string
     home: string
@@ -145,6 +149,50 @@ describe('Norge-kamper teller dobbelt', () => {
         expect(betFor('B').poeng).toEqual(4)
         // Jokeren nulles ut i resultatet så merkelapper ikke villeder.
         expect(betFor('B').joker).toEqual(false)
+    })
+})
+
+describe('Strukturert toppscorer-bonus (topscorer_player_id)', () => {
+    function brukerMedTopscorer(id: string, playerId: number | null, endret = false): OtherUser {
+        return { id, name: id, picture: null, paid: true, topscorer_player_id: playerId, topscorer_endret: endret }
+    }
+
+    it('gir bonus til brukeren som traff toppscorer-spilleren, 0 til de andre', () => {
+        const allBets: AllBets = {
+            users: [
+                brukerMedTopscorer('A', 42), // riktig
+                brukerMedTopscorer('B', 7), // feil spiller
+                brukerMedTopscorer('C', null), // ikke koblet
+            ],
+            bets: [],
+        }
+
+        const res = calculateAllBetsExtended(allBets)
+        const points = (id: string) => res.users.find((u) => u.id === id)!.topscorerPoints
+
+        // 1 av 3 traff → alene → 25 poeng.
+        expect(points('A')).toEqual(25)
+        expect(points('B')).toEqual(0)
+        expect(points('C')).toEqual(0)
+    })
+
+    it('halverer bonusen når tipset er endret i endrevinduet', () => {
+        const allBets: AllBets = {
+            users: [
+                brukerMedTopscorer('A', 42, true), // riktig, men endret → halvert
+                brukerMedTopscorer('B', 42), // riktig, ikke endret
+                brukerMedTopscorer('C', 7),
+            ],
+            bets: [],
+        }
+
+        const res = calculateAllBetsExtended(allBets)
+        const points = (id: string) => res.users.find((u) => u.id === id)!.topscorerPoints
+
+        // 2 av 3 traff = 67 % → 3 poeng hver; A halveres til floor(3/2) = 1.
+        expect(points('B')).toEqual(3)
+        expect(points('A')).toEqual(1)
+        expect(points('C')).toEqual(0)
     })
 })
 

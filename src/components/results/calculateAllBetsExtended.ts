@@ -2,7 +2,7 @@ import { finnUtfall, regnUtScoreForKamp } from './matchScoreCalculator'
 import { stringTilNumber } from '../../utils/stringnumber'
 import { AllBets, MatchBetMedScore, OtherUser } from '../../queries/useAllBets'
 import { winner } from './winner'
-import { topscorer } from './topscorer' // "topscorer" er DB-/type-navn (én p); UI bruker "toppscorer"
+import { topscorerPlayerIds } from './topscorer' // "topscorer" er DB-/type-navn (én p); UI bruker "toppscorer"
 import { erNorgeKamp } from '../../data/matches'
 
 export interface AllBetsExtended {
@@ -100,14 +100,14 @@ export function calculateAllBetsExtended(allBets: AllBets): AllBetsExtended {
         return regnUtBonuspoeng(antallOk, allBets.users.length)
     }
     const poengPerVinner = winnerPointsFun()
-    function riktigTopscorer(userTopscorer: string | undefined) {
-        if (!userTopscorer) {
-            return false
-        }
-        return topscorer.some((t) => userTopscorer.toLowerCase().includes(t.toLowerCase()))
+    // Strukturert toppscorer-treff: brukerens topscorer_player_id må peke på en av
+    // turneringens toppscorere. Ingen fritekst-fallback — ukoblede brukere
+    // (topscorer_player_id == null) får 0 toppscorer-poeng.
+    function riktigTopscorer(playerId: number | null | undefined) {
+        return playerId != null && topscorerPlayerIds.includes(playerId)
     }
     const topscorerPointsFun = () => {
-        const antallOk = allBets.users.filter((u) => riktigTopscorer(u.topscorer)).length
+        const antallOk = allBets.users.filter((u) => riktigTopscorer(u.topscorer_player_id)).length
         return regnUtBonuspoeng(antallOk, allBets.users.length)
     }
     const poengPerTopscorer = topscorerPointsFun()
@@ -118,7 +118,7 @@ export function calculateAllBetsExtended(allBets: AllBets): AllBetsExtended {
             if (u.winner == winner) {
                 winnerPoints = u.winner_endret ? Math.floor(poengPerVinner / 2) : poengPerVinner
             }
-            if (riktigTopscorer(u.topscorer)) {
+            if (riktigTopscorer(u.topscorer_player_id)) {
                 topscorerPoints = u.topscorer_endret ? Math.floor(poengPerTopscorer / 2) : poengPerTopscorer
             }
             return {

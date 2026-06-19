@@ -16,7 +16,7 @@ const handler = async function handler(opts: ApiHandlerOpts): Promise<void> {
         if (req.method == 'PUT') {
             const reqBody = JSON.parse(req.body)
 
-            if (reqBody.winner || reqBody.topscorer !== undefined) {
+            if (reqBody.winner || reqBody.topscorerPlayerId !== undefined) {
                 const frister = await hentFrister(client)
                 const iFørsteRunde = erIFørsteRundeMed(frister, req)
                 const iEndrevindu = erIEndrevinduMed(frister, req)
@@ -31,16 +31,30 @@ const handler = async function handler(opts: ApiHandlerOpts): Promise<void> {
                         )
                     }
                 }
-                if (reqBody.topscorer !== undefined) {
+                // Strukturert toppscorer-tipp: peker til en rad i players. null betyr
+                // «ikke valgt». Fritekst-kolonnen topscorer røres ikke lenger herfra.
+                if (reqBody.topscorerPlayerId !== undefined) {
+                    const playerId = reqBody.topscorerPlayerId === null ? null : Number(reqBody.topscorerPlayerId)
+                    if (playerId !== null && !Number.isInteger(playerId)) {
+                        res.status(400).json({ error: 'topscorerPlayerId må være et heltall eller null' })
+                        return
+                    }
+                    if (playerId !== null) {
+                        const finnes = await client.query(`SELECT 1 FROM players WHERE id = $1`, [playerId])
+                        if (finnes.rowCount === 0) {
+                            res.status(400).json({ error: 'Ukjent spiller' })
+                            return
+                        }
+                    }
                     if (iFørsteRunde) {
-                        await client.query(`UPDATE users SET topscorer = $1 WHERE id = $2`, [
-                            reqBody.topscorer,
+                        await client.query(`UPDATE users SET topscorer_player_id = $1 WHERE id = $2`, [
+                            playerId,
                             user.id,
                         ])
-                    } else if (iEndrevindu && !user.topscorer_endret && user.topscorer) {
+                    } else if (iEndrevindu && !user.topscorer_endret && user.topscorer_player_id != null) {
                         await client.query(
-                            `UPDATE users SET topscorer = $1, topscorer_endret = true, topscorer_forrige = $2 WHERE id = $3`,
-                            [reqBody.topscorer, user.topscorer, user.id],
+                            `UPDATE users SET topscorer_player_id = $1, topscorer_endret = true, topscorer_forrige_player_id = $2 WHERE id = $3`,
+                            [playerId, user.topscorer_player_id, user.id],
                         )
                     }
                 }

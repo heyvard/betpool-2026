@@ -1,4 +1,4 @@
-import { api, seedUser, truncateAll, withDb } from './helpers'
+import { api, seedUser, seedPlayer, truncateAll, withDb } from './helpers'
 
 beforeEach(truncateAll)
 
@@ -45,5 +45,33 @@ describe('/api/v1/me', () => {
 
         const me = await (await api('/api/v1/me', { user: 'alice' })).json()
         expect(me.winner).toBe('Brazil')
+    })
+
+    it('PUT setter strukturert topscorer_player_id i første runde', async () => {
+        await seedUser({ firebase_user_id: 'alice', name: 'Alice' })
+        await seedPlayer({ id: 20, name: 'Erling Haaland', team_tla: 'NOR' })
+
+        const put = await api('/api/v1/me', {
+            user: 'alice',
+            method: 'PUT',
+            body: { topscorerPlayerId: 20 },
+            clock: '2026-06-01T12:00:00Z',
+        })
+        expect(put.status).toBe(200)
+
+        const me = await (await api('/api/v1/me', { user: 'alice' })).json()
+        expect(me.topscorer_player_id).toBe(20)
+    })
+
+    it('PUT med ukjent topscorerPlayerId gir 400', async () => {
+        await seedUser({ firebase_user_id: 'alice', name: 'Alice' })
+
+        const put = await api('/api/v1/me', {
+            user: 'alice',
+            method: 'PUT',
+            body: { topscorerPlayerId: 999 },
+            clock: '2026-06-01T12:00:00Z',
+        })
+        expect(put.status).toBe(400)
     })
 })
