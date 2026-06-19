@@ -9,7 +9,7 @@ export function UsePlayers() {
     return useQuery<Spiller[]>({
         queryKey: ['players'],
         queryFn: async () => {
-            const response = await authedFetch('/api/v1/admin/players', { method: 'GET' })
+            const response = await authedFetch('/api/v1/players', { method: 'GET' })
             return await response.json()
         },
     })

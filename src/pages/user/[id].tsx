@@ -88,7 +88,8 @@ const Home: NextPage = () => {
                         <br />
                         <NextLink href="/toppscorer">
                             <Link>
-                                {t.spilteKamper.toppscorer} {user.topscorer} ({user.topscorerPoints} {t.felles.poeng})
+                                {t.spilteKamper.toppscorer} {user.topscorer_player_name} ({user.topscorerPoints}{' '}
+                                {t.felles.poeng})
                             </Link>
                         </NextLink>
                     </BpCard>

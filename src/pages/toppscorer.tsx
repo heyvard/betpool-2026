@@ -12,7 +12,9 @@ const Leaderboard: NextPage = () => {
         return <Spinner />
     }
 
-    const sortertePerToppscorer = [...data.users].sort((a, b) => a.topscorer?.localeCompare(b.topscorer || '') || 0)
+    const sortertePerToppscorer = [...data.users].sort(
+        (a, b) => a.topscorer_player_name?.localeCompare(b.topscorer_player_name || '') || 0,
+    )
 
     return (
         <Table size="small">
@@ -32,15 +34,15 @@ const Leaderboard: NextPage = () => {
                             </NextLink>
                         </Table.DataCell>
                         <Table.DataCell>
-                            {user.topscorer_endret && user.topscorer_forrige ? (
+                            {user.topscorer_endret && user.topscorer_forrige_player_name ? (
                                 <span className="flex flex-col gap-0.5">
                                     <span className="text-stone-400 line-through text-xs">
-                                        {user.topscorer_forrige}
+                                        {user.topscorer_forrige_player_name}
                                     </span>
-                                    <span>{user.topscorer}</span>
+                                    <span>{user.topscorer_player_name}</span>
                                 </span>
                             ) : (
-                                user.topscorer
+                                user.topscorer_player_name
                             )}
                         </Table.DataCell>
                         <Table.DataCell align="right">{user.topscorerPoints}</Table.DataCell>

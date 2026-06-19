@@ -38,6 +38,9 @@ const handler = async function handler(opts: ApiHandlerOpts): Promise<void> {
         picture: string
         winner?: string
         topscorer?: string
+        topscorer_player_id?: number | null
+        topscorer_player_name?: string | null
+        topscorer_forrige_player_name?: string | null
         winner_endret: boolean
         topscorer_endret: boolean
         winner_forrige?: string
@@ -57,8 +60,11 @@ const handler = async function handler(opts: ApiHandlerOpts): Promise<void> {
             FROM match_scores`),
         client.query<User>(`
             SELECT u.id, COALESCE(NULLIF(u.kallenavn, ''), u.name) AS name, u.paid, u.picture, u.winner, u.topscorer,
+                   u.topscorer_player_id, p.name AS topscorer_player_name, pf.name AS topscorer_forrige_player_name,
                    u.winner_endret, u.topscorer_endret, u.winner_forrige, u.topscorer_forrige, u.i_hovedliga
             FROM users u
+            LEFT JOIN players p ON p.id = u.topscorer_player_id
+            LEFT JOIN players pf ON pf.id = u.topscorer_forrige_player_id
             WHERE u.active = true`),
     ])
 
@@ -102,6 +108,9 @@ const handler = async function handler(opts: ApiHandlerOpts): Promise<void> {
         userList.forEach((u) => {
             delete u.winner
             delete u.topscorer
+            delete u.topscorer_player_id
+            delete u.topscorer_player_name
+            delete u.topscorer_forrige_player_name
             delete u.winner_forrige
             delete u.topscorer_forrige
         })

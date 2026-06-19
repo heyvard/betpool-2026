@@ -50,6 +50,8 @@ export function auth(fn: { (_opts: ApiHandlerOpts): Promise<void> }) {
                     onboarded_at: new Date().toISOString(),
                     winner: '',
                     topscorer: undefined,
+                    topscorer_player_id: null,
+                    topscorer_forrige_player_id: null,
                     winner_endret: false,
                     topscorer_endret: false,
                     winner_forrige: null,

@@ -7,12 +7,13 @@ import { getLagSortert, hentFlag, hentNavn } from '../utils/lag'
 import { UseMatches } from '../queries/useMatches'
 import { UseMyBets } from '../queries/useMyBets'
 import { MatchBetMedScore, UseAllBets } from '../queries/useAllBets'
+import { UsePlayers } from '../queries/usePlayers'
+import { SpillerVelger } from '../components/SpillerVelger'
 import dayjs from 'dayjs'
 import NextLink from 'next/link'
 import { useAuthedFetch } from '../auth/authedFetch'
 import { Check, CheckCheck, ChevronRight, Clock, Goal, Lock, Target, Trophy, TriangleAlert, X } from 'lucide-react'
 import { useQueryClient } from '@tanstack/react-query'
-import { useDebouncedCallback } from 'use-debounce'
 import nb from 'dayjs/locale/nb'
 import fr from 'dayjs/locale/fr'
 import { beregnFrister, erEtterFørsteRunde, erIEndrevindu } from '../utils/fristDatoer'
@@ -585,48 +586,27 @@ function ToppscorerKort({ megselv, laast, endrevindu }: { megselv: User; laast: 
     const authedFetch = useAuthedFetch()
     const queryClient = useQueryClient()
     const { t } = useLanguage()
-    const lagretTopscorer = megselv.topscorer ?? ''
-    const [topscorer, setTopscorer] = useState(lagretTopscorer)
-    const [forrigeLagret, setForrigeLagret] = useState(lagretTopscorer)
+    const { data: spillere } = UsePlayers()
     const [lagrer, setLagrer] = useState(false)
     const [nyligLagret, setNyligLagret] = useState(false)
     const [feil, setFeil] = useState<string | null>(null)
 
-    if (lagretTopscorer !== forrigeLagret) {
-        setForrigeLagret(lagretTopscorer)
-        setTopscorer(lagretTopscorer)
-    }
+    const valgtId = megselv.topscorer_player_id ?? null
+    const valgtSpiller = spillere?.find((s) => s.id === valgtId) ?? null
 
-    const kanEndreMedHalvering = endrevindu && laast && !megselv.topscorer_endret && !!megselv.topscorer
+    const kanEndreMedHalvering = endrevindu && laast && !megselv.topscorer_endret && megselv.topscorer_player_id != null
     const visLaast = laast && !kanEndreMedHalvering
 
-    const lagreDebounced = useDebouncedCallback(async (ny: string) => {
-        setFeil(null)
-        setLagrer(true)
-        try {
-            const response = await authedFetch('/api/v1/me/', {
-                method: 'PUT',
-                body: JSON.stringify({ topscorer: ny.trim() }),
-            })
-            if (!response.ok) {
-                setFeil(t.felles.feil)
-                return
-            }
-            queryClient.invalidateQueries({ queryKey: ['user-me'] }).then()
-            blink(setNyligLagret)
-        } finally {
-            setLagrer(false)
+    const lagre = async (playerId: number | null) => {
+        if (kanEndreMedHalvering) {
+            if (!window.confirm(t.hjem.bekreftEndringTopps)) return
         }
-    }, 600)
-
-    const lagreEndring = async () => {
-        if (!window.confirm(t.hjem.bekreftEndringTopps)) return
         setFeil(null)
         setLagrer(true)
         try {
             const response = await authedFetch('/api/v1/me/', {
                 method: 'PUT',
-                body: JSON.stringify({ topscorer: topscorer.trim() }),
+                body: JSON.stringify({ topscorerPlayerId: playerId }),
             })
             if (!response.ok) {
                 setFeil(t.felles.feil)
@@ -639,14 +619,9 @@ function ToppscorerKort({ megselv, laast, endrevindu }: { megselv: User; laast: 
         }
     }
 
-    const onChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setTopscorer(e.target.value)
-        if (!kanEndreMedHalvering) {
-            lagreDebounced(e.target.value)
-        }
-    }
-
-    const lagret = topscorer.trim()
+    // Spilleren er valgt, men spillerlista er ennå ikke lastet → vis en nøytral
+    // plassholder i stedet for å feilaktig vise «ikke valgt».
+    const valgtTekst = valgtSpiller ? valgtSpiller.name : valgtId != null ? '…' : t.hjem.ikkeValgt
 
     return (
         <div className="space-y-1">
@@ -658,13 +633,11 @@ function ToppscorerKort({ megselv, laast, endrevindu }: { megselv: User; laast: 
                 {visLaast ? (
                     <ValgtVerdi
                         venstre={
-                            lagret ? (
-                                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-amber-100 text-xs font-bold text-amber-700">
-                                    {initialer(lagret)}
-                                </span>
+                            valgtSpiller ? (
+                                <span className="text-xl leading-none">{hentFlag(valgtSpiller.team_tla)}</span>
                             ) : null
                         }
-                        tekst={lagret || t.hjem.ikkeValgt}
+                        tekst={valgtTekst}
                         ikon={
                             megselv.topscorer_endret ? (
                                 <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-800">
@@ -676,48 +649,20 @@ function ToppscorerKort({ megselv, laast, endrevindu }: { megselv: User; laast: 
                         }
                     />
                 ) : (
-                    <div className="flex min-w-0 flex-col items-end gap-1">
+                    <div className="flex w-56 min-w-0 flex-col items-stretch gap-1">
                         {kanEndreMedHalvering && (
-                            <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-800 ring-1 ring-amber-200">
+                            <span className="self-end rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-800 ring-1 ring-amber-200">
                                 {t.hjem.endrevinduInfo}
                             </span>
                         )}
-                        <div className="flex min-w-0 items-center gap-2">
-                            {lagret && (
-                                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-amber-100 text-xs font-bold text-amber-700">
-                                    {initialer(lagret)}
-                                </span>
-                            )}
-                            <label htmlFor="topscorer-input" className="sr-only">
-                                {t.hjem.hvilkenSpiller}
-                            </label>
-                            <input
-                                id="topscorer-input"
-                                type="text"
-                                value={topscorer}
-                                disabled={lagrer}
-                                placeholder={t.hjem.skrivNavn}
-                                onChange={onChange}
-                                className={cn(
-                                    'w-32 min-w-0 rounded-md bg-transparent px-1 py-1 text-right text-sm font-bold text-stone-900',
-                                    'placeholder:font-normal placeholder:text-stone-400',
-                                    'focus:bg-stone-50 focus:outline-hidden focus:ring-2 focus:ring-amber-400',
-                                    'disabled:cursor-not-allowed',
-                                )}
-                            />
-                            {kanEndreMedHalvering && (
-                                <button
-                                    onClick={lagreEndring}
-                                    disabled={lagrer || !lagret || lagret === (megselv.topscorer ?? '').trim()}
-                                    className={cn(
-                                        'shrink-0 rounded-md bg-amber-500 px-2 py-1 text-xs font-bold text-white',
-                                        'hover:bg-amber-600 disabled:cursor-not-allowed disabled:opacity-40',
-                                    )}
-                                >
-                                    {t.hjem.lagreEndring}
-                                </button>
-                            )}
-                        </div>
+                        <SpillerVelger
+                            valgtId={valgtId}
+                            spillere={spillere ?? []}
+                            lagrer={lagrer}
+                            disabled={!spillere}
+                            placeholder={t.hjem.skrivNavn}
+                            onVelg={(playerId) => lagre(playerId)}
+                        />
                     </div>
                 )}
             </RadKort>
@@ -774,13 +719,4 @@ function StatusLinjeKompakt({
 function blink(setter: (v: boolean) => void) {
     setter(true)
     setTimeout(() => setter(false), 2500)
-}
-
-function initialer(navn: string): string {
-    return navn
-        .split(/\s+/)
-        .filter(Boolean)
-        .slice(0, 2)
-        .map((ord) => ord[0]!.toUpperCase())
-        .join('')
 }

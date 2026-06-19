@@ -40,8 +40,16 @@ export interface SeedUser {
     paid: boolean
     winner: string
     topscorer: string | null
+    topscorer_player_id: number | null
     i_hovedliga: boolean
     notif_reminders: boolean
+}
+
+// Legger en spiller rett i players-tabellen (football-data sin player-id som primærnøkkel).
+export async function seedPlayer(p: { id: number; name: string; team_tla: string }): Promise<void> {
+    await withDb((c) =>
+        c.query(`INSERT INTO players (id, name, team_tla) VALUES ($1, $2, $3)`, [p.id, p.name, p.team_tla]),
+    )
 }
 
 export interface SeedBet {
@@ -121,14 +129,15 @@ export async function seedUser(overrides: Partial<SeedUser> = {}): Promise<SeedU
         paid: overrides.paid ?? false,
         winner: overrides.winner ?? '',
         topscorer: overrides.topscorer ?? null,
+        topscorer_player_id: overrides.topscorer_player_id ?? null,
         i_hovedliga: overrides.i_hovedliga ?? true,
         notif_reminders: overrides.notif_reminders ?? true,
     }
     return withDb(async (c) => {
         const r = await c.query(
             `INSERT INTO users
-               (firebase_user_id, name, email, picture, active, scoreadmin, paymentadmin, superadmin, paid, winner, topscorer, i_hovedliga, notif_reminders, onboarded_at)
-             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13, NOW())
+               (firebase_user_id, name, email, picture, active, scoreadmin, paymentadmin, superadmin, paid, winner, topscorer, topscorer_player_id, i_hovedliga, notif_reminders, onboarded_at)
+             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14, NOW())
              RETURNING *`,
             [
                 u.firebase_user_id,
@@ -142,6 +151,7 @@ export async function seedUser(overrides: Partial<SeedUser> = {}): Promise<SeedU
                 u.paid,
                 u.winner,
                 u.topscorer,
+                u.topscorer_player_id,
                 u.i_hovedliga,
                 u.notif_reminders,
             ],
