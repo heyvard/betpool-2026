@@ -65,3 +65,32 @@ describe('/api/v1/matches — live-synk throttle', () => {
         expect(etter.getTime()).toBeGreaterThan(før.getTime())
     })
 })
+
+describe('/api/v1/bets — live-synk throttle', () => {
+    it('claimer slottet og avanserer sync_state ved første GET etter intervallet', async () => {
+        await seedUser({ firebase_user_id: 'alice' })
+        await settLiveSyncedAt(new Date(0))
+
+        const res = await api('/api/v1/bets', { user: 'alice' })
+        expect(res.status).toBe(200)
+
+        const etter = await lesLiveSyncedAt()
+        expect(etter.getTime()).toBeGreaterThan(Date.now() - 60_000)
+    })
+
+    it('deler synk-slottet med /api/v1/matches på tvers av endepunkter', async () => {
+        await seedUser({ firebase_user_id: 'alice' })
+        await settLiveSyncedAt(new Date(0))
+
+        // Første GET (matches) claimer slottet.
+        await api('/api/v1/matches', { user: 'alice' })
+        const t1 = await lesLiveSyncedAt()
+
+        // Et påfølgende bets-kall innenfor samme 15s-vindu skal IKKE claime på
+        // nytt — den delte sync_state-gaten gjør at football-data.org treffes
+        // maks én gang totalt, uansett hvilke endepunkter som polles.
+        await api('/api/v1/bets', { user: 'alice' })
+        const t2 = await lesLiveSyncedAt()
+        expect(t2.getTime()).toBe(t1.getTime())
+    })
+})

@@ -1,6 +1,7 @@
 import { PoolClient } from 'pg'
 
 import { FootballDataMatch } from '../data/footballDataMatch'
+import { LIVE_SYNC_INTERVAL_SEKUNDER } from '../utils/liveSync'
 import { syncMatches, SyncResultat } from './syncMatches'
 import { syncScores, SyncScoresResultat } from './syncScores'
 
@@ -55,4 +56,28 @@ export async function syncLive(client: PoolClient): Promise<SyncLiveResultat> {
     const scoresResultat = await syncScores(client, false, kamper)
 
     return { hentet: kamper.length, kamper: matchResultat, scores: scoresResultat }
+}
+
+// Klient-trigget live-synk: pollere (/api/v1/matches og /api/v1/bets) henter
+// dette hvert 15s mens appen er oppe. Vi "claimer" et synk-slot atomisk via den
+// delte sync_state-raden slik at football-data.org treffes maks én gang per
+// LIVE_SYNC_INTERVAL_SEKUNDER-vindu globalt — uavhengig av antall klienter,
+// endepunkter og serverless-instanser. Kun forespørselen som vinner UPDATE-en
+// synker; resten leser bare fersk DB-data.
+export async function maybeSyncLive(client: PoolClient): Promise<void> {
+    try {
+        const claim = await client.query(
+            `UPDATE sync_state SET live_synced_at = now()
+             WHERE id = 'live'
+               AND live_synced_at < now() - ($1 * interval '1 second')
+             RETURNING live_synced_at`,
+            [LIVE_SYNC_INTERVAL_SEKUNDER],
+        )
+        if (claim.rowCount === 1) {
+            await syncLive(client)
+        }
+    } catch (e) {
+        // Ikke la en synk-feil velte klient-kallet — vi returnerer DB-data uansett.
+        console.error('live-synk feilet', e)
+    }
 }

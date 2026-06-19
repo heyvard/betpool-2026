@@ -18,11 +18,16 @@ export function UseMatches() {
             return matchene
         },
 
-        // Poll så scoren oppdateres jevnlig mens appen er oppe. Selve kallet
-        // trigger en throttlet live-synk fra football-data.org server-side.
-        // refetchIntervalInBackground = false → polling pauses når fanen er
-        // skjult, så API-budsjettet brukes kun når noen faktisk ser på appen.
-        refetchInterval: LIVE_SYNC_INTERVAL_SEKUNDER * 1000,
+        // Poll så scoren oppdateres mens en kamp pågår. Selve kallet trigger en
+        // throttlet live-synk fra football-data.org server-side. Vi poller raskt
+        // (15s) kun når en kamp faktisk er IN_PLAY/PAUSED; ellers 60s — nok til å
+        // fange at en kamp starter, men sparer Neon-compute og API-kall i idle-
+        // perioder. refetchIntervalInBackground = false → polling pauses når
+        // fanen er skjult, så API-budsjettet brukes kun når noen ser på appen.
+        refetchInterval: (query) => {
+            const harLive = query.state.data?.some((m) => m.status === 'IN_PLAY' || m.status === 'PAUSED')
+            return harLive ? LIVE_SYNC_INTERVAL_SEKUNDER * 1000 : 60_000
+        },
         refetchIntervalInBackground: false,
     })
 }
