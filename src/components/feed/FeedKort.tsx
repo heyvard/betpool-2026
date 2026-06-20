@@ -7,21 +7,14 @@ import { UseMutateFeedKommentar } from '../../queries/mutateFeedKommentar'
 import { UseMutateFeedKommentarReaksjon } from '../../queries/mutateFeedKommentarReaksjon'
 import { TILLATTE_EMOJI } from '../../utils/feedEmoji'
 import { useLanguage } from '../../i18n/LanguageContext'
-import { hentFlag } from '../../utils/lag'
+import { hentFlag, hentNavn } from '../../utils/lag'
 import { ACCENT, relativKort, tidEtikett, visningsnavn } from './feedUtils'
-import { BetpoolLogo, FeedAvatar, Flagg } from './FeedBits'
+import { FeedAvatar, Flagg, KampAvsenderIkon, MorgenrapportIkon } from './FeedBits'
 
 interface Props {
     post: FeedPost
     meNavn: string
     mePicture: string | null
-}
-
-// Type-etikett til avsender-raden («Kamp avgjort», «Sjeldent treff», «Morgenrapport»).
-function typeTekst(post: FeedPost, t: ReturnType<typeof useLanguage>['t']): string {
-    if (post.kind === 'morgenrapport') return t.feed.typeMorgenrapport
-    if (post.scenario === 'sjeldent') return t.feed.typeSjeldent
-    return t.feed.typeKampAvgjort
 }
 
 function EmojiVelger({ onVelg }: { onVelg: (emoji: string) => void }) {
@@ -238,14 +231,12 @@ function KommentarRad({ post, kommentar }: { post: FeedPost; kommentar: FeedKomm
 }
 
 export function FeedKort({ post, meNavn, mePicture }: Props) {
-    const { t } = useLanguage()
+    const { t, locale } = useLanguage()
     const farger = ACCENT[post.accent] ?? ACCENT.stone
     const [pickerOpen, setPickerOpen] = useState(false)
     const [tekst, setTekst] = useState('')
     const reaksjon = UseMutateFeedReaksjon()
     const kommentar = UseMutateFeedKommentar()
-
-    const erStor = post.scenario === 'lederbytte' || post.scenario === 'sjeldent'
 
     const sendKommentar = () => {
         const ren = tekst.trim()
@@ -268,17 +259,27 @@ export function FeedKort({ post, meNavn, mePicture }: Props) {
             <div style={{ padding: '14px 15px 16px' }}>
                 {/* Avsender-rad */}
                 <div className="flex items-center gap-2.5">
-                    <BetpoolLogo size={34} />
+                    {post.kind === 'kamp' ? (
+                        <KampAvsenderIkon
+                            home={String(post.data.homeTeam ?? '')}
+                            away={String(post.data.awayTeam ?? '')}
+                            size={34}
+                        />
+                    ) : (
+                        <MorgenrapportIkon size={34} farger={farger} />
+                    )}
                     <div className="min-w-0">
                         <div style={{ fontSize: 13.5, fontWeight: 800, color: '#1c1917' }}>
-                            Betpool
-                            {erStor && <span style={{ color: '#d97706', marginLeft: 4 }}>★</span>}
+                            {post.kind === 'kamp'
+                                ? `${hentNavn(String(post.data.homeTeam ?? ''), locale)}–${hentNavn(
+                                      String(post.data.awayTeam ?? ''),
+                                      locale,
+                                  )}`
+                                : t.feed.avsenderMorgenrapport}
                         </div>
                         <div style={{ fontSize: 11, fontWeight: 600, color: farger.acctx }}>
-                            {typeTekst(post, t)}
-                            {post.kind === 'kamp' && post.data.rundeTekst
-                                ? ` · ${String(post.data.rundeTekst)}`
-                                : ''} · {tidEtikett(post.created_at)}
+                            {post.kind === 'kamp' && post.data.rundeTekst ? `${String(post.data.rundeTekst)} · ` : ''}
+                            {tidEtikett(post.created_at)}
                         </div>
                     </div>
                 </div>
