@@ -31,3 +31,18 @@ export function osloGårsdagDato(d: Date = new Date()): string {
     const tidligere = new Date(new Date(`${iDag}T12:00:00Z`).getTime() - 24 * 60 * 60 * 1000)
     return osloDato(tidligere)
 }
+
+// Dagen før en gitt Oslo-dato (YYYY-MM-DD), som Oslo-dato.
+export function osloDagFør(datoStr: string): string {
+    const tidligere = new Date(new Date(`${datoStr}T12:00:00Z`).getTime() - 24 * 60 * 60 * 1000)
+    return osloDato(tidligere)
+}
+
+// UTC-instansen som svarer til kl. `time`:00 i Europe/Oslo på en gitt Oslo-dato.
+// Finner DST-offset ved å justere et gjett (trygt for «pene» timer som 08).
+export function osloInstant(datoStr: string, time = 8): Date {
+    const tt = time < 10 ? `0${time}` : String(time)
+    const gjett = new Date(`${datoStr}T${tt}:00:00Z`)
+    const diff = time - osloTime(gjett) // antall timer å justere
+    return new Date(gjett.getTime() + diff * 60 * 60 * 1000)
+}

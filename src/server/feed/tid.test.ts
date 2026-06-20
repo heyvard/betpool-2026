@@ -1,4 +1,4 @@
-import { osloDato, osloGårsdagDato, osloTime } from './tid'
+import { osloDagFør, osloDato, osloGårsdagDato, osloInstant, osloTime } from './tid'
 
 describe('tid – Europe/Oslo', () => {
     it('osloDato gir ISO-dato i norsk tid', () => {
@@ -17,5 +17,17 @@ describe('tid – Europe/Oslo', () => {
 
     it('osloGårsdagDato trekker fra ett døgn i norsk tid', () => {
         expect(osloGårsdagDato(new Date('2026-06-20T06:00:00Z'))).toBe('2026-06-19')
+    })
+
+    it('osloDagFør gir dagen før en gitt Oslo-dato', () => {
+        expect(osloDagFør('2026-06-20')).toBe('2026-06-19')
+        expect(osloDagFør('2026-03-01')).toBe('2026-02-28')
+    })
+
+    it('osloInstant gir UTC-instansen for kl 08 i Oslo', () => {
+        // Sommer: 08:00 Oslo = 06:00 UTC.
+        expect(osloInstant('2026-06-20', 8).toISOString()).toBe('2026-06-20T06:00:00.000Z')
+        // Vinter: 08:00 Oslo = 07:00 UTC.
+        expect(osloInstant('2026-01-20', 8).toISOString()).toBe('2026-01-20T07:00:00.000Z')
     })
 })

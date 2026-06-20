@@ -76,6 +76,23 @@ export interface SyncAllAdminResultat {
     scores: { hentet: number; oppdatert: number }
 }
 
+export interface FeedBackfillResultat {
+    dager: number
+    kampposter: number
+    morgenrapporter: number
+}
+
+export function UseMutateFeedBackfill() {
+    const authedFetch = useAuthedFetch()
+    return useMutation({
+        mutationFn: async (dager: number = 2) => {
+            const response = await authedFetch(`/api/v1/admin/cron/feed-backfill?dager=${dager}`, { method: 'POST' })
+            if (!response.ok) throw new Error(`Serverfeil: ${response.status}`)
+            return response.json() as Promise<FeedBackfillResultat>
+        },
+    })
+}
+
 export function UseMutateAdminSync() {
     const authedFetch = useAuthedFetch()
     return useMutation({
