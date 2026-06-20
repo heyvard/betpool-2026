@@ -50,6 +50,7 @@ const no = {
         typeKampAvgjort: 'Kamp avgjort',
         typeSjeldent: 'Sjeldent treff',
         typeMorgenrapport: 'Morgenrapport',
+        avsenderMorgenrapport: 'Morgenrapporten',
     },
     grupper: {
         tittel: 'Grupper',

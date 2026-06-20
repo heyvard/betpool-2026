@@ -52,6 +52,7 @@ const fr: Translations = {
         typeKampAvgjort: 'Match terminé',
         typeSjeldent: 'Pari rare',
         typeMorgenrapport: 'Rapport du matin',
+        avsenderMorgenrapport: 'Le rapport du matin',
     },
     grupper: {
         tittel: 'Groupes',

@@ -1,4 +1,60 @@
 import React from 'react'
+import { Sunrise } from 'lucide-react'
+import { hentFlag } from '../../utils/lag'
+
+// Avsender-ikon for kamp-poster: squircle delt i to, hjemmeflagg over borteflagg.
+export function KampAvsenderIkon({ home, away, size = 34 }: { home: string; away: string; size?: number }) {
+    const flaggStil: React.CSSProperties = {
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        height: size / 2,
+        fontSize: Math.round(size * 0.4),
+        lineHeight: 1,
+    }
+    return (
+        <div
+            className="flex shrink-0 flex-col overflow-hidden"
+            style={{
+                width: size,
+                height: size,
+                borderRadius: '30%',
+                background: '#fff',
+                boxShadow: 'inset 0 0 0 1px #e7e5e4',
+            }}
+            aria-hidden
+        >
+            <span style={flaggStil}>{hentFlag(home) || '🏳️'}</span>
+            <span style={{ ...flaggStil, boxShadow: 'inset 0 1px 0 #e7e5e4' }}>{hentFlag(away) || '🏳️'}</span>
+        </div>
+    )
+}
+
+// Avsender-ikon for morgenrapport: squircle i postens aksentfarge med soloppgang-glyf.
+export function MorgenrapportIkon({
+    size = 34,
+    farger,
+}: {
+    size?: number
+    farger: { acc: string; accbg: string; acctx: string }
+}) {
+    return (
+        <div
+            className="flex shrink-0 items-center justify-center"
+            style={{
+                width: size,
+                height: size,
+                borderRadius: '30%',
+                background: farger.accbg,
+                color: farger.acctx,
+                boxShadow: `inset 0 0 0 1px ${farger.acc}`,
+            }}
+            aria-hidden
+        >
+            <Sunrise size={Math.round(size * 0.52)} strokeWidth={1.9} />
+        </div>
+    )
+}
 
 // Betpool-logo som squircle med monogram «b». Brukes som avsender-ikon på hver post.
 export function BetpoolLogo({ size = 34 }: { size?: number }) {
