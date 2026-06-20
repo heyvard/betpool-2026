@@ -3,10 +3,43 @@ import {
     formatTipp,
     malEndring,
     malIngenTraff,
+    malLederBest,
     malLederbytte,
     malSjeldent,
     visningsnavn,
 } from './maler'
+
+describe('maler – kun fornavn i titler', () => {
+    it('bruker fornavn i tittel, men fullt navn i body', () => {
+        const best = malLederBest({
+            navn: 'Håvard Andersen',
+            poeng: 6,
+            resultat: '2–1',
+            sum: 30,
+            antallRiktige: 1,
+            totalt: 12,
+            erLeder: true,
+        })
+        expect(best.tittel).toBe('Håvard tok 6 poeng — best i kampen')
+
+        const bytte = malLederbytte({ nyLeder: 'Håvard Andersen', gammelLeder: 'Ola Nordmann', luke: '3', dager: 2 })
+        expect(bytte.tittel).toBe('Håvard har tatt ledelsen')
+        // Body beholder fullt navn.
+        expect(bytte.body).toContain('Ola Nordmann')
+    })
+
+    it('sjeldent: fornavn i alene-tittel', () => {
+        const m = malSjeldent({
+            spillere: ['Håvard Andersen'],
+            resultat: '2–1',
+            antall: 1,
+            totalt: 10,
+            vekt: 1,
+            poeng: 5,
+        })
+        expect(m.tittel).toBe('Håvard satt alene med 2–1')
+    })
+})
 
 describe('maler – formatering', () => {
     it('bruker tankestrek i resultat', () => {

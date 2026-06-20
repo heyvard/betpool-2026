@@ -27,6 +27,13 @@ export function visningsnavn(navn: string): string {
     return navn.includes('@') ? navn.split('@')[0] : navn
 }
 
+// Kun fornavn — brukes i post-TITLER (f.eks. «Håvard», ikke «Håvard Andersen»).
+// Splitter på mellomrom og tar første ledd. Body-tekst og tabeller bruker fullt
+// visningsnavn.
+export function fornavn(navn: string): string {
+    return visningsnavn(navn).split(' ')[0]
+}
+
 // Lederens tippede resultat, f.eks. «2–0 til Brasil» eller «1–1».
 export function formatTipp(home: number, away: number, homeTla: string, awayTla: string): string {
     const res = formatResultat(home, away)
@@ -60,9 +67,7 @@ export interface SjeldentArgs {
 
 export function malSjeldent(a: SjeldentArgs): MalResultat {
     const tittel =
-        a.antall === 1
-            ? `${visningsnavn(a.spillere[0])} satt alene med ${a.resultat}`
-            : `${a.antall} hadde ${a.resultat}`
+        a.antall === 1 ? `${fornavn(a.spillere[0])} satt alene med ${a.resultat}` : `${a.antall} hadde ${a.resultat}`
     const superlativDel = a.superlativ ? ` — ${a.superlativ}` : ''
     const body = `${a.antall} av ${a.totalt} hadde eksakt resultat. Med rundevekt ×${a.vekt}: +${a.poeng} poeng${superlativDel}.`
     return { accent: 'gold', tittel, body }
@@ -77,7 +82,7 @@ export interface LederBommetArgs {
 }
 
 export function malLederBommet(a: LederBommetArgs): MalResultat {
-    const tittel = `${visningsnavn(a.leder)} bommet — 0 poeng`
+    const tittel = `${fornavn(a.leder)} bommet — 0 poeng`
     const body = `Lederen tippet ${a.ledersTipp}. ${visningsnavn(a.utfordrer)} tok ${a.poeng} og er nå ${a.luke} bak i toppen.`
     return { accent: 'live', tittel, body }
 }
@@ -93,7 +98,7 @@ export interface LederBestArgs {
 }
 
 export function malLederBest(a: LederBestArgs): MalResultat {
-    const tittel = `${visningsnavn(a.navn)} tok ${a.poeng} poeng — best i kampen`
+    const tittel = `${fornavn(a.navn)} tok ${a.poeng} poeng — best i kampen`
     let førsteSetning: string
     if (a.antallRiktige === 1) {
         førsteSetning = `Eneste med riktig resultat (${a.resultat}).`
@@ -156,7 +161,7 @@ export interface LederbytteArgs {
 }
 
 export function malLederbytte(a: LederbytteArgs): MalResultat {
-    const tittel = `${visningsnavn(a.nyLeder)} har tatt ledelsen`
+    const tittel = `${fornavn(a.nyLeder)} har tatt ledelsen`
     const body = `Gikk forbi ${visningsnavn(a.gammelLeder)} i natt og leder med ${a.luke} poeng. ${visningsnavn(
         a.gammelLeder,
     )} ledet i ${a.dager} ${a.dager === 1 ? 'dag' : 'dager'}.`
