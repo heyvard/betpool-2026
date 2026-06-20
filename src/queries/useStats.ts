@@ -28,11 +28,9 @@ export interface StatsResponse {
  * queryKey-en `['stats']` invalideres allerede i `index.tsx` når brukeren lagrer
  * eget vinner-/toppscorer-tips, så denne hooken oppdaterer seg automatisk.
  *
- * // TODO backend: `/api/v1/stats/` finnes ikke ennå. Endepunktet skal returnere
- * // `StatsResponse` (se over) for ligaen den innloggede brukeren er med i —
- * // `totaltAntall` = antall som har tippet, og `vinner`/`toppscorer` med ett
- * // `TipsValg` per unikt valg (`navn` = tla for vinner / spillernavn for
- * // toppscorer, `deltakere` = kallenavn/navn på dem som valgte det).
+ * Backend: `/api/v1/stats/` (se `src/pages/api/v1/stats.ts`). Returnerer en tom
+ * fordeling så lenge andres tips er skjult (frem til starten på runde 2), samme
+ * synlighetsgaranti som `/api/v1/bets`.
  */
 export function UseStats() {
     const authedFetch = useAuthedFetch()

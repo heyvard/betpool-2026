@@ -1,13 +1,13 @@
-import { test, expect, type BrowserContext, type Page } from '@playwright/test'
+import { test, expect, type BrowserContext } from '@playwright/test'
 
 import { seedUser, seedPlayer, truncateAll } from '../support/db'
 import { testKamper } from '../support/matches'
 
 // Kjernegarantien for de første dagene: ingen ser andres VM-vinner eller
-// toppscorer før fristen (starten på runde 2). /api/v1/bets sletter winner og
-// topscorer fra alle brukere så lenge erIFørsteRunde er sann, og slipper dem
-// fram etterpå. Her seedes samme data, og bare test-klokka flyttes — synligheten
-// skal flippe. Konsumentene er /winnerbets og /toppscorer (kolonne 2 i tabellen).
+// toppscorer før fristen (starten på runde 2). /api/v1/stats returnerer en tom
+// fordeling så lenge erIFørsteRunde er sann, og hele fordelingen etterpå. Her
+// seedes samme data, og bare test-klokka flyttes — synligheten skal flippe.
+// Konsumenten er /alle-tips (samme garanti som /api/v1/bets).
 
 const PORT = Number(process.env.TEST_PORT ?? 3100)
 const URL_BASE = `http://localhost:${PORT}`
@@ -27,13 +27,6 @@ async function loggInn(context: BrowserContext, fid: string, klokke: string): Pr
     ])
 }
 
-// Leser tippet-kolonnen (Vinner / Toppscorer = 2. celle) for en navngitt rad.
-async function tippetForNavn(page: Page, navn: string): Promise<string> {
-    const rad = page.locator('tbody tr', { hasText: navn })
-    await expect(rad).toBeVisible()
-    return (await rad.locator('td').nth(1).innerText()).trim()
-}
-
 test.beforeEach(async () => {
     await truncateAll()
     // bob har tippet; alice er innlogget tilskuer.
@@ -51,19 +44,19 @@ test.beforeEach(async () => {
 test('andre brukeres vinner og toppscorer er skjult før runde 2', async ({ context, page }) => {
     await loggInn(context, 'alice', FØR_TURNERING)
 
-    await page.goto('/winnerbets')
-    expect(await tippetForNavn(page, 'bob')).toBe('')
-
-    await page.goto('/toppscorer')
-    expect(await tippetForNavn(page, 'bob')).toBe('')
+    await page.goto('/alle-tips')
+    // Fordelingen er tom så lenge tipsene er hemmelige.
+    await expect(page.getByText('Ingen i ligaen har tippet ennå.')).toBeVisible()
+    await expect(page.getByText('Argentina')).toHaveCount(0)
+    await expect(page.getByText('Kylian Mbappé')).toHaveCount(0)
 })
 
 test('andre brukeres vinner og toppscorer blir synlige etter runde 2-fristen', async ({ context, page }) => {
     await loggInn(context, 'alice', ETTER_FRIST)
 
-    await page.goto('/winnerbets')
-    expect(await tippetForNavn(page, 'bob')).toBe('🇦🇷 Argentina')
+    await page.goto('/alle-tips')
+    await expect(page.getByText('Argentina')).toBeVisible()
 
-    await page.goto('/toppscorer')
-    expect(await tippetForNavn(page, 'bob')).toBe('Kylian Mbappé')
+    await page.getByRole('button', { name: 'Toppscorer' }).click()
+    await expect(page.getByText('Kylian Mbappé')).toBeVisible()
 })
