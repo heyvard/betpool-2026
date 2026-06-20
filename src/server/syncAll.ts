@@ -3,6 +3,18 @@ import { PoolClient } from 'pg'
 import { FootballDataMatch } from '../data/footballDataMatch'
 import { syncMatches, SyncResultat } from './syncMatches'
 import { syncScores, SyncScoresResultat } from './syncScores'
+import { genererKampposter } from './feed/genererKamppost'
+
+// Genererer feed-kampposter for nylig ferdige kamper. Aldri en blokkering for
+// synken — feilet feed-generering skal ikke velte score-oppdateringen.
+async function genererFeedTrygt(client: PoolClient): Promise<void> {
+    try {
+        const res = await genererKampposter(client)
+        if (res.postet > 0) console.log(`[feed] postet ${res.postet} kamppost(er)`)
+    } catch (e) {
+        console.error('[feed] kunne ikke generere kampposter', e)
+    }
+}
 
 const BASE_URL = 'https://api.football-data.org/v4'
 const COMPETITION = 'WC'
@@ -35,6 +47,7 @@ export async function syncAll(client: PoolClient): Promise<SyncAllResultat> {
 
     const matchResultat = await syncMatches(client, false, kamper)
     const scoresResultat = await syncScores(client, false, kamper)
+    await genererFeedTrygt(client)
 
     return { hentet: kamper.length, kamper: matchResultat, scores: scoresResultat }
 }
@@ -53,6 +66,7 @@ export async function syncLive(client: PoolClient): Promise<SyncLiveResultat> {
 
     const matchResultat = await syncMatches(client, false, kamper)
     const scoresResultat = await syncScores(client, false, kamper)
+    await genererFeedTrygt(client)
 
     return { hentet: kamper.length, kamper: matchResultat, scores: scoresResultat }
 }
