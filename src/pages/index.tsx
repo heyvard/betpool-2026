@@ -108,6 +108,13 @@ const Home: NextPage = () => {
 
             <VinnerKort megselv={megselv} laast={laast} endrevindu={endrevindu} />
             <ToppscorerKort megselv={megselv} laast={laast} endrevindu={endrevindu} />
+
+            <NextLink
+                href="/alle-tips"
+                className="block text-center text-sm font-semibold text-amber-700 hover:text-amber-800"
+            >
+                {t.allesTips.seAlleTips}
+            </NextLink>
         </div>
     )
 }

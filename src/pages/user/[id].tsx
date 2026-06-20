@@ -79,14 +79,14 @@ const Home: NextPage = () => {
             {user.winner && (
                 <div className="mx-4 mt-4">
                     <BpCard>
-                        <NextLink href="/winnerbets">
+                        <NextLink href="/alle-tips">
                             <Link>
                                 {t.spilteKamper.vinner} {fixLand(user.winner || '', locale)} ({user.winnerPoints}{' '}
                                 {t.felles.poeng})
                             </Link>
                         </NextLink>
                         <br />
-                        <NextLink href="/toppscorer">
+                        <NextLink href="/alle-tips">
                             <Link>
                                 {t.spilteKamper.toppscorer} {user.topscorer_player_name} ({user.topscorerPoints}{' '}
                                 {t.felles.poeng})
