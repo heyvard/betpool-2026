@@ -20,8 +20,7 @@ function lagClient(opts: {
         if (sql.includes('FROM bets b')) return { rows: opts.bets }
         if (sql.includes('FROM match_scores')) return { rows: opts.scores }
         if (sql.includes('FROM users u')) return { rows: opts.users }
-        if (sql.includes('FROM matches m\n         JOIN') && sql.includes('AT TIME ZONE'))
-            return { rows: [{ antall: '0' }] } // stille dag
+        if (sql.includes('AS antall')) return { rows: [{ antall: '0' }] } // tellFerdigeKamper → stille dag
         if (sql.includes('FROM matches')) return { rows: opts.matches }
         if (sql.includes("kind = 'morgenrapport'")) return { rows: [], rowCount: 0 }
         if (sql.includes('max(dato)')) return { rows: [{ dato: null }] }

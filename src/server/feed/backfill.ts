@@ -114,8 +114,9 @@ async function backfillMorgenrapporter(client: PoolClient, dager: number, now: D
         const finnes = await client.query(`SELECT 1 FROM feed_posts WHERE kind = 'morgenrapport' AND dato = $1`, [dato])
         if (finnes.rowCount && finnes.rowCount > 0) continue
 
-        const iGår = osloDagFør(dato)
-        const antallKamper = await tellFerdigeKamper(client, iGår)
+        // Vindu: siste 24 t fram til 08:00 norsk tid på rapportdagen.
+        const fra = new Date(inst.getTime() - 24 * 60 * 60 * 1000)
+        const antallKamper = await tellFerdigeKamper(client, fra, inst)
         if (antallKamper === 0) continue // stille dag
 
         const { leaderboard, allBets } = await hentHovedligaData(client, inst)

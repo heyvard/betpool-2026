@@ -3,7 +3,7 @@ import { PoolClient } from 'pg'
 import { LeaderBoard } from '../../components/results/calculateAllScores'
 import { hentHovedligaData, sorterTabell } from './hovedligaData'
 import { malEndring, malLederbytte, MalResultat } from './maler'
-import { osloDato, osloGårsdagDato } from './tid'
+import { osloDato, osloInstant } from './tid'
 
 export interface MorgenrapportResultat {
     postet: boolean
@@ -90,8 +90,12 @@ export function velgMorgenScenario(args: {
     return { scenario: 'endring', mal, data }
 }
 
-// Antall hovedliga-kamper som ble ferdige på en gitt Oslo-dato.
-export async function tellFerdigeKamper(client: PoolClient, osloDatoStr: string): Promise<number> {
+// Antall hovedliga-kamper som ble ferdige i tidsvinduet (fra, til]. Morgenrapporten
+// bruker et rullerende 24-timersvindu som ender 08:00 norsk tid på rapportdagen,
+// IKKE en kalenderdato. Det grupperer hele kveldens/nattens kampslate riktig —
+// kamper som sparkes i gang sent og avgjøres etter midnatt (typisk
+// US-kampene) havner i samme rapport som de tidligere kampene samme «kveld».
+export async function tellFerdigeKamper(client: PoolClient, fra: Date, til: Date): Promise<number> {
     const res = await client.query<{ antall: string }>(
         `SELECT count(*) AS antall
          FROM matches m
@@ -99,8 +103,9 @@ export async function tellFerdigeKamper(client: PoolClient, osloDatoStr: string)
          WHERE m.status IN ('FINISHED', 'AWARDED')
            AND ms.synced_home_ft IS NOT NULL
            AND ms.synced_away_ft IS NOT NULL
-           AND (COALESCE(ms.score_synced_at, m.game_start) AT TIME ZONE 'Europe/Oslo')::date = $1`,
-        [osloDatoStr],
+           AND COALESCE(ms.score_synced_at, m.game_start) > $1
+           AND COALESCE(ms.score_synced_at, m.game_start) <= $2`,
+        [fra.toISOString(), til.toISOString()],
     )
     return parseInt(res.rows[0]?.antall ?? '0', 10)
 }
@@ -165,14 +170,15 @@ export async function insertMorgenrapport(
 // cron-handleren — UNIQUE på dato hindrer dobbel-post uansett.
 export async function genererMorgenrapport(client: PoolClient, now: Date = new Date()): Promise<MorgenrapportResultat> {
     const iDag = osloDato(now)
-    const iGår = osloGårsdagDato(now)
 
     // Idempotent: allerede postet i dag?
     const finnes = await client.query(`SELECT 1 FROM feed_posts WHERE kind = 'morgenrapport' AND dato = $1`, [iDag])
     if (finnes.rowCount && finnes.rowCount > 0) return { postet: false, grunn: 'allerede_postet' }
 
-    // Stille dag → ingen post.
-    const antallKamper = await tellFerdigeKamper(client, iGår)
+    // Stille dag → ingen post. Vindu: siste 24 t fram til 08:00 norsk tid i dag.
+    const til = osloInstant(iDag, 8)
+    const fra = new Date(til.getTime() - 24 * 60 * 60 * 1000)
+    const antallKamper = await tellFerdigeKamper(client, fra, til)
     if (antallKamper === 0) return { postet: false, grunn: 'stille_dag' }
 
     // Dagens stilling.
