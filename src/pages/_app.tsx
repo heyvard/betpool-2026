@@ -94,8 +94,7 @@ function Layout({ children }: { children: React.ReactNode }) {
             <nav className="fixed bottom-0 left-0 z-50 w-full min-h-[calc(4rem+env(safe-area-inset-bottom))] flex bg-stone-900 text-stone-300 border-t border-stone-800 shadow-[0_-2px_12px_rgba(0,0,0,0.08)] pb-[env(safe-area-inset-bottom)] [transform:translateZ(0)] [-webkit-backface-visibility:hidden] [backface-visibility:hidden] [will-change:transform]">
                 <NavKnapp url="/" text={t.nav.hjem} icon={<House className="w-5 h-5" />} />
                 <NavKnapp url="/my-bets" text={t.nav.tipp} icon={<ListChecks className="w-5 h-5" />} />
-                {/* Feed er midlertidig kun synlig for superadmin mens den testes — hardkodet. */}
-                {me?.superadmin && <NavKnapp url="/feed" text={t.nav.feed} icon={<Radio className="w-5 h-5" />} />}
+                <NavKnapp url="/feed" text={t.nav.feed} icon={<Radio className="w-5 h-5" />} />
                 <NavKnapp url="/leaderboard" text={t.nav.resultater} icon={<ListOrdered className="w-5 h-5" />} />
                 <NavKnapp url="/rules" text={t.nav.regler} icon={<BookOpen className="w-5 h-5" />} />
 
