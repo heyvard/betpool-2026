@@ -9,9 +9,10 @@ const SEKS_TIMER_MS = 6 * 60 * 60 * 1000
 export interface SyncScoresResultat {
     hentet: number
     oppdatert: number
-    // Match-num-ene som gikk fra «uten fulltidsresultat» til «med fulltidsresultat»
-    // i nettopp denne kjøringen. Feed-generatoren bruker dette til å lage poster
-    // KUN for kamper som akkurat ble ferdige — aldri en sweep av hele historikken.
+    // Match-num-ene til kamper som er FERDIGE (FINISHED/AWARDED) og ble synket i
+    // denne kjøringen. Feed-generatoren bruker dette til å lage poster kun for
+    // ferdige kamper — aldri midt i en kamp, og aldri en sweep av hele historikken
+    // (bare kamper som fortsatt er «relevante», dvs. nylig ferdige / mangler score).
     nyligFerdige: number[]
 }
 
@@ -224,9 +225,10 @@ export async function syncScores(
         if (!score) continue
         if (score.fullTime.home === null || score.fullTime.away === null) continue
 
-        // Manglet kampen fulltidsresultat før denne skrivingen? (Brukes til å
-        // skille «akkurat ferdig nå» fra en allerede ferdig kamp som synkes på nytt.)
-        const mangletFtFør = manglerSynketScore(m)
+        // En kamp er FERDIG først når football-data melder FINISHED/AWARDED. Et
+        // synket fulltidsresultat alene betyr ikke ferdig — under spill er
+        // `score.fullTime` selve live-scoren (brukes til foreløpige poeng).
+        const erFerdig = m.status === 'FINISHED' || m.status === 'AWARDED'
 
         const result = await client.query(
             `INSERT INTO match_scores
@@ -268,11 +270,14 @@ export async function syncScores(
         )
         if (result.rowCount && result.rowCount > 0) {
             oppdatert++
-            if (mangletFtFør) nyligFerdige.push(m.id)
             console.log(
                 `[sync-scores] oppdaterte kamp ${m.id}: ${score.fullTime.home}–${score.fullTime.away} (${m.status})`,
             )
         }
+        // Ferdige kamper synket denne kjøringen er kandidater for feed-post.
+        // genererKampposter er idempotent, så gjentatte runder i 6-timersvinduet
+        // (kampen er fortsatt «relevant») lager ikke duplikater.
+        if (erFerdig) nyligFerdige.push(m.id)
     }
 
     const resultat: SyncScoresResultat = { hentet: relevante.length, oppdatert, nyligFerdige }

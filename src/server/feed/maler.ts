@@ -102,9 +102,7 @@ export function malLederBest(a: LederBestArgs): MalResultat {
     } else {
         førsteSetning = `Traff utfallet i ${a.resultat}.`
     }
-    const ledelse = a.erLeder
-        ? `Beholder ledelsen i Æresligaen med ${a.sum} poeng.`
-        : `Står med ${a.sum} poeng i Æresligaen.`
+    const ledelse = a.erLeder ? `Beholder ledelsen med ${a.sum} poeng.` : `Står med ${a.sum} poeng sammenlagt.`
     return { accent: 'win', tittel, body: `${førsteSetning} ${ledelse}` }
 }
 
@@ -159,7 +157,7 @@ export interface LederbytteArgs {
 
 export function malLederbytte(a: LederbytteArgs): MalResultat {
     const tittel = `${visningsnavn(a.nyLeder)} har tatt ledelsen`
-    const body = `Gikk forbi ${visningsnavn(a.gammelLeder)} i natt og leder Æresligaen med ${a.luke} poeng. ${visningsnavn(
+    const body = `Gikk forbi ${visningsnavn(a.gammelLeder)} i natt og leder med ${a.luke} poeng. ${visningsnavn(
         a.gammelLeder,
     )} ledet i ${a.dager} ${a.dager === 1 ? 'dag' : 'dager'}.`
     return { accent: 'gold', tittel, body }

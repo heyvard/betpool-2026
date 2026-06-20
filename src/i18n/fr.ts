@@ -46,7 +46,6 @@ const fr: Translations = {
     },
     feed: {
         tittel: 'Fil',
-        underTittel: 'Ligue d’honneur',
         skrivKommentar: 'Écrire un commentaire …',
         ingenHendelser: 'Aucun événement pour le moment',
         ingenHendelserSub: 'La fil se réveille quand le premier match est terminé.',

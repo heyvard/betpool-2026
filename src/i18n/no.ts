@@ -44,7 +44,6 @@ const no = {
     },
     feed: {
         tittel: 'Feed',
-        underTittel: 'Æresligaen',
         skrivKommentar: 'Skriv en kommentar …',
         ingenHendelser: 'Ingen hendelser ennå',
         ingenHendelserSub: 'Feeden våkner når den første kampen er ferdig.',
