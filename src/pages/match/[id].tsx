@@ -513,7 +513,16 @@ function BetRow({ bet, isLive, isFinished }: { bet: BetWithUser; isLive: boolean
             >
                 {initials(bet.user.name)}
             </div>
-            <span className="text-sm text-stone-800 truncate flex-1">{bet.user.name}</span>
+            <span className="text-sm text-stone-800 truncate min-w-0 flex-1">{bet.user.name}</span>
+            {bet.joker && (
+                <span
+                    className="inline-flex items-center gap-0.5 rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold text-amber-800 ring-1 ring-amber-200 shrink-0"
+                    title="Joker ×2"
+                >
+                    <Zap className="w-3 h-3 fill-amber-500 text-amber-500" />
+                    ×2
+                </span>
+            )}
             <span
                 className="bp-tabular text-sm font-semibold text-stone-700 shrink-0 w-10 text-center"
                 style={{ fontFamily: "'SF Mono', ui-monospace, Menlo, monospace" }}
