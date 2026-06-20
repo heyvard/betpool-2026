@@ -59,7 +59,8 @@ async function backfillKampposter(client: PoolClient, dager: number, now: Date):
                 ms.score_synced_at::text AS score_synced_at, m.game_start::text AS game_start
          FROM matches m
          JOIN match_scores ms ON ms.match_num = m.match_num
-         WHERE ms.synced_home_ft IS NOT NULL
+         WHERE m.status IN ('FINISHED', 'AWARDED')
+           AND ms.synced_home_ft IS NOT NULL
            AND ms.synced_away_ft IS NOT NULL
            AND COALESCE(ms.score_synced_at, m.game_start + interval '2 hours') >= $1
            AND COALESCE(ms.score_synced_at, m.game_start + interval '2 hours') <= $2

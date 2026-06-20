@@ -54,9 +54,10 @@ export interface Kamppost {
     data: Record<string, unknown>
 }
 
-// Finner ferdige kamper (begge fulltidsfeltene satt) blant et gitt sett match-num
-// som ennå ikke har en feed-post. Settet er kampene som AKKURAT ble ferdige denne
-// synken — slik unngår vi en sweep av hele historikken. Idempotent via NOT EXISTS.
+// Finner ferdige kamper (status FINISHED/AWARDED + begge fulltidsfeltene satt)
+// blant et gitt sett match-num som ennå ikke har en feed-post. Status-sjekken er
+// avgjørende: synket fulltidsresultat alene er live-scoren under spill, så uten
+// den ville vi postet midt i en kamp. Idempotent via NOT EXISTS.
 async function hentFerdigeUtenPost(client: PoolClient, matchNums: number[]): Promise<FerdigKampRow[]> {
     if (matchNums.length === 0) return []
     const res = await client.query<FerdigKampRow>(
@@ -68,6 +69,7 @@ async function hentFerdigeUtenPost(client: PoolClient, matchNums: number[]): Pro
         FROM matches m
         JOIN match_scores ms ON ms.match_num = m.match_num
         WHERE m.match_num = ANY($1)
+          AND m.status IN ('FINISHED', 'AWARDED')
           AND ms.synced_home_ft IS NOT NULL
           AND ms.synced_away_ft IS NOT NULL
           AND NOT EXISTS (

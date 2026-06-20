@@ -41,7 +41,6 @@ const Feed: NextPage = () => {
                     <p style={{ fontSize: 21, fontWeight: 800, letterSpacing: '-.02em', color: '#1c1917' }}>
                         {t.feed.tittel}
                     </p>
-                    <p style={{ fontSize: 11, fontWeight: 600, color: '#78716c' }}>{t.feed.underTittel}</p>
                 </div>
                 <button
                     type="button"
