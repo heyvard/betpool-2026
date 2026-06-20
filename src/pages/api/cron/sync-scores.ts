@@ -19,11 +19,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     try {
         client = await getPool().connect()
         const resultat = await syncScores(client)
-        // Generer feed-kampposter for nylig ferdige kamper. Aldri en blokkering.
-        try {
-            await genererKampposter(client)
-        } catch (e) {
-            console.error('[feed] kunne ikke generere kampposter', e)
+        // Generer feed-kampposter KUN for kamper som akkurat ble ferdige denne
+        // synken. Aldri en blokkering.
+        if (resultat.nyligFerdige.length > 0) {
+            try {
+                await genererKampposter(client, resultat.nyligFerdige)
+            } catch (e) {
+                console.error('[feed] kunne ikke generere kampposter', e)
+            }
         }
         res.status(200).json(resultat)
     } catch (e) {
