@@ -229,7 +229,39 @@ it('teller oppdatert basert på rowCount', async () => {
         .mockResolvedValueOnce({ rowCount: 0 }) // INSERT kamp 2
 
     const resultat = await syncScores(mockClient as any)
-    expect(resultat).toEqual({ hentet: 2, oppdatert: 1 })
+    // Kamp 1 manglet FT i DB (SELECT [] ) og ble oppdatert → nylig ferdig.
+    // Kamp 2 ble ikke oppdatert (rowCount 0) → ikke nylig ferdig.
+    expect(resultat).toEqual({ hentet: 2, oppdatert: 1, nyligFerdige: [1] })
+})
+
+it('rapporterer kamp som gikk fra «uten FT» til «med FT» som nylig ferdig', async () => {
+    jest.spyOn(global, 'fetch').mockResolvedValue(mockOkResponse([lagKamp({ id: 7 })]))
+    // DB mangler synket score for kampen → den blir nylig ferdig når FT skrives.
+    mockClient.query.mockImplementation((sql: string) =>
+        Promise.resolve(sql.trim().startsWith('SELECT') ? { rows: [] } : { rowCount: 1 }),
+    )
+
+    const resultat = await syncScores(mockClient as any)
+    expect(resultat.nyligFerdige).toEqual([7])
+})
+
+it('rapporterer IKKE en allerede-ferdig kamp som korrigeres (hadde FT fra før)', async () => {
+    const nylig = new Date(Date.now() - 60 * 60 * 1000).toISOString() // 1 t siden → relevant
+    jest.spyOn(global, 'fetch').mockResolvedValue(
+        mockOkResponse([lagKamp({ id: 7, status: 'FINISHED', utcDate: nylig })]),
+    )
+    // DB har allerede FT (en korreksjon skrives), så kampen er ikke «nylig ferdig».
+    mockClient.query.mockImplementation((sql: string) =>
+        Promise.resolve(
+            sql.trim().startsWith('SELECT')
+                ? { rows: [{ match_num: 7, synced_home_ft: 1, synced_away_ft: 0 }] }
+                : { rowCount: 1 },
+        ),
+    )
+
+    const resultat = await syncScores(mockClient as any)
+    expect(resultat.oppdatert).toBe(1)
+    expect(resultat.nyligFerdige).toEqual([])
 })
 
 it('sender ekstraomgangs- og straffepark-score videre når de finnes', async () => {

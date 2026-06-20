@@ -14,6 +14,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `pnpm migrate` — `knex migrate:latest` against `PG_URI` (CockroachDB).
 - CI (`.github/workflows/workflow.yaml`) runs lint, `test:ci`, and `prettier:check`; a separate `integration-test` job runs `test:integration` + `test:e2e`; pushes to `master` deploy to Vercel.
 
+## Branch-arbeidsflyt
+
+Når du allerede har commitet til en arbeidsbranch og skal fortsette på samme
+oppgave senere: sjekk om branchen er merget til `main` først (f.eks.
+`git log origin/main` — squash-merge dukker ikke opp i `git branch --merged`).
+Er den merget, lag en **ny branch fra oppdatert `main`** i stedet for å bygge
+videre på den merge-de branchen.
+
 ## Before every commit
 
 Always run `pnpm format` (prettier write + lint fix) before committing. This prevents CI failures on formatting and lint.

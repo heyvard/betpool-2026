@@ -4,9 +4,11 @@
 import { genererKampposter } from './genererKamppost'
 
 // Mock-klient som svarer ut fra SQL-innhold (ikke kall-rekkefølge), så testen
-// ikke knekker av små refaktorer.
+// ikke knekker av små refaktorer. NOT EXISTS-spørringen filtreres på match_num-ene
+// som faktisk sendes inn (params[0]), slik at vi kan teste at kun oppgitte kamper
+// behandles.
 function lagClient(rader: {
-    ferdige: unknown[]
+    ferdige: { match_num: number; [k: string]: unknown }[]
     bets: unknown[]
     scores: unknown[]
     users: unknown[]
@@ -14,7 +16,10 @@ function lagClient(rader: {
 }) {
     const insertCalls: { params: unknown[] }[] = []
     const query = jest.fn(async (sql: string, params?: unknown[]) => {
-        if (sql.includes('NOT EXISTS') && sql.includes('feed_posts')) return { rows: rader.ferdige }
+        if (sql.includes('NOT EXISTS') && sql.includes('feed_posts')) {
+            const ids = (params?.[0] as number[]) ?? []
+            return { rows: rader.ferdige.filter((r) => ids.includes(r.match_num)) }
+        }
         if (sql.includes('FROM bets b')) return { rows: rader.bets }
         if (sql.includes('FROM match_scores')) return { rows: rader.scores }
         if (sql.includes('FROM users u')) return { rows: rader.users }
@@ -30,8 +35,8 @@ function lagClient(rader: {
 
 const iFortiden = new Date('2026-06-19T18:00:00Z')
 
-it('velger «sjeldent» når kun én hadde eksakt resultat', async () => {
-    const { client, insertCalls } = lagClient({
+function fixtures() {
+    return {
         ferdige: [
             {
                 match_num: 1,
@@ -96,9 +101,13 @@ it('velger «sjeldent» når kun én hadde eksakt resultat', async () => {
                 status: 'FINISHED',
             },
         ],
-    })
+    }
+}
 
-    const res = await genererKampposter(client, iFortiden)
+it('velger «sjeldent» når kun én hadde eksakt resultat (kampen er nylig ferdig)', async () => {
+    const { client, insertCalls } = lagClient(fixtures())
+
+    const res = await genererKampposter(client, [1], iFortiden)
 
     expect(res.postet).toBe(1)
     expect(insertCalls).toHaveLength(1)
@@ -112,15 +121,17 @@ it('velger «sjeldent» når kun én hadde eksakt resultat', async () => {
     expect(data.resultat).toBe('2–1')
 })
 
-it('poster ingenting når det ikke finnes ferdige kamper uten post', async () => {
-    const { client, insertCalls } = lagClient({
-        ferdige: [],
-        bets: [],
-        scores: [],
-        users: [],
-        matches: [],
-    })
-    const res = await genererKampposter(client, iFortiden)
+it('poster ingenting når ingen kamper akkurat ble ferdige (tom liste)', async () => {
+    const { client, insertCalls } = lagClient(fixtures())
+    const res = await genererKampposter(client, [], iFortiden)
+    expect(res).toEqual({ behandlet: 0, postet: 0 })
+    expect(insertCalls).toHaveLength(0)
+})
+
+it('behandler kun kampene i nylig-ferdig-lista — ikke historiske ferdige kamper', async () => {
+    // Kamp 1 er ferdig, men ble ikke ferdig denne synken (lista peker på kamp 2).
+    const { client, insertCalls } = lagClient(fixtures())
+    const res = await genererKampposter(client, [2], iFortiden)
     expect(res).toEqual({ behandlet: 0, postet: 0 })
     expect(insertCalls).toHaveLength(0)
 })

@@ -9,6 +9,10 @@ const SEKS_TIMER_MS = 6 * 60 * 60 * 1000
 export interface SyncScoresResultat {
     hentet: number
     oppdatert: number
+    // Match-num-ene som gikk fra «uten fulltidsresultat» til «med fulltidsresultat»
+    // i nettopp denne kjøringen. Feed-generatoren bruker dette til å lage poster
+    // KUN for kamper som akkurat ble ferdige — aldri en sweep av hele historikken.
+    nyligFerdige: number[]
 }
 
 export interface DryRunScoreKamp {
@@ -214,10 +218,15 @@ export async function syncScores(
     }
 
     let oppdatert = 0
+    const nyligFerdige: number[] = []
     for (const m of relevante) {
         const { score } = m
         if (!score) continue
         if (score.fullTime.home === null || score.fullTime.away === null) continue
+
+        // Manglet kampen fulltidsresultat før denne skrivingen? (Brukes til å
+        // skille «akkurat ferdig nå» fra en allerede ferdig kamp som synkes på nytt.)
+        const mangletFtFør = manglerSynketScore(m)
 
         const result = await client.query(
             `INSERT INTO match_scores
@@ -259,13 +268,14 @@ export async function syncScores(
         )
         if (result.rowCount && result.rowCount > 0) {
             oppdatert++
+            if (mangletFtFør) nyligFerdige.push(m.id)
             console.log(
                 `[sync-scores] oppdaterte kamp ${m.id}: ${score.fullTime.home}–${score.fullTime.away} (${m.status})`,
             )
         }
     }
 
-    const resultat: SyncScoresResultat = { hentet: relevante.length, oppdatert }
+    const resultat: SyncScoresResultat = { hentet: relevante.length, oppdatert, nyligFerdige }
     console.log('[sync-scores] ferdig —', resultat)
     return resultat
 }

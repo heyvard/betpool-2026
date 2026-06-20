@@ -5,11 +5,13 @@ import { syncMatches, SyncResultat } from './syncMatches'
 import { syncScores, SyncScoresResultat } from './syncScores'
 import { genererKampposter } from './feed/genererKamppost'
 
-// Genererer feed-kampposter for nylig ferdige kamper. Aldri en blokkering for
-// synken — feilet feed-generering skal ikke velte score-oppdateringen.
-async function genererFeedTrygt(client: PoolClient): Promise<void> {
+// Genererer feed-kampposter for kampene som akkurat ble ferdige (fra syncScores).
+// Aldri en blokkering for synken — feilet feed-generering skal ikke velte
+// score-oppdateringen.
+async function genererFeedTrygt(client: PoolClient, nyligFerdige: number[]): Promise<void> {
+    if (nyligFerdige.length === 0) return
     try {
-        const res = await genererKampposter(client)
+        const res = await genererKampposter(client, nyligFerdige)
         if (res.postet > 0) console.log(`[feed] postet ${res.postet} kamppost(er)`)
     } catch (e) {
         console.error('[feed] kunne ikke generere kampposter', e)
@@ -47,7 +49,7 @@ export async function syncAll(client: PoolClient): Promise<SyncAllResultat> {
 
     const matchResultat = await syncMatches(client, false, kamper)
     const scoresResultat = await syncScores(client, false, kamper)
-    await genererFeedTrygt(client)
+    await genererFeedTrygt(client, scoresResultat.nyligFerdige)
 
     return { hentet: kamper.length, kamper: matchResultat, scores: scoresResultat }
 }
@@ -66,7 +68,7 @@ export async function syncLive(client: PoolClient): Promise<SyncLiveResultat> {
 
     const matchResultat = await syncMatches(client, false, kamper)
     const scoresResultat = await syncScores(client, false, kamper)
-    await genererFeedTrygt(client)
+    await genererFeedTrygt(client, scoresResultat.nyligFerdige)
 
     return { hentet: kamper.length, kamper: matchResultat, scores: scoresResultat }
 }

@@ -54,23 +54,28 @@ export interface Kamppost {
     data: Record<string, unknown>
 }
 
-// Finner kamper som er ferdige (begge fulltidsfeltene satt) og som ennå ikke har
-// en feed-post — håndterer både «akkurat ferdig denne synken» og catch-up etter
-// en bom-synk, og er idempotent.
-async function hentFerdigeUtenPost(client: PoolClient): Promise<FerdigKampRow[]> {
-    const res = await client.query<FerdigKampRow>(`
+// Finner ferdige kamper (begge fulltidsfeltene satt) blant et gitt sett match-num
+// som ennå ikke har en feed-post. Settet er kampene som AKKURAT ble ferdige denne
+// synken — slik unngår vi en sweep av hele historikken. Idempotent via NOT EXISTS.
+async function hentFerdigeUtenPost(client: PoolClient, matchNums: number[]): Promise<FerdigKampRow[]> {
+    if (matchNums.length === 0) return []
+    const res = await client.query<FerdigKampRow>(
+        `
         SELECT m.match_num, m.round, m.home_team, m.away_team,
                ms.home_score, ms.away_score,
                ms.home_team_override, ms.away_team_override,
                ms.synced_home_ft, ms.synced_away_ft, ms.use_manual
         FROM matches m
         JOIN match_scores ms ON ms.match_num = m.match_num
-        WHERE ms.synced_home_ft IS NOT NULL
+        WHERE m.match_num = ANY($1)
+          AND ms.synced_home_ft IS NOT NULL
           AND ms.synced_away_ft IS NOT NULL
           AND NOT EXISTS (
               SELECT 1 FROM feed_posts fp
               WHERE fp.kind = 'kamp' AND fp.match_num = m.match_num
-          )`)
+          )`,
+        [matchNums],
+    )
     return res.rows
 }
 
@@ -233,9 +238,15 @@ export interface KampPostResultat {
 }
 
 // Genererer kamp-oppsummeringer for hovedligaen (Æresligaen). Kalles fra
-// score-synk-flyten etter at scores er upsertet. Trygt å kjøre på nytt.
-export async function genererKampposter(client: PoolClient, now: Date = new Date()): Promise<KampPostResultat> {
-    const ferdige = await hentFerdigeUtenPost(client)
+// score-synk-flyten etter at scores er upsertet, med `nyligFerdige` = kampene som
+// AKKURAT ble ferdige i samme synk (fra `syncScores`). Tom liste → ingen poster
+// (vi feier aldri hele historikken — det er backfillens jobb). Trygt å kjøre på nytt.
+export async function genererKampposter(
+    client: PoolClient,
+    nyligFerdige: number[],
+    now: Date = new Date(),
+): Promise<KampPostResultat> {
+    const ferdige = await hentFerdigeUtenPost(client, nyligFerdige)
     if (ferdige.length === 0) return { behandlet: 0, postet: 0 }
 
     const hd = await hentHovedligaData(client, now)

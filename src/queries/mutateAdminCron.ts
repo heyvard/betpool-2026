@@ -93,6 +93,25 @@ export function UseMutateFeedBackfill() {
     })
 }
 
+export interface FeedResetResultat {
+    feed_comment_reactions: number
+    feed_reactions: number
+    feed_comments: number
+    feed_posts: number
+    feed_standings_snapshot: number
+}
+
+export function UseMutateFeedReset() {
+    const authedFetch = useAuthedFetch()
+    return useMutation({
+        mutationFn: async () => {
+            const response = await authedFetch('/api/v1/admin/cron/feed-reset', { method: 'POST' })
+            if (!response.ok) throw new Error(`Serverfeil: ${response.status}`)
+            return response.json() as Promise<FeedResetResultat>
+        },
+    })
+}
+
 export function UseMutateAdminSync() {
     const authedFetch = useAuthedFetch()
     return useMutation({
