@@ -1,5 +1,6 @@
 import type { NextPage } from 'next'
 import { useRouter } from 'next/router'
+import { useEffect } from 'react'
 import { Bell } from 'lucide-react'
 
 import { Spinner } from '../components/loading/Spinner'
@@ -18,6 +19,15 @@ const Feed: NextPage = () => {
 
     const meNavn = visningsnavn(me?.kallenavn?.trim() || me?.name || '')
     const mePicture = me?.picture ?? null
+
+    // Feed er midlertidig kun for superadmin mens den testes — hardkodet gate.
+    // Send andre tilbake til forsiden hvis de finner ruta direkte.
+    useEffect(() => {
+        if (me && !me.superadmin) router.replace('/')
+    }, [me, router])
+
+    if (!me) return <Spinner />
+    if (!me.superadmin) return null
 
     return (
         // -mx-2 opphever layoutens px-2 så kortene flyter på den grå flaten edge-to-edge
