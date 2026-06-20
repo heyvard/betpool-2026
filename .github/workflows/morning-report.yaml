@@ -1,0 +1,17 @@
+name: Generer morgenrapport i feeden
+
+# 08:00 Oslo = 06:00 UTC på sommertid (VM-perioden). Endepunktet avbryter
+# uansett hvis klokka i Oslo ikke er 8.
+on:
+  schedule:
+    - cron: '0 6 * * *'
+  workflow_dispatch:
+
+jobs:
+  generer:
+    name: POST /api/cron/morning-report
+    runs-on: ubuntu-latest
+    steps:
+      - name: Generer morgenrapport
+        run: |
+          curl -fsS -X POST "${{ secrets.APP_BASE_URL }}/api/cron/morning-report" -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}"
