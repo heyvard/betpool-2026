@@ -16,6 +16,7 @@ const no = {
     nav: {
         hjem: 'Hjem',
         tipp: 'Tipp',
+        feed: 'Feed',
         resultater: 'Resultater',
         regler: 'Regler',
         meny: 'Meny',
@@ -40,6 +41,16 @@ const no = {
         sprak: 'Språk',
         jokerbruk: 'Jokerbruk',
         admin: 'Admin',
+    },
+    feed: {
+        tittel: 'Feed',
+        underTittel: 'Æresligaen',
+        skrivKommentar: 'Skriv en kommentar …',
+        ingenHendelser: 'Ingen hendelser ennå',
+        ingenHendelserSub: 'Feeden våkner når den første kampen er ferdig.',
+        typeKampAvgjort: 'Kamp avgjort',
+        typeSjeldent: 'Sjeldent treff',
+        typeMorgenrapport: 'Morgenrapport',
     },
     grupper: {
         tittel: 'Grupper',

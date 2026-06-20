@@ -18,6 +18,7 @@ const fr: Translations = {
     nav: {
         hjem: 'Accueil',
         tipp: 'Parier',
+        feed: 'Fil',
         resultater: 'Résultats',
         regler: 'Règles',
         meny: 'Menu',
@@ -42,6 +43,16 @@ const fr: Translations = {
         sprak: 'Langue',
         jokerbruk: 'Jokers',
         admin: 'Admin',
+    },
+    feed: {
+        tittel: 'Fil',
+        underTittel: 'Ligue d’honneur',
+        skrivKommentar: 'Écrire un commentaire …',
+        ingenHendelser: 'Aucun événement pour le moment',
+        ingenHendelserSub: 'La fil se réveille quand le premier match est terminé.',
+        typeKampAvgjort: 'Match terminé',
+        typeSjeldent: 'Pari rare',
+        typeMorgenrapport: 'Rapport du matin',
     },
     grupper: {
         tittel: 'Groupes',
