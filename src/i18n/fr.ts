@@ -35,6 +35,7 @@ const fr: Translations = {
         toppscorerFiks: 'Corriger buteur',
         standingsDebug: 'Débogage classement',
         kampApiData: 'Données API match',
+        debugData: 'Débogage données',
         adminLigaer: 'Ligues privées',
         utenforHovedliga: 'Hors ligue principale',
         innbetaling: 'Paiements',

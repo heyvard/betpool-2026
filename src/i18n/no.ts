@@ -33,6 +33,7 @@ const no = {
         toppscorerFiks: 'Fiks toppscorer',
         standingsDebug: 'Standings-debug',
         kampApiData: 'Kamp-API-data',
+        debugData: 'Debug-data',
         adminLigaer: 'Private ligaer',
         utenforHovedliga: 'Utenfor hovedligaen',
         innbetaling: 'Innbetalinger',
