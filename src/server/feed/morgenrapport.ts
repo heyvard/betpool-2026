@@ -2,7 +2,7 @@ import { PoolClient } from 'pg'
 
 import { LeaderBoard } from '../../components/results/calculateAllScores'
 import { hentHovedligaData, sorterTabell } from './hovedligaData'
-import { malEndring, malLederbytte, MalResultat } from './maler'
+import { malEndring, malLederbytte, malLederHolder, MalResultat, MorgenScenario } from './maler'
 import { osloDato, osloInstant } from './tid'
 
 // Hvor langt bakover morgenrapporten ser etter ferdige kamper, fram til 08:00
@@ -12,7 +12,7 @@ export const RAPPORT_VINDU_TIMER = 24
 export interface MorgenrapportResultat {
     postet: boolean
     grunn?: 'allerede_postet' | 'stille_dag' | 'ingen_baseline'
-    scenario?: 'endring' | 'lederbytte'
+    scenario?: MorgenScenario
     antallKamper?: number
 }
 
@@ -23,7 +23,7 @@ export interface SnapshotRad {
 }
 
 export interface MorgenScenarioValg {
-    scenario: 'endring' | 'lederbytte'
+    scenario: MorgenScenario
     mal: MalResultat
     data: Record<string, unknown>
 }
@@ -37,29 +37,37 @@ export function velgMorgenScenario(args: {
     forrigeRader: SnapshotRad[]
     antallKamper: number
     dager: number
+    frø: string
 }): MorgenScenarioValg | null {
-    const { tabell, navnMap, forrigeRader, antallKamper, dager } = args
+    const { tabell, navnMap, forrigeRader, antallKamper, dager, frø } = args
     if (tabell.length === 0) return null
 
     const nyPlassMap = new Map(tabell.map((r, i) => [r.userid, i + 1]))
     const forrigePlassMap = new Map(forrigeRader.map((r) => [r.user_id, r.plass]))
     const forrigeLederId = forrigeRader.find((r) => r.plass === 1)?.user_id ?? null
     const nyLederId = tabell[0].userid
+    const topp3 = tabell.slice(0, 3).map((r, i) => ({ plass: i + 1, navn: r.userName, poeng: r.poeng, leder: i === 0 }))
+    const luke = tabell.length > 1 ? Math.max(0, tabell[0].poeng - tabell[1].poeng) : tabell[0].poeng
 
     const data: Record<string, unknown> = { antallKamper }
 
     // lederbytte (prioritert) — men bare hvis den nye lederen faktisk har poeng,
     // så vi ikke lager støy mens alle står på 0 (vilkårlig rekkefølge).
     if (forrigeLederId && forrigeLederId !== nyLederId && tabell[0].poeng > 0) {
-        const luke = tabell.length > 1 ? Math.max(0, tabell[0].poeng - tabell[1].poeng) : tabell[0].poeng
         const nyLeder = tabell[0].userName
         const gammelLeder = navnMap.get(forrigeLederId) ?? 'ukjent'
-        const mal = malLederbytte({ nyLeder, gammelLeder, luke: String(luke), dager })
-        const topp3 = tabell
-            .slice(0, 3)
-            .map((r, i) => ({ plass: i + 1, navn: r.userName, poeng: r.poeng, leder: i === 0 }))
+        const mal = malLederbytte({ nyLeder, gammelLeder, luke: String(luke), dager, frø })
         Object.assign(data, { nyLeder, gammelLeder, luke, dager, topp3 })
         return { scenario: 'lederbytte', mal, data }
+    }
+
+    // leder_holder — samme leder som før, men har holdt stand gjennom enda en
+    // kampdag (minst to dager på rad). En egen, triumferende vinkling.
+    if (forrigeLederId && forrigeLederId === nyLederId && tabell[0].poeng > 0 && dager >= 2) {
+        const leder = tabell[0].userName
+        const mal = malLederHolder({ leder, luke: String(luke), dager, frø })
+        Object.assign(data, { leder, luke, dager, topp3 })
+        return { scenario: 'leder_holder', mal, data }
     }
 
     // endring
@@ -89,7 +97,7 @@ export function velgMorgenScenario(args: {
         .map((r) => r.user_id)
     const nyTopp3 = JSON.stringify(nyTopp3Sett) !== JSON.stringify(gammelTopp3Sett)
 
-    const mal = malEndring({ antallKamper, størsteKlatrer, størsteFaller, nyTopp3 })
+    const mal = malEndring({ antallKamper, størsteKlatrer, størsteFaller, nyTopp3, frø })
     Object.assign(data, { størsteKlatrer, størsteFaller, nyTopp3, delta: bevegelser.slice(0, 4) })
     return { scenario: 'endring', mal, data }
 }
@@ -216,7 +224,7 @@ export async function genererMorgenrapport(client: PoolClient, now: Date = new D
     }
     const dager = forrigeLederId ? await tellDagerPåTopp(client, forrigeLederId, forrigeDato) : 0
 
-    const valg = velgMorgenScenario({ tabell, navnMap, forrigeRader: forrige.rows, antallKamper, dager })
+    const valg = velgMorgenScenario({ tabell, navnMap, forrigeRader: forrige.rows, antallKamper, dager, frø: iDag })
     if (!valg) {
         await lagreSnapshot(client, iDag, tabell)
         return { postet: false, grunn: 'stille_dag' }

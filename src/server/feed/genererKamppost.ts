@@ -6,10 +6,13 @@ import {
     formatLuke,
     formatResultat,
     formatTipp,
+    malEnstemmig,
     malIngenTraff,
+    malJoker,
     malLederBest,
     malLederBommet,
     malSjeldent,
+    malSjokk,
 } from './maler'
 import { resolveActiveScore } from '../../data/matchScore'
 import { rundeTilTekst } from '../../utils/rundeTilTekst'
@@ -112,6 +115,16 @@ export function lagKamppost(kamp: FerdigKampRow, hd: HovedligaData): Kamppost | 
     const vekt = finnVekting(kamp.round)
     const lederPoengHer = leder ? (poengPerBruker.get(leder.userid) ?? 0) : 0
     const lederHarTips = leder ? betsForKamp.some((b) => b.user_id === leder.userid) : false
+    const frø = kamp.match_num
+
+    // Joker-tips på kampen. Vi løfter fram et tydelig utslag: en topp-3-spillers
+    // joker som enten satt (poeng) eller brant (0). Holder betingelsen stram så
+    // joker-scenarioet ikke kaprer hver eneste kamp.
+    const topp3Ids = new Set(tabell.slice(0, 3).map((r) => r.userid))
+    const jokerBets = betsForKamp.filter((b) => b.joker && topp3Ids.has(b.user_id))
+    const jokerTopp = jokerBets
+        .map((b) => ({ id: b.user_id, poeng: poengPerBruker.get(b.user_id) ?? 0 }))
+        .sort((a, b) => b.poeng - a.poeng)[0]
 
     let mal: { accent: FeedAccent; tittel: string; body: string } | null = null
     let scenario = ''
@@ -131,9 +144,6 @@ export function lagKamppost(kamp: FerdigKampRow, hd: HovedligaData): Kamppost | 
         scenario = 'sjeldent'
         const spillere = eksaktBrukere.map((id) => navnMap.get(id) ?? 'ukjent')
         const poengForTreff = eksaktBrukere.reduce((m, id) => Math.max(m, poengPerBruker.get(id) ?? 0), 0)
-        const erEnesteToppscorer =
-            mp.antallRiktigeSvar === 1 && topScorere.length === 1 && topScorere[0] === eksaktBrukere[0]
-        const superlativ = erEnesteToppscorer ? 'kveldens største napp' : undefined
         mal = malSjeldent({
             spillere,
             resultat: resultatStr,
@@ -141,11 +151,23 @@ export function lagKamppost(kamp: FerdigKampRow, hd: HovedligaData): Kamppost | 
             totalt,
             vekt,
             poeng: poengForTreff,
-            superlativ,
+            frø,
         })
         Object.assign(data, { spillere, antall: mp.antallRiktigeSvar, totalt, vekt, poeng: poengForTreff })
+    } else if (jokerTopp) {
+        // 2. joker — en topp-3-spillers joker som satt eller brant.
+        scenario = 'joker'
+        const navn = navnMap.get(jokerTopp.id) ?? 'ukjent'
+        const satt = jokerTopp.poeng > 0
+        mal = malJoker({ navn, poeng: jokerTopp.poeng, resultat: resultatStr, satt, frø })
+        Object.assign(data, { navn, poeng: jokerTopp.poeng, satt })
+    } else if (totalt > 1 && mp.antallRiktigeUtfall === totalt) {
+        // 3. enstemmig — alle traff utfallet.
+        scenario = 'enstemmig'
+        mal = malEnstemmig({ totalt, resultat: resultatStr, utfall: mp.utfall, homeTla, awayTla, frø })
+        Object.assign(data, { totalt, utfall: mp.utfall })
     } else if (leder && lederHarTips && lederPoengHer === 0 && maxPoeng > 0) {
-        // 2. leder_bommet
+        // 4. leder_bommet
         scenario = 'leder_bommet'
         const lederBet = betsForKamp.find((b) => b.user_id === leder.userid)!
         const ledersTipp = formatTipp(Number(lederBet.home_score), Number(lederBet.away_score), homeTla, awayTla)
@@ -158,10 +180,11 @@ export function lagKamppost(kamp: FerdigKampRow, hd: HovedligaData): Kamppost | 
             utfordrer,
             poeng: maxPoeng,
             luke: formatLuke(luke),
+            frø,
         })
         Object.assign(data, { leder: leder.userName, ledersTipp, utfordrer, poeng: maxPoeng, luke })
     } else if (leder && maxPoeng > 0 && topScorere.includes(leder.userid)) {
-        // 3. leder_best
+        // 5. leder_best
         scenario = 'leder_best'
         mal = malLederBest({
             navn: leder.userName,
@@ -171,10 +194,16 @@ export function lagKamppost(kamp: FerdigKampRow, hd: HovedligaData): Kamppost | 
             antallRiktige: mp.antallRiktigeSvar,
             totalt,
             erLeder: true,
+            frø,
         })
         Object.assign(data, { navn: leder.userName, poeng: maxPoeng, sum: leder.poeng })
+    } else if (mp.antallRiktigeUtfall === 0) {
+        // 6. sjokk — ingen traff engang utfallet.
+        scenario = 'sjokk'
+        mal = malSjokk({ totalt, resultat: resultatStr, utfall: mp.utfall, homeTla, awayTla, frø })
+        Object.assign(data, { totalt, utfall: mp.utfall })
     } else if (mp.antallRiktigeSvar === 0) {
-        // 4. ingen_traff
+        // 7. ingen_traff
         scenario = 'ingen_traff'
         mal = malIngenTraff({
             totalt,
@@ -183,10 +212,11 @@ export function lagKamppost(kamp: FerdigKampRow, hd: HovedligaData): Kamppost | 
             homeTla,
             awayTla,
             antallUtfall: mp.antallRiktigeUtfall,
+            frø,
         })
         Object.assign(data, { totalt, utfall: mp.utfall, antallUtfall: mp.antallRiktigeUtfall })
     } else if (maxPoeng > 0) {
-        // 5. fallback leder_best — den med høyest poengsum i kampen.
+        // 8. fallback leder_best — den med høyest poengsum i kampen.
         scenario = 'leder_best'
         const toppId = topScorere[0]
         const navn = navnMap.get(toppId) ?? 'ukjent'
@@ -199,6 +229,7 @@ export function lagKamppost(kamp: FerdigKampRow, hd: HovedligaData): Kamppost | 
             antallRiktige: mp.antallRiktigeSvar,
             totalt,
             erLeder,
+            frø,
         })
         Object.assign(data, { navn, poeng: maxPoeng, sum: totalMap.get(toppId) ?? 0 })
     }
