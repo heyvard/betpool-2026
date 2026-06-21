@@ -49,7 +49,11 @@ describe('/api/cron/send-reminders — kjøring', () => {
 })
 
 describe('/api/v1/admin/cron/* — tilgangskontroll', () => {
-    const adminRuter = ['/api/v1/admin/cron/sync', '/api/v1/admin/cron/send-reminders']
+    const adminRuter = [
+        '/api/v1/admin/cron/sync',
+        '/api/v1/admin/cron/send-reminders',
+        '/api/v1/admin/cron/morning-report',
+    ]
 
     it.each(adminRuter)('%s returnerer 401 uten innlogging', async (path) => {
         const res = await api(path, { method: 'POST' })
@@ -72,5 +76,16 @@ describe('/api/v1/admin/cron/send-reminders — kjøring', () => {
         expect(body).toHaveProperty('kamperIMorgen')
         expect(body).toHaveProperty('brukereVarslet')
         expect(body.brukereVarslet).toBe(0)
+    })
+})
+
+describe('/api/v1/admin/cron/morning-report — kjøring', () => {
+    it('returnerer 200 med resultatstruktur for superadmin (stille dag uten kamper)', async () => {
+        await seedUser({ firebase_user_id: 'admin', superadmin: true })
+        const res = await api('/api/v1/admin/cron/morning-report', { user: 'admin', method: 'POST' })
+        expect(res.status).toBe(200)
+        const body = await res.json()
+        expect(body).toHaveProperty('postet', false)
+        expect(body.grunn).toBe('stille_dag')
     })
 })

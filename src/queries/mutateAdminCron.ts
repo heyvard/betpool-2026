@@ -112,6 +112,24 @@ export function UseMutateFeedReset() {
     })
 }
 
+export interface MorgenrapportResultat {
+    postet: boolean
+    grunn?: 'allerede_postet' | 'stille_dag' | 'ingen_baseline'
+    scenario?: 'endring' | 'lederbytte'
+    antallKamper?: number
+}
+
+export function UseMutateMorgenrapport() {
+    const authedFetch = useAuthedFetch()
+    return useMutation({
+        mutationFn: async () => {
+            const response = await authedFetch('/api/v1/admin/cron/morning-report', { method: 'POST' })
+            if (!response.ok) throw new Error(`Serverfeil: ${response.status}`)
+            return response.json() as Promise<MorgenrapportResultat>
+        },
+    })
+}
+
 export function UseMutateAdminSync() {
     const authedFetch = useAuthedFetch()
     return useMutation({
