@@ -14,7 +14,7 @@ import { hentNorsk } from '../../utils/lag'
 export type FeedAccent = 'win' | 'live' | 'gold' | 'stone' | 'royal'
 
 export type KampScenario = 'sjeldent' | 'leder_bommet' | 'leder_best' | 'ingen_traff' | 'enstemmig' | 'sjokk' | 'joker'
-export type MorgenScenario = 'endring' | 'lederbytte' | 'leder_holder'
+export type MorgenScenario = 'endring' | 'lederbytte' | 'leder_holder' | 'delt_ledelse'
 
 export interface MalResultat {
     accent: FeedAccent
@@ -495,5 +495,58 @@ export function malLederHolder(a: LederHolderArgs): MalResultat {
         ],
         a.frø,
     )
+    return { accent: 'gold', tittel, body }
+}
+
+// Delt ledelse: det står likt på toppen (to eller flere deler 1.-plass). Dette er
+// IKKE et lederbytte — selv om rå-sorteringen tilfeldigvis legger en annen øverst,
+// har ingen gått forbi noen. Egen «dødt løp»-vinkling så vi aldri skriver «leder
+// med 0 poeng».
+export interface DeltLedelseArgs {
+    // Alle som deler 1.-plass (visningsklare navn, i tabellrekkefølge).
+    ledere: string[]
+    // Den delte toppsummen.
+    poeng: number
+    // De som klatret opp i delt ledelse siden i går (tom = toppen sto allerede delt).
+    nyeUtfordrere: string[]
+    // Gårsdagens (sole) leder, hvis fremdeles på topp — den som ble innhentet.
+    forrigeLeder: string | null
+    // Antall dager forrige leder satt på topp før de fikk selskap.
+    dager: number
+    frø: number | string
+}
+
+const DELT_LEDELSE_TITTEL: string[] = [
+    'Dødt løp i toppen! 🤝',
+    'Delt ledelse — ingen vil gi seg',
+    'Skulder ved skulder helt på topp 🔝',
+]
+
+export function malDeltLedelse(a: DeltLedelseArgs): MalResultat {
+    const tittel = velgVariant(DELT_LEDELSE_TITTEL, a.frø)
+    const ledereTekst = listeMedOg(a.ledere.map(visningsnavn))
+    const poeng = formatLuke(a.poeng)
+
+    let body: string
+    if (a.nyeUtfordrere.length === 1 && a.forrigeLeder) {
+        const utfordrer = visningsnavn(a.nyeUtfordrere[0])
+        const leder = visningsnavn(a.forrigeLeder)
+        const dagerTekst = `${a.dager} ${flertall(a.dager, 'dag', 'dager')}`
+        body = velgVariant(
+            [
+                `${utfordrer} har tatt igjen ${leder} på topp — begge står med ${poeng}. ${leder} ledet alene i ${dagerTekst} før dette. Nå er det åpent igjen! 🔥`,
+                `Innhentet! ${utfordrer} klatret helt opp i delt ledelse med ${leder}, og det står ${poeng} på begge i teten. Ikke en luke å gå på.`,
+            ],
+            a.frø,
+        )
+    } else {
+        body = velgVariant(
+            [
+                `${ledereTekst} står helt likt på topp med ${poeng} hver. Ingen luke i teten — her avgjøres alt på neste kampdag. 🔥`,
+                `Tett som hagl i toppen: ${ledereTekst} deler førsteplassen på ${poeng}. Marginene er ute.`,
+            ],
+            a.frø,
+        )
+    }
     return { accent: 'gold', tittel, body }
 }

@@ -123,7 +123,7 @@ function ScoreBlokk({ data, matchNum }: { data: Record<string, unknown>; matchNu
     )
 }
 
-// Mini-topp-3 (lederbytte).
+// Mini-topp-3 (lederbytte / leder_holder / delt_ledelse).
 function MiniTopp3({ data }: { data: Record<string, unknown> }) {
     const topp3 = (data.topp3 as { plass: number; navn: string; poeng: number; leder: boolean }[]) ?? []
     return (
@@ -368,7 +368,9 @@ export function FeedKort({ post, meNavn, mePicture, erSuperadmin }: Props) {
 
                 {/* Strukturert tillegg */}
                 {post.kind === 'kamp' && <ScoreBlokk data={post.data} matchNum={post.match_num} />}
-                {(post.scenario === 'lederbytte' || post.scenario === 'leder_holder') && <MiniTopp3 data={post.data} />}
+                {(post.scenario === 'lederbytte' ||
+                    post.scenario === 'leder_holder' ||
+                    post.scenario === 'delt_ledelse') && <MiniTopp3 data={post.data} />}
                 {post.scenario === 'endring' && (
                     <>
                         <DeltaListe data={post.data} />
