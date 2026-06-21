@@ -16,9 +16,9 @@ import {
     EttermiddagsVarselDryRunBruker,
 } from '../queries/mutateAdminCron'
 import { UseMutateSyncPlayers } from '../queries/mutateSyncPlayers'
-import { UseMutateMorgenrapport } from '../queries/mutateAdminCron'
+import { UseMutateFeedBackfill, UseMutateMorgenrapport } from '../queries/mutateAdminCron'
 import { Button } from '@/components/ui/button'
-import { RefreshCw, Bell, Eye, Trophy, Users, Sunrise } from 'lucide-react'
+import { RefreshCw, Bell, Eye, Trophy, Users, Radio, Sunrise } from 'lucide-react'
 
 function formaterFeltVerdi(felt: string, verdi: string | number | null): string {
     if (verdi === null) return 'null'
@@ -487,6 +487,46 @@ function SyncSpillereKnapp() {
     )
 }
 
+function FeedBackfillKnapp() {
+    const { mutate, isPending, data, error, isSuccess } = UseMutateFeedBackfill()
+
+    return (
+        <div className="flex flex-col gap-2 py-3 first:pt-0 last:pb-0">
+            <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                    <p className="text-sm font-medium text-stone-900">Backfill feed</p>
+                    <p className="text-xs text-stone-500">
+                        Full backfill: fyller feeden med hele turneringens hendelser — kamp-oppsummeringer og
+                        morgenrapporter fra første ferdige kamp til i dag. Historisk korrekte tidspunkter og stillinger.
+                        Idempotent — dedup på kamp og dato, så allerede backfilte dager hoppes over.
+                    </p>
+                </div>
+                <div className="flex shrink-0 gap-2">
+                    <Button
+                        variant="outline"
+                        size="small"
+                        loading={isPending}
+                        icon={<Radio className="h-4 w-4" />}
+                        onClick={() => mutate()}
+                    >
+                        Kjør
+                    </Button>
+                </div>
+            </div>
+            {isSuccess && data && (
+                <p className="rounded-lg bg-green-50 px-3 py-1.5 text-xs text-green-700">
+                    {data.fraDato
+                        ? `${data.fraDato} → ${data.tilDato} (${data.dager} dager) · kamp-poster: ${data.kampposter} · morgenrapporter: ${data.morgenrapporter}`
+                        : 'Ingen ferdige kamper å backfille ennå.'}
+                </p>
+            )}
+            {error && (
+                <p className="rounded-lg bg-red-50 px-3 py-1.5 text-xs text-red-700">Kunne ikke lagre — prøv igjen.</p>
+            )}
+        </div>
+    )
+}
+
 function MorgenrapportKnapp() {
     const { mutate, isPending, data, error, isSuccess } = UseMutateMorgenrapport()
 
@@ -544,6 +584,7 @@ const CronPage: NextPage = () => {
                 <div className="divide-y divide-stone-100">
                     <SyncKnapp />
                     <SyncSpillereKnapp />
+                    <FeedBackfillKnapp />
                     <MorgenrapportKnapp />
                     <SendPåminnelserKnapp />
                     <SendEttermiddagsVarselKnapp />

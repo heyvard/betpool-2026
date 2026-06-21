@@ -76,6 +76,25 @@ export interface SyncAllAdminResultat {
     scores: { hentet: number; oppdatert: number }
 }
 
+export interface FeedBackfillResultat {
+    fraDato: string | null
+    tilDato: string
+    dager: number
+    kampposter: number
+    morgenrapporter: number
+}
+
+export function UseMutateFeedBackfill() {
+    const authedFetch = useAuthedFetch()
+    return useMutation({
+        mutationFn: async () => {
+            const response = await authedFetch('/api/v1/admin/cron/feed-backfill', { method: 'POST' })
+            if (!response.ok) throw new Error(`Serverfeil: ${response.status}`)
+            return response.json() as Promise<FeedBackfillResultat>
+        },
+    })
+}
+
 export interface MorgenrapportResultat {
     postet: boolean
     grunn?: 'allerede_postet' | 'stille_dag' | 'ingen_baseline'
