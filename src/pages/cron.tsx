@@ -16,9 +16,9 @@ import {
     EttermiddagsVarselDryRunBruker,
 } from '../queries/mutateAdminCron'
 import { UseMutateSyncPlayers } from '../queries/mutateSyncPlayers'
-import { UseMutateFeedBackfill, UseMutateFeedReset, UseMutateMorgenrapport } from '../queries/mutateAdminCron'
+import { UseMutateMorgenrapport } from '../queries/mutateAdminCron'
 import { Button } from '@/components/ui/button'
-import { RefreshCw, Bell, Eye, Trophy, Users, Radio, Trash2, Sunrise } from 'lucide-react'
+import { RefreshCw, Bell, Eye, Trophy, Users, Sunrise } from 'lucide-react'
 
 function formaterFeltVerdi(felt: string, verdi: string | number | null): string {
     if (verdi === null) return 'null'
@@ -487,82 +487,6 @@ function SyncSpillereKnapp() {
     )
 }
 
-function FeedBackfillKnapp() {
-    const { mutate, isPending, data, error, isSuccess } = UseMutateFeedBackfill()
-
-    return (
-        <div className="flex flex-col gap-2 py-3 first:pt-0 last:pb-0">
-            <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
-                    <p className="text-sm font-medium text-stone-900">Backfill feed</p>
-                    <p className="text-xs text-stone-500">
-                        Engangsjobb: fyller feeden med de siste 2 dagenes hendelser — kamp-oppsummeringer og
-                        morgenrapporter. Historisk korrekte tidspunkter og stillinger. Idempotent.
-                    </p>
-                </div>
-                <div className="flex shrink-0 gap-2">
-                    <Button
-                        variant="outline"
-                        size="small"
-                        loading={isPending}
-                        icon={<Radio className="h-4 w-4" />}
-                        onClick={() => mutate(2)}
-                    >
-                        Kjør
-                    </Button>
-                </div>
-            </div>
-            {isSuccess && data && (
-                <p className="rounded-lg bg-green-50 px-3 py-1.5 text-xs text-green-700">
-                    {`${data.dager} dager · kamp-poster: ${data.kampposter} · morgenrapporter: ${data.morgenrapporter}`}
-                </p>
-            )}
-            {error && (
-                <p className="rounded-lg bg-red-50 px-3 py-1.5 text-xs text-red-700">Kunne ikke lagre — prøv igjen.</p>
-            )}
-        </div>
-    )
-}
-
-function FeedResetKnapp() {
-    const { mutate, isPending, data, error, isSuccess } = UseMutateFeedReset()
-
-    return (
-        <div className="flex flex-col gap-2 py-3 first:pt-0 last:pb-0">
-            <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
-                    <p className="text-sm font-medium text-stone-900">Tøm feed</p>
-                    <p className="text-xs text-stone-500">
-                        Sletter ALT feed-innhold (poster, reaksjoner, kommentarer og snapshots). Brukes for å nullstille
-                        feeden før en ren backfill. Kan ikke angres.
-                    </p>
-                </div>
-                <div className="flex shrink-0 gap-2">
-                    <Button
-                        variant="outline"
-                        size="small"
-                        loading={isPending}
-                        icon={<Trash2 className="h-4 w-4" />}
-                        onClick={() => {
-                            if (confirm('Slette alt feed-innhold? Dette kan ikke angres.')) mutate()
-                        }}
-                    >
-                        Tøm
-                    </Button>
-                </div>
-            </div>
-            {isSuccess && data && (
-                <p className="rounded-lg bg-green-50 px-3 py-1.5 text-xs text-green-700">
-                    {`slettet — poster: ${data.feed_posts} · reaksjoner: ${data.feed_reactions} · kommentarer: ${data.feed_comments} · kommentar-reaksjoner: ${data.feed_comment_reactions} · snapshots: ${data.feed_standings_snapshot}`}
-                </p>
-            )}
-            {error && (
-                <p className="rounded-lg bg-red-50 px-3 py-1.5 text-xs text-red-700">Kunne ikke lagre — prøv igjen.</p>
-            )}
-        </div>
-    )
-}
-
 function MorgenrapportKnapp() {
     const { mutate, isPending, data, error, isSuccess } = UseMutateMorgenrapport()
 
@@ -620,8 +544,6 @@ const CronPage: NextPage = () => {
                 <div className="divide-y divide-stone-100">
                     <SyncKnapp />
                     <SyncSpillereKnapp />
-                    <FeedResetKnapp />
-                    <FeedBackfillKnapp />
                     <MorgenrapportKnapp />
                     <SendPåminnelserKnapp />
                     <SendEttermiddagsVarselKnapp />
