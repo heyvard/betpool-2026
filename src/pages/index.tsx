@@ -12,7 +12,19 @@ import { SpillerVelger } from '../components/SpillerVelger'
 import dayjs from 'dayjs'
 import NextLink from 'next/link'
 import { useAuthedFetch } from '../auth/authedFetch'
-import { Check, CheckCheck, ChevronRight, Clock, Goal, Lock, Target, Trophy, TriangleAlert, X } from 'lucide-react'
+import {
+    Check,
+    CheckCheck,
+    ChevronRight,
+    Clock,
+    Goal,
+    ListChecks,
+    Lock,
+    Target,
+    Trophy,
+    TriangleAlert,
+    X,
+} from 'lucide-react'
 import { useQueryClient } from '@tanstack/react-query'
 import nb from 'dayjs/locale/nb'
 import fr from 'dayjs/locale/fr'
@@ -84,6 +96,20 @@ const Home: NextPage = () => {
             ))}
 
             {!megselv.paid && megselv.i_hovedliga && <InnbetalingsAlert />}
+
+            <NextLink passHref legacyBehavior href="/my-bets">
+                <LinkPanel>
+                    <span className="flex items-center gap-3">
+                        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-amber-100 text-amber-700">
+                            <ListChecks className="h-5 w-5" />
+                        </span>
+                        <span className="flex flex-col">
+                            <span className="text-base font-semibold text-stone-900">{t.hjem.tippLenkeTittel}</span>
+                            <span className="text-xs text-stone-500">{t.hjem.tippLenkeUndertekst}</span>
+                        </span>
+                    </span>
+                </LinkPanel>
+            </NextLink>
 
             <NesteKampSeksjon />
 
