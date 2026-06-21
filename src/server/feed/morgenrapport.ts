@@ -156,11 +156,23 @@ export function velgMorgenScenario(args: {
     }
 
     // leder_holder — samme leder alene på topp som før, men har holdt stand gjennom
-    // enda en kampdag (minst to dager på rad). En egen, triumferende vinkling.
+    // enda en kampdag. En egen, triumferende vinkling.
+    //
+    // `dager` teller sammenhengende dager på topp t.o.m. forrigeDato (i går) — den
+    // dag-EKSKLUSIVE streaken. I denne grenen står lederen bekreftet øverst også i dag
+    // (forrigeLederId === nyLederId), så den faktiske reekken t.o.m. i dag er
+    // `dager + 1`. Det er det dag-inklusive tallet teksten skal vise («har ledet N
+    // dager på rad») — uten +1 underrapporterte vi alltid med én dag (tre dager på
+    // topp ble skrevet som «2 dager»). Porten står på `dager >= 2` (≥ 3 dager på rad
+    // inkl. i dag): er det færre står lederen ennå ikke trygt nok til denne vinklingen,
+    // og dagen håndteres av «endring» under.
+    // (lederbytte/delt_ledelse beholder det dag-eksklusive `dager`-tallet: der gjelder
+    // det en avsluttet/forbigått ledelse, ikke en pågående.)
     if (forrigeLederId && forrigeLederId === nyLederId && !deltToppen && tabell[0].poeng > 0 && dager >= 2) {
         const leder = tabell[0].userName
-        const mal = malLederHolder({ leder, luke: String(luke), dager, frø })
-        Object.assign(data, { leder, luke, dager, topp3 })
+        const dagerPåRad = dager + 1
+        const mal = malLederHolder({ leder, luke: String(luke), dager: dagerPåRad, frø })
+        Object.assign(data, { leder, luke, dager: dagerPåRad, topp3 })
         return { scenario: 'leder_holder', mal, data }
     }
 
