@@ -34,6 +34,7 @@ const no = {
         standingsDebug: 'Standings-debug',
         kampApiData: 'Kamp-API-data',
         adminLigaer: 'Private ligaer',
+        utenforHovedliga: 'Utenfor hovedligaen',
         innbetaling: 'Innbetalinger',
         innstillinger: 'Innstillinger',
         tilbakemelding: 'Gi tilbakemelding',
