@@ -4,6 +4,7 @@ import { PoolClient } from 'pg'
 import { getPool } from '../../../auth/authHandler'
 import { genererMorgenrapport } from '../../../server/feed/morgenrapport'
 import { osloTime } from '../../../server/feed/tid'
+import { syncMatches } from '../../../server/syncMatches'
 
 // Morgenrapport-cron, ment å treffe 08:00 norsk tid. Vercel/GHA-cron kjører i
 // UTC, og 08:00 Oslo er 06:00 UTC (sommer) / 07:00 UTC (vinter). Robust løsning:
@@ -27,6 +28,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     let client: PoolClient | null = null
     try {
         client = await getPool().connect()
+        try {
+            await syncMatches(client)
+        } catch (syncFeil) {
+            console.warn('morning-report: kamp-synk feilet, fortsetter med rapport', syncFeil)
+        }
         const resultat = await genererMorgenrapport(client)
         res.status(200).json(resultat)
     } catch (e) {
