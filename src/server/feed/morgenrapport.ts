@@ -28,6 +28,22 @@ export interface MorgenScenarioValg {
     data: Record<string, unknown>
 }
 
+// Konkurranseplassering («delt plass»): like poeng gir samme plass, og neste
+// distinkte poengsum hopper til index+1 — samme «1224»-logikk som ledertavla
+// (finnFaktiskPlass i leaderboard.tsx). Uten dette ville morgenrapporten vist
+// rå radnummer (13, 14, 15 …) der ledertavla viser delte plasser (13, 13, 13,
+// 16 …), så plasseringer og endringer ikke stemte overens. `tabell` må være
+// ferdigsortert (synkende poeng).
+export function beregnPlasseringer(tabell: { userid: string; poeng: number }[]): Map<string, number> {
+    const map = new Map<string, number>()
+    for (let i = 0; i < tabell.length; i++) {
+        const r = tabell[i]
+        const delerMedForrige = i > 0 && tabell[i - 1].poeng === r.poeng
+        map.set(r.userid, delerMedForrige ? map.get(tabell[i - 1].userid)! : i + 1)
+    }
+    return map
+}
+
 // Velger morgenrapport-scenario ut fra dagens tabell og forrige snapshot. Ren
 // funksjon (ingen DB) så den kan gjenbrukes av både live-cronen og backfillen.
 // `dager` = antall sammenhengende dager forrige leder lå øverst (precomputed).
@@ -42,11 +58,16 @@ export function velgMorgenScenario(args: {
     const { tabell, navnMap, forrigeRader, antallKamper, dager, frø } = args
     if (tabell.length === 0) return null
 
-    const nyPlassMap = new Map(tabell.map((r, i) => [r.userid, i + 1]))
+    const nyPlassMap = beregnPlasseringer(tabell)
     const forrigePlassMap = new Map(forrigeRader.map((r) => [r.user_id, r.plass]))
     const forrigeLederId = forrigeRader.find((r) => r.plass === 1)?.user_id ?? null
     const nyLederId = tabell[0].userid
-    const topp3 = tabell.slice(0, 3).map((r, i) => ({ plass: i + 1, navn: r.userName, poeng: r.poeng, leder: i === 0 }))
+    const topp3 = tabell.slice(0, 3).map((r) => ({
+        plass: nyPlassMap.get(r.userid)!,
+        navn: r.userName,
+        poeng: r.poeng,
+        leder: nyPlassMap.get(r.userid) === 1,
+    }))
     const luke = tabell.length > 1 ? Math.max(0, tabell[0].poeng - tabell[1].poeng) : tabell[0].poeng
 
     const data: Record<string, unknown> = { antallKamper }
@@ -90,15 +111,17 @@ export function velgMorgenScenario(args: {
         ? { navn: fallere[0].navn, n: Math.abs(fallere[0].deltaPlass), plass: fallere[0].nyPlass }
         : null
 
-    const nyTopp3Sett = tabell.slice(0, 3).map((r) => r.userid)
-    const gammelTopp3Sett = forrigeRader
-        .filter((r) => r.plass <= 3)
+    // Topp 3 = alle med (delt) plass ≤ 3, så det matcher medaljene på ledertavla.
+    // «Nye i topp 3» er de som ligger der nå, men ikke gjorde det forrige dag.
+    const gammelTopp3Ids = new Set(forrigeRader.filter((r) => r.plass <= 3).map((r) => r.user_id))
+    const nyeITopp3 = tabell
+        .filter((r) => nyPlassMap.get(r.userid)! <= 3 && !gammelTopp3Ids.has(r.userid))
+        .map((r) => ({ navn: r.userName, plass: nyPlassMap.get(r.userid)! }))
         .sort((a, b) => a.plass - b.plass)
-        .map((r) => r.user_id)
-    const nyTopp3 = JSON.stringify(nyTopp3Sett) !== JSON.stringify(gammelTopp3Sett)
+    const nyTopp3 = nyeITopp3.length > 0
 
-    const mal = malEndring({ antallKamper, størsteKlatrer, størsteFaller, nyTopp3, frø })
-    Object.assign(data, { størsteKlatrer, størsteFaller, nyTopp3, delta: bevegelser.slice(0, 4) })
+    const mal = malEndring({ antallKamper, størsteKlatrer, størsteFaller, nyTopp3, nyeITopp3, frø })
+    Object.assign(data, { størsteKlatrer, størsteFaller, nyTopp3, nyeITopp3, delta: bevegelser.slice(0, 4) })
     return { scenario: 'endring', mal, data }
 }
 
@@ -122,15 +145,17 @@ export async function tellFerdigeKamper(client: PoolClient, fra: Date, til: Date
     return parseInt(res.rows[0]?.antall ?? '0', 10)
 }
 
-// Lagrer (upsert) en tabell-snapshot for en gitt Oslo-dato.
+// Lagrer (upsert) en tabell-snapshot for en gitt Oslo-dato. Lagrer
+// konkurranseplassering («delt plass»), ikke rå radnummer, så endringene
+// morgenrapporten regner ut dagen etter stemmer med ledertavla.
 export async function lagreSnapshot(client: PoolClient, dato: string, tabell: LeaderBoard[]): Promise<void> {
-    for (let i = 0; i < tabell.length; i++) {
-        const r = tabell[i]
+    const plasser = beregnPlasseringer(tabell)
+    for (const r of tabell) {
         await client.query(
             `INSERT INTO feed_standings_snapshot (dato, user_id, plass, poeng)
              VALUES ($1, $2, $3, $4)
              ON CONFLICT (dato, user_id) DO UPDATE SET plass = EXCLUDED.plass, poeng = EXCLUDED.poeng`,
-            [dato, r.userid, i + 1, r.poeng],
+            [dato, r.userid, plasser.get(r.userid)!, r.poeng],
         )
     }
 }

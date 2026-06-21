@@ -122,6 +122,22 @@ describe('maler – morgenrapport', () => {
         expect(m.body).toContain('Topp 3 står som støpt.')
     })
 
+    it('endring: navngir hvem som går inn i topp 3', () => {
+        const m = malEndring({
+            antallKamper: 3,
+            størsteKlatrer: { navn: 'Robin', n: 3, plass: 2 },
+            størsteFaller: null,
+            nyTopp3: true,
+            nyeITopp3: [
+                { navn: 'Robin', plass: 2 },
+                { navn: 'Ada', plass: 3 },
+            ],
+            frø: '2026-06-21',
+        })
+        expect(m.body).toContain('Ny i topp 3: Robin (2.) og Ada (3.).')
+        expect(m.body).not.toContain('Topp 3 står som støpt.')
+    })
+
     it('lederbytte: ny leder, luke og dager', () => {
         const m = malLederbytte({ nyLeder: 'Ada', gammelLeder: 'Ola', luke: '5', dager: 6, frø: '2026-06-20' })
         expect(m.accent).toBe('gold')
