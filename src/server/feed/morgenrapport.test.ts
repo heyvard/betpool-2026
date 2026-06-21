@@ -171,6 +171,29 @@ describe('velgMorgenScenario – delt ledelse vs. lederbytte', () => {
         expect(valg.data.luke).toBe(4)
     })
 
+    it('leder_holder viser dag-INKLUSIV streak (dager + 1), siden lederen står øverst også i dag', () => {
+        // Samme leder alene på topp som i går. `dager` = 2 er streaken t.o.m. i går;
+        // i dag står han fortsatt øverst, så teksten skal si 3 dager på rad.
+        const tabell = [rad('johannes', 45), rad('dagga', 35), rad('bendik', 34), rad('d', 28)]
+        const forrige: SnapshotRad[] = [
+            { user_id: 'johannes', plass: 1, poeng: 37 },
+            { user_id: 'dagga', plass: 2, poeng: 33 },
+            { user_id: 'bendik', plass: 3, poeng: 31 },
+            { user_id: 'd', plass: 4, poeng: 25 },
+        ]
+        const valg = velgMorgenScenario({
+            tabell,
+            navnMap: navnMap(tabell),
+            forrigeRader: forrige,
+            antallKamper: 3,
+            dager: 2,
+            frø: '2026-06-21',
+        })!
+        expect(valg.scenario).toBe('leder_holder')
+        expect(valg.data.dager).toBe(3)
+        expect(valg.mal.body).toContain('3 dager')
+    })
+
     it('uendret delt topp gjentar ikke delt_ledelse — faller til endring', () => {
         // Begge sto delt på topp også i går; ingen ny i teten → ikke ny «dødt løp».
         const tabell = [rad('johannes', 31), rad('dagga', 31), rad('bendik', 29), rad('d', 20)]
