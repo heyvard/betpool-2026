@@ -5,6 +5,12 @@ import { hentHovedligaData, sorterTabell } from './hovedligaData'
 import { malEndring, malLederbytte, MalResultat } from './maler'
 import { osloDato, osloInstant } from './tid'
 
+// Hvor langt bakover morgenrapporten ser etter ferdige kamper, fram til 08:00
+// norsk tid på rapportdagen. 30 t (ikke 24) for å trygt fange hele forrige kvelds
+// kampslate, inkl. sene US-kamper som avgjøres etter midnatt og ikke synkes før
+// godt utpå natta.
+export const RAPPORT_VINDU_TIMER = 30
+
 export interface MorgenrapportResultat {
     postet: boolean
     grunn?: 'allerede_postet' | 'stille_dag' | 'ingen_baseline'
@@ -91,9 +97,9 @@ export function velgMorgenScenario(args: {
 }
 
 // Antall hovedliga-kamper som ble ferdige i tidsvinduet (fra, til]. Morgenrapporten
-// bruker et rullerende 24-timersvindu som ender 08:00 norsk tid på rapportdagen,
-// IKKE en kalenderdato. Det grupperer hele kveldens/nattens kampslate riktig —
-// kamper som sparkes i gang sent og avgjøres etter midnatt (typisk
+// bruker et rullerende vindu (RAPPORT_VINDU_TIMER) som ender 08:00 norsk tid på
+// rapportdagen, IKKE en kalenderdato. Det grupperer hele kveldens/nattens kampslate
+// riktig — kamper som sparkes i gang sent og avgjøres etter midnatt (typisk
 // US-kampene) havner i samme rapport som de tidligere kampene samme «kveld».
 export async function tellFerdigeKamper(client: PoolClient, fra: Date, til: Date): Promise<number> {
     const res = await client.query<{ antall: string }>(
@@ -175,9 +181,9 @@ export async function genererMorgenrapport(client: PoolClient, now: Date = new D
     const finnes = await client.query(`SELECT 1 FROM feed_posts WHERE kind = 'morgenrapport' AND dato = $1`, [iDag])
     if (finnes.rowCount && finnes.rowCount > 0) return { postet: false, grunn: 'allerede_postet' }
 
-    // Stille dag → ingen post. Vindu: siste 24 t fram til 08:00 norsk tid i dag.
+    // Stille dag → ingen post. Vindu: siste RAPPORT_VINDU_TIMER t fram til 08:00 i dag.
     const til = osloInstant(iDag, 8)
-    const fra = new Date(til.getTime() - 24 * 60 * 60 * 1000)
+    const fra = new Date(til.getTime() - RAPPORT_VINDU_TIMER * 60 * 60 * 1000)
     const antallKamper = await tellFerdigeKamper(client, fra, til)
     if (antallKamper === 0) return { postet: false, grunn: 'stille_dag' }
 

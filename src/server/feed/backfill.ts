@@ -6,6 +6,7 @@ import {
     hentNavn,
     insertMorgenrapport,
     lagreSnapshot,
+    RAPPORT_VINDU_TIMER,
     SnapshotRad,
     tellDagerPåTopp,
     tellFerdigeKamper,
@@ -114,8 +115,8 @@ async function backfillMorgenrapporter(client: PoolClient, dager: number, now: D
         const finnes = await client.query(`SELECT 1 FROM feed_posts WHERE kind = 'morgenrapport' AND dato = $1`, [dato])
         if (finnes.rowCount && finnes.rowCount > 0) continue
 
-        // Vindu: siste 24 t fram til 08:00 norsk tid på rapportdagen.
-        const fra = new Date(inst.getTime() - 24 * 60 * 60 * 1000)
+        // Vindu: siste RAPPORT_VINDU_TIMER t fram til 08:00 norsk tid på rapportdagen.
+        const fra = new Date(inst.getTime() - RAPPORT_VINDU_TIMER * 60 * 60 * 1000)
         const antallKamper = await tellFerdigeKamper(client, fra, inst)
         if (antallKamper === 0) continue // stille dag
 

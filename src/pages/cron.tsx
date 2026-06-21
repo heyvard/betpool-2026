@@ -16,9 +16,9 @@ import {
     EttermiddagsVarselDryRunBruker,
 } from '../queries/mutateAdminCron'
 import { UseMutateSyncPlayers } from '../queries/mutateSyncPlayers'
-import { UseMutateFeedBackfill, UseMutateFeedReset } from '../queries/mutateAdminCron'
+import { UseMutateFeedBackfill, UseMutateFeedReset, UseMutateMorgenrapport } from '../queries/mutateAdminCron'
 import { Button } from '@/components/ui/button'
-import { RefreshCw, Bell, Eye, Trophy, Users, Radio, Trash2 } from 'lucide-react'
+import { RefreshCw, Bell, Eye, Trophy, Users, Radio, Trash2, Sunrise } from 'lucide-react'
 
 function formaterFeltVerdi(felt: string, verdi: string | number | null): string {
     if (verdi === null) return 'null'
@@ -563,6 +563,51 @@ function FeedResetKnapp() {
     )
 }
 
+function MorgenrapportKnapp() {
+    const { mutate, isPending, data, error, isSuccess } = UseMutateMorgenrapport()
+
+    const grunnTekst: Record<string, string> = {
+        allerede_postet: 'Allerede postet i dag — ingen ny rapport laget.',
+        stille_dag: 'Stille dag — ingen ferdige kamper i vinduet (30 t), ingen rapport.',
+        ingen_baseline: 'Ingen baseline ennå — snapshot lagret, men ingen rapport.',
+    }
+
+    return (
+        <div className="flex flex-col gap-2 py-3 first:pt-0 last:pb-0">
+            <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                    <p className="text-sm font-medium text-stone-900">Kjør morgenrapport</p>
+                    <p className="text-xs text-stone-500">
+                        Lager morgenrapporten for i dag manuelt (uten å vente til kl 8). Ser 30 timer bakover etter
+                        ferdige kamper. Idempotent — lager ikke to rapporter for samme dag.
+                    </p>
+                </div>
+                <div className="flex shrink-0 gap-2">
+                    <Button
+                        variant="outline"
+                        size="small"
+                        loading={isPending}
+                        icon={<Sunrise className="h-4 w-4" />}
+                        onClick={() => mutate()}
+                    >
+                        Kjør
+                    </Button>
+                </div>
+            </div>
+            {isSuccess && data && (
+                <p className="rounded-lg bg-green-50 px-3 py-1.5 text-xs text-green-700">
+                    {data.postet
+                        ? `Morgenrapport postet · scenario: ${data.scenario} · kamper: ${data.antallKamper}`
+                        : (data.grunn && grunnTekst[data.grunn]) || 'Ingen rapport laget.'}
+                </p>
+            )}
+            {error && (
+                <p className="rounded-lg bg-red-50 px-3 py-1.5 text-xs text-red-700">Kunne ikke lagre — prøv igjen.</p>
+            )}
+        </div>
+    )
+}
+
 const CronPage: NextPage = () => {
     const { data: me } = UseUser()
 
@@ -577,6 +622,7 @@ const CronPage: NextPage = () => {
                     <SyncSpillereKnapp />
                     <FeedResetKnapp />
                     <FeedBackfillKnapp />
+                    <MorgenrapportKnapp />
                     <SendPåminnelserKnapp />
                     <SendEttermiddagsVarselKnapp />
                     <SendVmStartKnapp />
