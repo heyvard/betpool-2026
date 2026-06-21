@@ -2,9 +2,14 @@ import {
     formatResultat,
     formatTipp,
     malEndring,
+    malEnstemmig,
     malIngenTraff,
+    malJoker,
     malLederbytte,
+    malLederHolder,
     malSjeldent,
+    malSjokk,
+    velgVariant,
     visningsnavn,
 } from './maler'
 
@@ -26,28 +31,40 @@ describe('maler – formatering', () => {
     })
 })
 
+describe('velgVariant', () => {
+    it('er deterministisk for samme frø og varierer med ulike frø', () => {
+        const arr = ['a', 'b', 'c', 'd']
+        expect(velgVariant(arr, 1)).toBe(velgVariant(arr, 1))
+        expect(velgVariant(arr, 'foo')).toBe(velgVariant(arr, 'foo'))
+        const valgte = new Set([0, 1, 2, 3, 4, 5, 6, 7].map((f) => velgVariant(arr, f)))
+        expect(valgte.size).toBeGreaterThan(1)
+    })
+})
+
 describe('maler – kamp-scenarioer', () => {
-    it('sjeldent: alene-tittel og rundevekt i body', () => {
-        const m = malSjeldent({
-            spillere: ['Ola'],
-            resultat: '2–1',
-            antall: 1,
-            totalt: 12,
-            vekt: 3,
-            poeng: 15,
-            superlativ: 'kveldens største napp',
-        })
+    it('sjeldent: alene-tittel nevner spilleren, og rundevekt/poeng i body', () => {
+        const m = malSjeldent({ spillere: ['Ola'], resultat: '2–1', antall: 1, totalt: 12, vekt: 3, poeng: 15, frø: 1 })
         expect(m.accent).toBe('gold')
-        expect(m.tittel).toBe('Ola satt alene med 2–1')
-        expect(m.body).toContain('1 av 12')
+        expect(m.tittel).toContain('Ola')
+        expect(m.tittel).toContain('2–1')
+        expect(m.body).toContain('av 12')
         expect(m.body).toContain('×3')
         expect(m.body).toContain('+15 poeng')
-        expect(m.body).toContain('kveldens største napp')
+        expect(m.body).not.toContain('største napp')
     })
 
     it('sjeldent: flertall-tittel når flere traff', () => {
-        const m = malSjeldent({ spillere: ['A', 'B'], resultat: '0–0', antall: 2, totalt: 20, vekt: 1, poeng: 5 })
-        expect(m.tittel).toBe('2 hadde 0–0')
+        const m = malSjeldent({
+            spillere: ['A', 'B'],
+            resultat: '0–0',
+            antall: 2,
+            totalt: 20,
+            vekt: 1,
+            poeng: 5,
+            frø: 1,
+        })
+        expect(m.tittel).toContain('2')
+        expect(m.tittel).toContain('0–0')
     })
 
     it('ingen_traff: deler utfallspoeng', () => {
@@ -58,11 +75,34 @@ describe('maler – kamp-scenarioer', () => {
             homeTla: 'BRA',
             awayTla: 'ARG',
             antallUtfall: 4,
+            frø: 1,
         })
         expect(m.accent).toBe('stone')
-        expect(m.tittel).toBe('Ingen traff resultatet')
-        expect(m.body).toContain('0 av 10')
+        expect(m.body).toContain('3–2')
         expect(m.body).toContain('seier til Brasil')
+    })
+
+    it('enstemmig: alle traff utfallet', () => {
+        const m = malEnstemmig({ totalt: 8, resultat: '1–0', utfall: 'H', homeTla: 'BRA', awayTla: 'ARG', frø: 2 })
+        expect(m.accent).toBe('win')
+        expect(m.body).toContain('seier til Brasil')
+        expect(m.body).toContain('1–0')
+    })
+
+    it('sjokk: ingen traff utfallet', () => {
+        const m = malSjokk({ totalt: 9, resultat: '0–3', utfall: 'B', homeTla: 'BRA', awayTla: 'ARG', frø: 3 })
+        expect(m.accent).toBe('live')
+        expect(m.body).toContain('0–3')
+    })
+
+    it('joker: ulik tone om jokeren satt eller brant', () => {
+        const satt = malJoker({ navn: 'Ola', poeng: 12, resultat: '2–1', satt: true, frø: 4 })
+        expect(satt.accent).toBe('gold')
+        expect(satt.tittel).toContain('Ola')
+        expect(satt.body).toContain('12')
+        const brant = malJoker({ navn: 'Ola', poeng: 0, resultat: '2–1', satt: false, frø: 4 })
+        expect(brant.tittel).toContain('Ola')
+        expect(brant.tittel).not.toBe(satt.tittel)
     })
 })
 
@@ -73,18 +113,29 @@ describe('maler – morgenrapport', () => {
             størsteKlatrer: { navn: 'Robin', n: 3, plass: 2 },
             størsteFaller: { navn: 'Marius', n: 3, plass: 10 },
             nyTopp3: false,
+            frø: '2026-06-20',
         })
         expect(m.accent).toBe('royal')
-        expect(m.tittel).toBe('4 kamper avgjort i går')
-        expect(m.body).toBe('Robin klatret 3 plasser til 2. Marius falt 3 til 10. Topp 3 ellers uendret.')
+        expect(m.tittel).toContain('4 kamper')
+        expect(m.body).toContain('Robin')
+        expect(m.body).toContain('Marius')
+        expect(m.body).toContain('Topp 3 står som støpt.')
     })
 
     it('lederbytte: ny leder, luke og dager', () => {
-        const m = malLederbytte({ nyLeder: 'Ada', gammelLeder: 'Ola', luke: '5', dager: 6 })
+        const m = malLederbytte({ nyLeder: 'Ada', gammelLeder: 'Ola', luke: '5', dager: 6, frø: '2026-06-20' })
         expect(m.accent).toBe('gold')
-        expect(m.tittel).toBe('Ada har tatt ledelsen')
-        expect(m.body).toContain('Gikk forbi Ola')
-        expect(m.body).toContain('med 5 poeng')
-        expect(m.body).toContain('ledet i 6 dager')
+        expect(m.tittel).toContain('Ada')
+        expect(m.body).toContain('Ola')
+        expect(m.body).toContain('5 poeng')
+        expect(m.body).toContain('6 dager')
+    })
+
+    it('leder_holder: samme leder holder stand', () => {
+        const m = malLederHolder({ leder: 'Ada', luke: '5', dager: 4, frø: '2026-06-20' })
+        expect(m.accent).toBe('gold')
+        expect(m.tittel).toContain('Ada')
+        expect(m.body).toContain('4 dager')
+        expect(m.body).toContain('5 poeng')
     })
 })

@@ -339,7 +339,7 @@ export function FeedKort({ post, meNavn, mePicture, erSuperadmin }: Props) {
 
                 {/* Strukturert tillegg */}
                 {post.kind === 'kamp' && <ScoreBlokk data={post.data} matchNum={post.match_num} />}
-                {post.scenario === 'lederbytte' && <MiniTopp3 data={post.data} />}
+                {(post.scenario === 'lederbytte' || post.scenario === 'leder_holder') && <MiniTopp3 data={post.data} />}
                 {post.scenario === 'endring' && <DeltaListe data={post.data} />}
 
                 {/* Reaksjons-rad */}
