@@ -54,6 +54,8 @@ const fr: Translations = {
         typeSjeldent: 'Pari rare',
         typeMorgenrapport: 'Rapport du matin',
         avsenderMorgenrapport: 'Le rapport du matin',
+        slettPost: 'Supprimer la publication',
+        slettBekreft: 'Supprimer cette publication ? Les réactions et commentaires disparaîtront aussi.',
     },
     grupper: {
         tittel: 'Groupes',
