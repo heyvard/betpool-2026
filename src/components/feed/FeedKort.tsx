@@ -1,11 +1,12 @@
 import React, { useState } from 'react'
 import NextLink from 'next/link'
-import { Plus, Send } from 'lucide-react'
+import { Plus, Send, Trash2 } from 'lucide-react'
 
 import { FeedKommentar, FeedPost, FeedReaksjon } from '../../queries/useFeed'
 import { UseMutateFeedReaksjon } from '../../queries/mutateFeedReaksjon'
 import { UseMutateFeedKommentar } from '../../queries/mutateFeedKommentar'
 import { UseMutateFeedKommentarReaksjon } from '../../queries/mutateFeedKommentarReaksjon'
+import { UseMutateFeedSlettPost } from '../../queries/mutateFeedSlettPost'
 import { TILLATTE_EMOJI } from '../../utils/feedEmoji'
 import { useLanguage } from '../../i18n/LanguageContext'
 import { hentFlag, hentNavn } from '../../utils/lag'
@@ -16,6 +17,7 @@ interface Props {
     post: FeedPost
     meNavn: string
     mePicture: string | null
+    erSuperadmin?: boolean
 }
 
 function EmojiVelger({ onVelg }: { onVelg: (emoji: string) => void }) {
@@ -246,19 +248,26 @@ function KommentarRad({ post, kommentar }: { post: FeedPost; kommentar: FeedKomm
     )
 }
 
-export function FeedKort({ post, meNavn, mePicture }: Props) {
+export function FeedKort({ post, meNavn, mePicture, erSuperadmin }: Props) {
     const { t, locale } = useLanguage()
     const farger = ACCENT[post.accent] ?? ACCENT.stone
     const [pickerOpen, setPickerOpen] = useState(false)
     const [tekst, setTekst] = useState('')
     const reaksjon = UseMutateFeedReaksjon()
     const kommentar = UseMutateFeedKommentar()
+    const slettPost = UseMutateFeedSlettPost()
 
     const sendKommentar = () => {
         const ren = tekst.trim()
         if (!ren) return
         kommentar.mutate({ postId: post.id, body: ren, meNavn, mePicture })
         setTekst('')
+    }
+
+    const håndterSlett = () => {
+        if (window.confirm(t.feed.slettBekreft)) {
+            slettPost.mutate({ postId: post.id })
+        }
     }
 
     return (
@@ -298,6 +307,19 @@ export function FeedKort({ post, meNavn, mePicture }: Props) {
                             {tidEtikett(post.created_at)}
                         </div>
                     </div>
+                    {erSuperadmin && (
+                        <button
+                            type="button"
+                            onClick={håndterSlett}
+                            disabled={slettPost.isPending}
+                            className="ml-auto flex shrink-0 items-center justify-center rounded-full text-stone-400 transition-colors hover:bg-stone-100 hover:text-red-600 disabled:opacity-40"
+                            style={{ width: 30, height: 30 }}
+                            aria-label={t.feed.slettPost}
+                            title={t.feed.slettPost}
+                        >
+                            <Trash2 size={15} />
+                        </button>
+                    )}
                 </div>
 
                 {/* Tittel + body */}

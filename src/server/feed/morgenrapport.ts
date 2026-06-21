@@ -6,10 +6,8 @@ import { malEndring, malLederbytte, MalResultat } from './maler'
 import { osloDato, osloInstant } from './tid'
 
 // Hvor langt bakover morgenrapporten ser etter ferdige kamper, fram til 08:00
-// norsk tid på rapportdagen. 30 t (ikke 24) for å trygt fange hele forrige kvelds
-// kampslate, inkl. sene US-kamper som avgjøres etter midnatt og ikke synkes før
-// godt utpå natta.
-export const RAPPORT_VINDU_TIMER = 30
+// norsk tid på rapportdagen. 24 t dekker hele forrige døgns kampslate.
+export const RAPPORT_VINDU_TIMER = 24
 
 export interface MorgenrapportResultat {
     postet: boolean

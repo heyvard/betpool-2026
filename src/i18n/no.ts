@@ -52,6 +52,8 @@ const no = {
         typeSjeldent: 'Sjeldent treff',
         typeMorgenrapport: 'Morgenrapport',
         avsenderMorgenrapport: 'Morgenrapporten',
+        slettPost: 'Slett post',
+        slettBekreft: 'Slette denne posten? Reaksjoner og kommentarer forsvinner også.',
     },
     grupper: {
         tittel: 'Grupper',

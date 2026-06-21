@@ -52,7 +52,13 @@ const Feed: NextPage = () => {
             ) : (
                 <div style={{ paddingTop: 12 }}>
                     {data.posts.map((post) => (
-                        <FeedKort key={post.id} post={post} meNavn={meNavn} mePicture={mePicture} />
+                        <FeedKort
+                            key={post.id}
+                            post={post}
+                            meNavn={meNavn}
+                            mePicture={mePicture}
+                            erSuperadmin={!!me.superadmin}
+                        />
                     ))}
                 </div>
             )}
