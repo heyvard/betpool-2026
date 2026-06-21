@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import NextLink from 'next/link'
 import { Plus, Send } from 'lucide-react'
 
 import { FeedKommentar, FeedPost, FeedReaksjon } from '../../queries/useFeed'
@@ -72,22 +73,14 @@ function LagCelle({ tla }: { tla: string }) {
     )
 }
 
-// Score-blokk (kun kamp-poster).
-function ScoreBlokk({ data }: { data: Record<string, unknown> }) {
+// Score-blokk (kun kamp-poster). Lenker til kampsiden når match_num finnes.
+function ScoreBlokk({ data, matchNum }: { data: Record<string, unknown>; matchNum: number | null }) {
     const homeTeam = String(data.homeTeam ?? '')
     const awayTeam = String(data.awayTeam ?? '')
     const resultat = String(data.resultat ?? '')
     const rundeTekst = String(data.rundeTekst ?? '')
-    return (
-        <div
-            style={{
-                margin: '13px 0',
-                padding: 14,
-                borderRadius: 12,
-                background: '#fafaf9',
-                boxShadow: 'inset 0 0 0 1px #e7e5e4',
-            }}
-        >
+    const innhold = (
+        <>
             <div className="flex items-center justify-center gap-5">
                 <LagCelle tla={homeTeam} />
                 <span className="bp-tabular font-bold" style={{ fontSize: 28 }}>
@@ -101,6 +94,29 @@ function ScoreBlokk({ data }: { data: Record<string, unknown> }) {
             >
                 {rundeTekst}
             </div>
+        </>
+    )
+    const stil: React.CSSProperties = {
+        display: 'block',
+        margin: '13px 0',
+        padding: 14,
+        borderRadius: 12,
+        boxShadow: 'inset 0 0 0 1px #e7e5e4',
+    }
+    if (matchNum != null) {
+        return (
+            <NextLink
+                href={`/match/${matchNum}`}
+                style={stil}
+                className="bg-stone-50 transition-colors hover:bg-stone-100"
+            >
+                {innhold}
+            </NextLink>
+        )
+    }
+    return (
+        <div style={stil} className="bg-stone-50">
+            {innhold}
         </div>
     )
 }
@@ -300,7 +316,7 @@ export function FeedKort({ post, meNavn, mePicture }: Props) {
                 <p style={{ fontSize: 13.5, color: '#57534e', lineHeight: 1.5, marginTop: 6 }}>{post.body}</p>
 
                 {/* Strukturert tillegg */}
-                {post.kind === 'kamp' && <ScoreBlokk data={post.data} />}
+                {post.kind === 'kamp' && <ScoreBlokk data={post.data} matchNum={post.match_num} />}
                 {post.scenario === 'lederbytte' && <MiniTopp3 data={post.data} />}
                 {post.scenario === 'endring' && <DeltaListe data={post.data} />}
 
