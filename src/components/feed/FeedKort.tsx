@@ -194,6 +194,35 @@ function DeltaListe({ data }: { data: Record<string, unknown> }) {
     )
 }
 
+// Bunn-stripe (endring): hvem ligger sist (jumbo). Liten, nedtonet linje under
+// delta-lista — vi snakker også om dem som ligger helt nederst.
+function BunnStripe({ data }: { data: Record<string, unknown> }) {
+    const bunn = data.bunn as { jumbo: { navn: string; plass: number; poeng: number }; nyJumbo: boolean } | null
+    if (!bunn?.jumbo) return null
+    return (
+        <div
+            className="mt-2 flex items-center gap-2.5"
+            style={{
+                padding: '8px 11px',
+                borderRadius: 12,
+                background: '#fafaf9',
+                boxShadow: 'inset 0 0 0 1px #f5f5f4',
+            }}
+        >
+            <span style={{ fontSize: 14 }}>{bunn.nyJumbo ? '🪦' : '⚓'}</span>
+            <span className="bp-overline" style={{ color: '#a8a29e' }}>
+                Jumbo
+            </span>
+            <span className="flex-1 truncate font-bold" style={{ fontSize: 13, color: '#57534e' }}>
+                {visningsnavn(bunn.jumbo.navn)}
+            </span>
+            <span className="bp-tabular" style={{ fontSize: 12, fontWeight: 700, color: '#a8a29e' }}>
+                {bunn.jumbo.plass}. · {bunn.jumbo.poeng}
+            </span>
+        </div>
+    )
+}
+
 function KommentarRad({ post, kommentar }: { post: FeedPost; kommentar: FeedKommentar }) {
     const [pickerOpen, setPickerOpen] = useState(false)
     const reaksjon = UseMutateFeedKommentarReaksjon()
@@ -340,7 +369,12 @@ export function FeedKort({ post, meNavn, mePicture, erSuperadmin }: Props) {
                 {/* Strukturert tillegg */}
                 {post.kind === 'kamp' && <ScoreBlokk data={post.data} matchNum={post.match_num} />}
                 {(post.scenario === 'lederbytte' || post.scenario === 'leder_holder') && <MiniTopp3 data={post.data} />}
-                {post.scenario === 'endring' && <DeltaListe data={post.data} />}
+                {post.scenario === 'endring' && (
+                    <>
+                        <DeltaListe data={post.data} />
+                        <BunnStripe data={post.data} />
+                    </>
+                )}
 
                 {/* Reaksjons-rad */}
                 <div className="relative mt-3.5 flex flex-wrap items-center gap-1.5">
