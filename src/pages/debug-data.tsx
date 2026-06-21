@@ -69,25 +69,27 @@ const DebugData: NextPage = () => {
         },
     })
 
-    function byggBundle(): string {
+    // Bygger fila klientside fra dataene siden allerede har hentet — samme form
+    // enten det er én seksjon eller alle, slik at den lastes inn likt som kontekst.
+    function byggBundle(valgte: Seksjon[]): string {
         const bundle = {
             _meta: {
                 beskrivelse:
                     "Betpool debug-eksport. Hver nøkkel under 'seksjoner' er en separat API-respons (eller server-side-beregning). Last inn som kontekst for debugging.",
                 eksportertAt: new Date().toISOString(),
             },
-            seksjoner: Object.fromEntries((seksjoner ?? []).map((s) => [s.nøkkel, { kilde: s.kilde, data: s.data }])),
+            seksjoner: Object.fromEntries(valgte.map((s) => [s.nøkkel, { kilde: s.kilde, data: s.data }])),
         }
         return JSON.stringify(bundle, null, 2)
     }
 
-    function lastNed() {
-        const blob = new Blob([byggBundle()], { type: 'application/json' })
+    function lastNed(navn: string, valgte: Seksjon[]) {
+        const blob = new Blob([byggBundle(valgte)], { type: 'application/json' })
         const url = URL.createObjectURL(blob)
         const stempel = new Date().toISOString().slice(0, 16).replace(/[:T]/g, '-')
         const a = document.createElement('a')
         a.href = url
-        a.download = `betpool-debug-${stempel}.json`
+        a.download = `betpool-debug-${navn}-${stempel}.json`
         document.body.appendChild(a)
         a.click()
         a.remove()
@@ -119,7 +121,12 @@ const DebugData: NextPage = () => {
                     <Button variant="outline" size="small" loading={isFetching} onClick={() => refetch()}>
                         Hent på nytt
                     </Button>
-                    <Button variant="default" size="small" disabled={!seksjoner} onClick={lastNed}>
+                    <Button
+                        variant="default"
+                        size="small"
+                        disabled={!seksjoner}
+                        onClick={() => lastNed('alt', seksjoner ?? [])}
+                    >
                         Last ned alt (JSON)
                     </Button>
                 </div>
@@ -145,16 +152,28 @@ const DebugData: NextPage = () => {
                                         <span className="font-semibold text-stone-900">{s.tittel}</span>{' '}
                                         <span className="text-xs text-stone-500">{s.kilde}</span>
                                     </span>
-                                    <Button
-                                        variant="ghost"
-                                        size="small"
-                                        onClick={(e) => {
-                                            e.preventDefault()
-                                            kopier(s.nøkkel, tekst)
-                                        }}
-                                    >
-                                        {kopiert === s.nøkkel ? 'Kopiert' : 'Kopier'}
-                                    </Button>
+                                    <span className="flex shrink-0 gap-1">
+                                        <Button
+                                            variant="ghost"
+                                            size="small"
+                                            onClick={(e) => {
+                                                e.preventDefault()
+                                                kopier(s.nøkkel, tekst)
+                                            }}
+                                        >
+                                            {kopiert === s.nøkkel ? 'Kopiert' : 'Kopier'}
+                                        </Button>
+                                        <Button
+                                            variant="ghost"
+                                            size="small"
+                                            onClick={(e) => {
+                                                e.preventDefault()
+                                                lastNed(s.nøkkel, [s])
+                                            }}
+                                        >
+                                            Last ned
+                                        </Button>
+                                    </span>
                                 </summary>
                                 <pre className="mt-3 max-h-96 overflow-auto rounded-lg bg-stone-50 p-3 text-xs text-stone-800">
                                     {tekst}
