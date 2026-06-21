@@ -3,7 +3,8 @@ import { Spinner } from '../../components/loading/Spinner'
 import { useRouter } from 'next/router'
 import NextLink from 'next/link'
 import { UseAllBets, MatchBetMedScore, OtherUser } from '../../queries/useAllBets'
-import React, { useState } from 'react'
+import { calculateAllBetsExtended, filtrerAllBets } from '../../components/results/calculateAllBetsExtended'
+import React, { useMemo, useState } from 'react'
 import { hentFlag, hentNavn } from '../../utils/lag'
 import { UseUser } from '../../queries/useUser'
 import { useLanguage } from '../../i18n/LanguageContext'
@@ -620,11 +621,24 @@ const MatchPage: NextPage = () => {
     const router = useRouter()
     const { id } = router.query
 
-    if (!data || isLoading || !me) {
+    // Matchsiden viser hovedligaen (Æresligaen): tips fra brukere som har valgt
+    // bort hovedligaen (i_hovedliga === false) skal verken telle eller vises. Vi
+    // regner derfor fordeling/raritet/poeng på nytt for hovedliga-populasjonen —
+    // på samme måte som ledertavla — slik at prosenter og poeng kun reflekterer
+    // hovedligaen. Den innloggede brukeren tas alltid med, så man ser sitt eget
+    // tipp selv om man kun er med i en privat liga.
+    const hovedliga = useMemo(() => {
+        if (!data || !me) return null
+        const populasjon = new Set(data.raw.users.filter((u) => u.i_hovedliga !== false).map((u) => u.id))
+        populasjon.add(me.id)
+        return calculateAllBetsExtended(filtrerAllBets(data.raw, populasjon))
+    }, [data, me])
+
+    if (!data || isLoading || !me || !hovedliga) {
         return <Spinner />
     }
 
-    const matchBets = data.bets.filter((a) => a.match_num == Number(id))
+    const matchBets = hovedliga.bets.filter((a) => a.match_num == Number(id))
     if (matchBets.length === 0) {
         return <p className="text-center text-stone-500 py-8">{t.spilteKamper.kampIkkeFunnet}</p>
     }
@@ -638,7 +652,7 @@ const MatchPage: NextPage = () => {
 
     const betsWithUser: BetWithUser[] = matchBets.map((a) => ({
         ...a,
-        user: data.users.find((u) => u.id == a.user_id)!,
+        user: hovedliga.users.find((u) => u.id == a.user_id)!,
     }))
 
     const myBet = betsWithUser.find((a) => a.user.id == me.id) ?? null
