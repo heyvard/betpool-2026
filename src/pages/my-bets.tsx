@@ -5,7 +5,7 @@ import { BetView } from '../components/bet/BetView'
 import { Spinner } from '../components/loading/Spinner'
 import dayjs from 'dayjs'
 import NextLink from 'next/link'
-import React from 'react'
+import React, { useEffect } from 'react'
 import { UseUser } from '../queries/useUser'
 import { nå } from '../utils/testClock'
 import { LinkPanel } from '@/components/ui/link-panel'
@@ -21,6 +21,23 @@ const Home: NextPage = () => {
     const { data: myBets } = UseMyBets()
     const { data: megselv } = UseUser()
     const { t, locale } = useLanguage()
+
+    // Når man kommer hit med et anker (#kamp-<match_num>) fra hjemsiden, scroll til
+    // den kampen. Kampene rendres først når myBets er lastet, så en vanlig hash-hopp
+    // i nettleseren rekker ikke finne elementet – derfor scroller vi selv.
+    const lastet = !!myBets
+    useEffect(() => {
+        if (!lastet) return
+        const hash = window.location.hash
+        if (!hash.startsWith('#kamp-')) return
+        const el = document.getElementById(hash.slice(1))
+        if (!el) return
+        requestAnimationFrame(() => {
+            el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+            el.classList.add('ring-2', 'ring-amber-400')
+            setTimeout(() => el.classList.remove('ring-2', 'ring-amber-400'), 2000)
+        })
+    }, [lastet])
 
     if (!myBets || !megselv) {
         return <Spinner />
