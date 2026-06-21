@@ -111,6 +111,8 @@ const fr: Translations = {
         kickoff: "Coup d'envoi",
         slutt: 'Terminé',
         nattenSomVar: 'La nuit passée',
+        tippLenkeTittel: 'Pronostiquer les matchs',
+        tippLenkeUndertekst: 'Voir et modifier vos pronostics',
     },
     allesTips: {
         tilbake: 'Accueil',

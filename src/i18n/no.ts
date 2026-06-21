@@ -106,6 +106,8 @@ const no = {
         kickoff: 'Kickoff',
         slutt: 'Slutt',
         nattenSomVar: 'Natten som var',
+        tippLenkeTittel: 'Tipp kampene',
+        tippLenkeUndertekst: 'Se og endre tipsene dine',
     },
     allesTips: {
         tilbake: 'Hjem',
