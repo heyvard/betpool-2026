@@ -11,6 +11,7 @@ import { Link } from '@/components/ui/typography'
 import { useLanguage } from '../../i18n/LanguageContext'
 import { RundeSeksjon, Legende } from '../../components/bet/PastBetView'
 import { UseUser } from '../../queries/useUser'
+import { calculateAllBetsExtended, filtrerAllBets } from '../../components/results/calculateAllBetsExtended'
 
 const AVATAR_FARGER = ['bg-rose-400', 'bg-amber-400', 'bg-emerald-500', 'bg-blue-500', 'bg-violet-500']
 
@@ -23,13 +24,27 @@ const Home: NextPage = () => {
 
     if (!data || isLoading) return <Spinner />
 
-    const user = data.users.find((a) => a.id == id)!
+    // Poeng må regnes ut over hovedliga-populasjonen (samme som ledertavla),
+    // ikke hele brukermassen. Raritets-vektingen i regnUtScoreForKamp avhenger
+    // av hvor stor andel av populasjonen som traff, så en global beregning gir
+    // andre poeng enn ledertavla viser. Den betraktede brukeren legges alltid
+    // til i populasjonen, slik at også ikke-hovedliga-brukere får poeng.
+    const populasjon = new Set(data.raw.users.filter((u) => u.i_hovedliga !== false).map((u) => u.id))
+    populasjon.add(String(id))
+    const { users, bets } = calculateAllBetsExtended(filtrerAllBets(data.raw, populasjon))
 
-    const userBets = data.bets
+    const user = users.find((a) => a.id == id)!
+
+    const userBets = bets
         .filter((a) => a.user_id == id)
         .sort((a, b) => dayjs(b.game_start).unix() - dayjs(a.game_start).unix())
 
-    const totalPoeng = userBets.filter((b) => !b.foreløpig).reduce((sum, b) => sum + b.poeng, 0)
+    // Toppsum = ferdigspilte kamp-poeng + vinner/toppscorer-bonus, akkurat som
+    // calculateLeaderboard summerer på ledertavla.
+    const totalPoeng =
+        userBets.filter((b) => !b.foreløpig).reduce((sum, b) => sum + b.poeng, 0) +
+        (user.winnerPoints ?? 0) +
+        (user.topscorerPoints ?? 0)
 
     const rundeMap = new Map<number, typeof userBets>()
     userBets.forEach((bet) => {
