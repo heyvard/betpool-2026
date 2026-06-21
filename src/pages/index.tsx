@@ -228,7 +228,7 @@ function KampSeksjonPanel({
                     return (
                         <NextLink
                             key={b.match_num}
-                            href={startet ? '/match/' + b.match_num : '/my-bets'}
+                            href={startet ? '/match/' + b.match_num : '/my-bets#kamp-' + b.match_num}
                             className="flex items-stretch border-b border-stone-100 last:border-b-0 transition-colors hover:bg-stone-50"
                         >
                             <span aria-hidden className={cn('w-[3px] shrink-0 rounded-r', stripeKlasse)} />

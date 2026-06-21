@@ -144,9 +144,10 @@ export const BetView = ({ bet, matchside, joker }: { bet: Bet; matchside: boolea
 
     return (
         <div
+            id={`kamp-${bet.match_num}`}
             data-testid={`bet-${bet.match_num}`}
             className={cn(
-                'my-4 bg-white rounded-xl shadow-xs overflow-hidden',
+                'my-4 scroll-mt-16 bg-white rounded-xl shadow-xs overflow-hidden',
                 joker.aktiv ? 'ring-2 ring-amber-300' : 'ring-1 ring-stone-200/70',
             )}
         >

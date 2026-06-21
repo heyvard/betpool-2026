@@ -144,7 +144,9 @@ test('kommende kamp lenker til tipping, startet kamp lenker til kampsiden', asyn
     await page.goto('/')
     await expect(page.getByText('Neste kampdag')).toBeVisible()
     await page.getByRole('link').filter({ hasText: '2–1' }).click()
-    await expect(page).toHaveURL(/\/my-bets$/)
+    await expect(page).toHaveURL(new RegExp(`/my-bets#kamp-${m0.match_num}$`))
+    // Ankeret scroller til – og fremhever – riktig kamp-kort på tippesiden.
+    await expect(page.getByTestId(`bet-${m0.match_num}`)).toBeInViewport()
 
     // Startet kamp (30 min etter avspark): kampraden lenker til kampsiden.
     const etterAvspark = new Date(new Date(m0.game_start).getTime() + 30 * 60 * 1000).toISOString()
