@@ -320,7 +320,15 @@ export interface EndringArgs {
     størsteKlatrer: { navn: string; n: number; plass: number } | null
     størsteFaller: { navn: string; n: number; plass: number } | null
     nyTopp3: boolean
+    // Hvem som gikk inn i topp 3 siden i går (med ny plass). Tom = ingen nye.
+    nyeITopp3?: { navn: string; plass: number }[]
     frø: number | string
+}
+
+// «Ada (2.)» / «Ada (2.) og Bo (3.)» / «Ada, Bo og Cleo». Norsk liste med «og».
+function listeMedOg(navn: string[]): string {
+    if (navn.length <= 1) return navn[0] ?? ''
+    return `${navn.slice(0, -1).join(', ')} og ${navn[navn.length - 1]}`
 }
 
 const ENDRING_TITTEL: ((antallKamper: number) => string)[] = [
@@ -356,7 +364,13 @@ export function malEndring(a: EndringArgs): MalResultat {
             ),
         )
     }
-    deler.push(a.nyTopp3 ? 'Ny topp 3!' : 'Topp 3 står som støpt.')
+    const nyeITopp3 = a.nyeITopp3 ?? []
+    if (nyeITopp3.length > 0) {
+        const navn = listeMedOg(nyeITopp3.map((n) => `${visningsnavn(n.navn)} (${n.plass}.)`))
+        deler.push(`Ny i topp 3: ${navn}.`)
+    } else {
+        deler.push('Topp 3 står som støpt.')
+    }
     return { accent: 'royal', tittel, body: deler.join(' ') }
 }
 
