@@ -315,6 +315,20 @@ export function malJoker(a: JokerArgs): MalResultat {
 
 // ── Morgenrapport-scenarioer ───────────────────────────────────────────────
 
+// Bunnstriden («kjelleren»): hvem ligger sist, om jumboplassen byttet eier i natt,
+// og hvor tett det er nederst. Brukes til den sportskommentar-aktige bunn-vinkelen
+// i morgenrapporten — vi snakker også om dem som ligger langt ned på tabellen.
+export interface BunnArgs {
+    // Den som ligger sist (jumbo).
+    jumbo: { navn: string; plass: number; poeng: number }
+    // Byttet jumboplassen eier siden forrige rapport?
+    nyJumbo: boolean
+    // Forrige jumbo som klatret bort fra sisteplass (kun satt når nyJumbo).
+    rømling: string | null
+    // Poeng opp til nest sist — hvor tett bunnstriden er.
+    luke: number
+}
+
 export interface EndringArgs {
     antallKamper: number
     størsteKlatrer: { navn: string; n: number; plass: number } | null
@@ -322,6 +336,8 @@ export interface EndringArgs {
     nyTopp3: boolean
     // Hvem som gikk inn i topp 3 siden i går (med ny plass). Tom = ingen nye.
     nyeITopp3?: { navn: string; plass: number }[]
+    // Bunnstriden. Utelatt tidlig i turneringen (alle på 0) og i små puljer.
+    bunn?: BunnArgs | null
     frø: number | string
 }
 
@@ -336,6 +352,46 @@ const ENDRING_TITTEL: ((antallKamper: number) => string)[] = [
     (k) => `Natta ga ${k} ${flertall(k, 'kamp', 'kamper')} — og bevegelse i tabellen`,
     (k) => `Tabellen rørte på seg: ${k} ${flertall(k, 'kamp', 'kamper')} i boks`,
 ]
+
+// ── Bunnstriden ────────────────────────────────────────────────────────────
+// Sportskommentar-vinkel på dem som ligger langt ned: jumboplassen og kjelleren.
+// Tre toner: helt ny jumbo, en rømling som dyttet noen ned, eller samme stakkar
+// som henger igjen nederst. `luke` flettes inn der det er tett.
+
+const BUNN_NY_JUMBO: ((b: BunnArgs) => string)[] = [
+    (b) => `Nederst i bunken: ${visningsnavn(b.jumbo.navn)} har overtatt jumboplassen (${b.jumbo.plass}.). 🪦`,
+    (b) => `Ny mann i kjelleren — ${visningsnavn(b.jumbo.navn)} dumpet helt ned til ${b.jumbo.plass}. plass.`,
+    (b) => `Bånnskrap: ${visningsnavn(b.jumbo.navn)} er fersk innehaver av sisteplassen.`,
+]
+
+const BUNN_RØMLING: ((b: BunnArgs) => string)[] = [
+    (b) =>
+        `${visningsnavn(b.rømling!)} rømte fra kjelleren i natt og overlot jumboplassen til ${visningsnavn(
+            b.jumbo.navn,
+        )}. 🪜`,
+    (b) =>
+        `${visningsnavn(b.rømling!)} klatret ut av bånn — nå er det ${visningsnavn(
+            b.jumbo.navn,
+        )} som holder skansen helt nederst.`,
+]
+
+const BUNN_SAMME: ((b: BunnArgs) => string)[] = [
+    (b) => `${visningsnavn(b.jumbo.navn)} er fortsatt forankret på sisteplass (${b.jumbo.plass}.). ⚓`,
+    (b) =>
+        `Bunnstriden er tett: bare ${formatLuke(b.luke)} skiller ${visningsnavn(
+            b.jumbo.navn,
+        )} fra å rømme jumboplassen.`,
+    (b) => `${visningsnavn(b.jumbo.navn)} henger fortsatt igjen i kjelleren — ingen redning i natt.`,
+]
+
+// Velger riktig bunn-setning ut fra om jumboplassen byttet eier. Når det er tett
+// (≤ 2 poeng opp) og samme stakkar henger igjen, foretrekkes «tett»-varianten.
+function bunnSetning(b: BunnArgs, frø: number | string): string {
+    if (b.nyJumbo && b.rømling) return velgVariant(BUNN_RØMLING, frø)(b)
+    if (b.nyJumbo) return velgVariant(BUNN_NY_JUMBO, frø)(b)
+    if (b.luke > 0 && b.luke <= 2) return BUNN_SAMME[1](b)
+    return velgVariant(BUNN_SAMME, frø)(b)
+}
 
 export function malEndring(a: EndringArgs): MalResultat {
     const tittel = velgVariant(ENDRING_TITTEL, a.frø)(a.antallKamper)
@@ -370,6 +426,9 @@ export function malEndring(a: EndringArgs): MalResultat {
         deler.push(`Ny i topp 3: ${navn}.`)
     } else {
         deler.push('Topp 3 står som støpt.')
+    }
+    if (a.bunn) {
+        deler.push(bunnSetning(a.bunn, a.frø))
     }
     return { accent: 'royal', tittel, body: deler.join(' ') }
 }

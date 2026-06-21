@@ -1,5 +1,6 @@
 import { LeaderBoard } from '../../components/results/calculateAllScores'
-import { beregnPlasseringer, SnapshotRad, velgMorgenScenario } from './morgenrapport'
+import { BunnArgs } from './maler'
+import { beregnBunn, beregnPlasseringer, SnapshotRad, velgMorgenScenario } from './morgenrapport'
 
 function rad(userid: string, poeng: number, userName = userid): LeaderBoard {
     return { userid, poeng, userName, paid: true, picture: null }
@@ -21,6 +22,51 @@ describe('beregnPlasseringer – delt plass', () => {
     it('gir fortløpende plasser uten likhet', () => {
         const p = beregnPlasseringer([rad('a', 5), rad('b', 4), rad('c', 3)])
         expect([p.get('a'), p.get('b'), p.get('c')]).toEqual([1, 2, 3])
+    })
+})
+
+describe('beregnBunn – bunnstriden', () => {
+    const plasser = (tabell: LeaderBoard[]) => beregnPlasseringer(tabell)
+
+    it('returnerer null i små puljer (< 4)', () => {
+        const tabell = [rad('a', 10), rad('b', 6), rad('c', 3)]
+        expect(beregnBunn(tabell, plasser(tabell), [])).toBeNull()
+    })
+
+    it('returnerer null før noen har poeng (vilkårlig rekkefølge)', () => {
+        const tabell = [rad('a', 0), rad('b', 0), rad('c', 0), rad('d', 0)]
+        expect(beregnBunn(tabell, plasser(tabell), [])).toBeNull()
+    })
+
+    it('peker ut jumboen og luka opp til nest sist', () => {
+        const tabell = [rad('a', 40), rad('b', 30), rad('c', 20), rad('d', 12)]
+        const forrige: SnapshotRad[] = [
+            { user_id: 'a', plass: 1, poeng: 40 },
+            { user_id: 'b', plass: 2, poeng: 30 },
+            { user_id: 'c', plass: 3, poeng: 20 },
+            { user_id: 'd', plass: 4, poeng: 12 },
+        ]
+        const bunn = beregnBunn(tabell, plasser(tabell), forrige) as BunnArgs
+        expect(bunn.jumbo.navn).toBe('d')
+        expect(bunn.jumbo.plass).toBe(4)
+        expect(bunn.luke).toBe(8)
+        expect(bunn.nyJumbo).toBe(false)
+        expect(bunn.rømling).toBeNull()
+    })
+
+    it('markerer ny jumbo og rømlingen som klatret bort fra bånn', () => {
+        // I går lå c sist; i natt falt d forbi og er ny jumbo, mens c rømte opp.
+        const tabell = [rad('a', 40), rad('b', 30), rad('c', 20), rad('d', 12)]
+        const forrige: SnapshotRad[] = [
+            { user_id: 'a', plass: 1, poeng: 40 },
+            { user_id: 'b', plass: 2, poeng: 28 },
+            { user_id: 'd', plass: 3, poeng: 18 },
+            { user_id: 'c', plass: 4, poeng: 10 },
+        ]
+        const bunn = beregnBunn(tabell, plasser(tabell), forrige) as BunnArgs
+        expect(bunn.jumbo.navn).toBe('d')
+        expect(bunn.nyJumbo).toBe(true)
+        expect(bunn.rømling).toBe('c')
     })
 })
 

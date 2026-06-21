@@ -122,6 +122,56 @@ describe('maler – morgenrapport', () => {
         expect(m.body).toContain('Topp 3 står som støpt.')
     })
 
+    it('endring: bunn-vinkel når jumboplassen byttet eier', () => {
+        const m = malEndring({
+            antallKamper: 3,
+            størsteKlatrer: null,
+            størsteFaller: { navn: 'Marius', n: 3, plass: 12 },
+            nyTopp3: false,
+            bunn: { jumbo: { navn: 'Marius', plass: 12, poeng: 4 }, nyJumbo: true, rømling: null, luke: 1 },
+            frø: '2026-06-22',
+        })
+        // Nevner jumboen, men ikke som rømling (rømling = null).
+        expect(m.body).toContain('Marius')
+        expect(m.body.toLowerCase()).toMatch(/jumbo|kjeller|sisteplass/)
+    })
+
+    it('endring: bunn-vinkel forteller om rømlingen som dyttet noen ned', () => {
+        const m = malEndring({
+            antallKamper: 2,
+            størsteKlatrer: { navn: 'Ada', n: 2, plass: 9 },
+            størsteFaller: null,
+            nyTopp3: false,
+            bunn: { jumbo: { navn: 'Bo', plass: 14, poeng: 7 }, nyJumbo: true, rømling: 'Ada', luke: 2 },
+            frø: '2026-06-22',
+        })
+        expect(m.body).toContain('Ada')
+        expect(m.body).toContain('Bo')
+    })
+
+    it('endring: bunn-vinkel når samme stakkar henger igjen nederst', () => {
+        const m = malEndring({
+            antallKamper: 1,
+            størsteKlatrer: null,
+            størsteFaller: null,
+            nyTopp3: false,
+            bunn: { jumbo: { navn: 'Cleo', plass: 16, poeng: 3 }, nyJumbo: false, rømling: null, luke: 5 },
+            frø: '2026-06-22',
+        })
+        expect(m.body).toContain('Cleo')
+    })
+
+    it('endring: uten bunn-data nevnes ingen jumbo', () => {
+        const m = malEndring({
+            antallKamper: 4,
+            størsteKlatrer: { navn: 'Robin', n: 3, plass: 2 },
+            størsteFaller: null,
+            nyTopp3: false,
+            frø: '2026-06-20',
+        })
+        expect(m.body.toLowerCase()).not.toContain('jumbo')
+    })
+
     it('endring: navngir hvem som går inn i topp 3', () => {
         const m = malEndring({
             antallKamper: 3,

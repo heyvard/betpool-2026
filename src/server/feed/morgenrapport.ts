@@ -2,7 +2,7 @@ import { PoolClient } from 'pg'
 
 import { LeaderBoard } from '../../components/results/calculateAllScores'
 import { hentHovedligaData, sorterTabell } from './hovedligaData'
-import { malEndring, malLederbytte, malLederHolder, MalResultat, MorgenScenario } from './maler'
+import { BunnArgs, malEndring, malLederbytte, malLederHolder, MalResultat, MorgenScenario } from './maler'
 import { osloDato, osloInstant } from './tid'
 
 // Hvor langt bakover morgenrapporten ser etter ferdige kamper, fram til 08:00
@@ -42,6 +42,34 @@ export function beregnPlasseringer(tabell: { userid: string; poeng: number }[]):
         map.set(r.userid, delerMedForrige ? map.get(tabell[i - 1].userid)! : i + 1)
     }
     return map
+}
+
+// Bunnstriden for morgenrapporten: hvem ligger sist, om jumboplassen byttet eier
+// siden forrige snapshot, og hvor tett det er nederst. Returnerer null når bunn-
+// vinkelen ikke gir mening: små puljer (< 4) eller helt tidlig (ingen har poeng,
+// så rekkefølgen nederst er vilkårlig). `tabell` er ferdigsortert (synkende poeng).
+export function beregnBunn(
+    tabell: LeaderBoard[],
+    nyPlassMap: Map<string, number>,
+    forrigeRader: SnapshotRad[],
+): BunnArgs | null {
+    if (tabell.length < 4 || tabell[0].poeng === 0) return null
+
+    const sisteRad = tabell[tabell.length - 1]
+    // Forrige jumbo = den med høyest (dårligst) plass i forrige snapshot.
+    const forrigeJumboId =
+        forrigeRader.length > 0 ? forrigeRader.reduce((a, b) => (b.plass > a.plass ? b : a)).user_id : null
+    const nyJumbo = forrigeJumboId != null && forrigeJumboId !== sisteRad.userid
+    // Rømlingen: forrige jumbo som fortsatt er med, men har klatret bort fra bånn.
+    const rømlingRad = nyJumbo ? tabell.find((r) => r.userid === forrigeJumboId) : undefined
+    const luke = Math.max(0, tabell[tabell.length - 2].poeng - sisteRad.poeng)
+
+    return {
+        jumbo: { navn: sisteRad.userName, plass: nyPlassMap.get(sisteRad.userid)!, poeng: sisteRad.poeng },
+        nyJumbo,
+        rømling: rømlingRad ? rømlingRad.userName : null,
+        luke,
+    }
 }
 
 // Velger morgenrapport-scenario ut fra dagens tabell og forrige snapshot. Ren
@@ -120,8 +148,13 @@ export function velgMorgenScenario(args: {
         .sort((a, b) => a.plass - b.plass)
     const nyTopp3 = nyeITopp3.length > 0
 
-    const mal = malEndring({ antallKamper, størsteKlatrer, størsteFaller, nyTopp3, nyeITopp3, frø })
-    Object.assign(data, { størsteKlatrer, størsteFaller, nyTopp3, nyeITopp3, delta: bevegelser.slice(0, 4) })
+    // Bunnstriden: hvem ligger sist (jumbo), og byttet kjelleren eier i natt? Vi
+    // dropper bunn-vinkelen tidlig i turneringen (alle på 0 → vilkårlig rekkefølge)
+    // og i bittesmå puljer der «sisteplass» ikke er noe poeng.
+    const bunn = beregnBunn(tabell, nyPlassMap, forrigeRader)
+
+    const mal = malEndring({ antallKamper, størsteKlatrer, størsteFaller, nyTopp3, nyeITopp3, bunn, frø })
+    Object.assign(data, { størsteKlatrer, størsteFaller, nyTopp3, nyeITopp3, bunn, delta: bevegelser.slice(0, 4) })
     return { scenario: 'endring', mal, data }
 }
 
