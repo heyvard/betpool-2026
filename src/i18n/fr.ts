@@ -70,7 +70,6 @@ const fr: Translations = {
         poeng: 'Pts',
     },
     hjem: {
-        kampStarterKl: '{{home}} vs {{away}} commence à {{tid}}h',
         dineVmTips: 'Vos paris CM',
         vinnerToppsLukkerIDag:
             'Dernière chance ! La possibilité de parier sur le champion et le meilleur buteur ferme aujourd’hui.',

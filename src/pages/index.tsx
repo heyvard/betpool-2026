@@ -2,7 +2,7 @@ import type { NextPage } from 'next'
 
 import { UseUser } from '../queries/useUser'
 
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { getLagSortert, hentFlag, hentNavn } from '../utils/lag'
 import { UseMatches } from '../queries/useMatches'
 import { UseMyBets } from '../queries/useMyBets'
@@ -44,11 +44,6 @@ import type { Translations } from '../i18n/no'
 import { tx } from '../i18n/interpolate'
 import type { Bet } from '../types/types'
 
-function fixLandMedLocale(s: string, locale: 'no' | 'fr') {
-    if (s === 'To be announced') return 'TBA'
-    return hentFlag(s) + ' ' + hentNavn(s, locale)
-}
-
 const Home: NextPage = () => {
     const { data: megselv } = UseUser()
     const { data: matches, isLoading } = UseMatches()
@@ -59,9 +54,6 @@ const Home: NextPage = () => {
         return <LoadingScreen />
     }
 
-    const snartKamper = matches.filter((a) => {
-        return dayjs(a.game_start).isAfter(nå()) && dayjs(a.game_start).isBefore(nå().add(2, 'hours'))
-    })
     const frister = beregnFrister(matches)
     const laast = erEtterFørsteRunde(frister, nå())
     const endrevindu = erIEndrevindu(frister, nå())
@@ -78,23 +70,6 @@ const Home: NextPage = () => {
                     </span>
                 </Alert>
             )}
-            {snartKamper.map((k) => (
-                <NextLink
-                    key={k.match_num}
-                    href="/my-bets/"
-                    className="block rounded-xl bg-amber-50 px-4 py-3 ring-1 ring-amber-200"
-                >
-                    <span className="inline-flex items-center gap-2 text-sm font-semibold text-amber-800">
-                        <Clock className="h-3.5 w-3.5" />
-                        {tx(t.hjem.kampStarterKl, {
-                            home: fixLandMedLocale(k.home_team, locale),
-                            away: fixLandMedLocale(k.away_team, locale),
-                            tid: dayjs(k.game_start).format('HH:mm'),
-                        })}
-                    </span>
-                </NextLink>
-            ))}
-
             {!megselv.paid && megselv.i_hovedliga && <InnbetalingsAlert />}
 
             <NextLink passHref legacyBehavior href="/my-bets">
@@ -142,6 +117,34 @@ const Home: NextPage = () => {
                 {t.allesTips.seAlleTips}
             </NextLink>
         </div>
+    )
+}
+
+// Rød «24»-style klokkeradio-nedteller. Vises bare når det er under 2 timer
+// igjen til kickoff, og teller ned HH:MM:SS i sanntid (oppdateres hvert sekund).
+function Nedteller({ gameStart }: { gameStart: string }) {
+    const [, setTick] = useState(0)
+    useEffect(() => {
+        const id = setInterval(() => setTick((n) => n + 1), 1000)
+        return () => clearInterval(id)
+    }, [])
+
+    const msIgjen = dayjs(gameStart).diff(nå())
+    if (msIgjen <= 0 || msIgjen > 2 * 60 * 60 * 1000) return null
+
+    const totalSek = Math.floor(msIgjen / 1000)
+    const timer = Math.floor(totalSek / 3600)
+    const min = Math.floor((totalSek % 3600) / 60)
+    const sek = totalSek % 60
+    const pad = (n: number) => String(n).padStart(2, '0')
+
+    return (
+        <span
+            className="bp-tabular mt-1 whitespace-nowrap rounded bg-stone-900 px-1.5 py-0.5 font-mono text-[12px] font-bold leading-none tracking-tight text-red-500"
+            style={{ textShadow: '0 0 6px rgba(239,68,68,0.7)' }}
+        >
+            {pad(timer)}:{pad(min)}:{pad(sek)}
+        </span>
     )
 }
 
@@ -274,6 +277,7 @@ function KampSeksjonPanel({
                                             <span className="text-[9px] font-bold uppercase tracking-widest text-stone-400">
                                                 {t.hjem.kickoff}
                                             </span>
+                                            <Nedteller gameStart={b.game_start} />
                                         </>
                                     )}
                                     {pågår && (
