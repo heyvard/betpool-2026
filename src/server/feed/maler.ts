@@ -383,7 +383,7 @@ export interface LederbytteArgs {
 }
 
 const LEDERBYTTE_TITTEL: ((nyLeder: string) => string)[] = [
-    (n) => `${visningsnavn(n)} har kuppet tronen 👑`,
+    (n) => `${visningsnavn(n)} har kuppet ledelsen 🔥`,
     (n) => `Maktskifte! ${visningsnavn(n)} er ny leder`,
     (n) => `${visningsnavn(n)} har tatt ledelsen`,
 ]
@@ -415,7 +415,7 @@ export interface LederHolderArgs {
 
 const LEDER_HOLDER_TITTEL: ((leder: string) => string)[] = [
     (l) => `${visningsnavn(l)} sitter trygt på tronen 👑`,
-    (l) => `Kongen vakler ikke — ${visningsnavn(l)} leder fortsatt`,
+    (l) => `Lederen vakler ikke — ${visningsnavn(l)} leder fortsatt`,
     (l) => `${visningsnavn(l)} holder stand på topp`,
 ]
 

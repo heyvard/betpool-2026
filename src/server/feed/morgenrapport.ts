@@ -249,7 +249,14 @@ export async function genererMorgenrapport(client: PoolClient, now: Date = new D
     }
     const dager = forrigeLederId ? await tellDagerPåTopp(client, forrigeLederId, forrigeDato) : 0
 
-    const valg = velgMorgenScenario({ tabell, navnMap, forrigeRader: forrige.rows, antallKamper, dager, frø: iDag })
+    // Tekstvarianten skal være litt random fra dag til dag — ikke alltid samme
+    // vinkling på samme slags rapport. Vi salter datofrøet med en tilfeldig verdi
+    // her i live-genereringen (kjøres kun én gang per dag — UNIQUE på dato +
+    // idempotens-sjekken over hindrer dobbel-post, så valgt variant fryses ved
+    // innsetting). `velgMorgenScenario`/`velgVariant` er fortsatt rene og
+    // deterministiske på `frø`-input, så tester og scenariovalg er upåvirket.
+    const frø = `${iDag}-${Math.floor(Math.random() * 1_000_000)}`
+    const valg = velgMorgenScenario({ tabell, navnMap, forrigeRader: forrige.rows, antallKamper, dager, frø })
     if (!valg) {
         await lagreSnapshot(client, iDag, tabell)
         return { postet: false, grunn: 'stille_dag' }
