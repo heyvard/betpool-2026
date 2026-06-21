@@ -185,7 +185,7 @@ function ModusVisning({ modus, stats, megselv }: { modus: Modus; stats: StatsRes
                 totaltSvar={totaltSvar}
             />
 
-            <ul className="space-y-2">
+            <ul className="list-none space-y-2">
                 {rader.map((rad) => (
                     <FordelingsRad
                         key={rad.nokkel}
