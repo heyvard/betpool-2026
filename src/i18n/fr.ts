@@ -36,6 +36,7 @@ const fr: Translations = {
         standingsDebug: 'Débogage classement',
         kampApiData: 'Données API match',
         adminLigaer: 'Ligues privées',
+        utenforHovedliga: 'Hors ligue principale',
         innbetaling: 'Paiements',
         innstillinger: 'Réglages',
         tilbakemelding: 'Donner un avis',
