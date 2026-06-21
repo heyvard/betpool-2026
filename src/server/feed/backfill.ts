@@ -36,14 +36,14 @@ export interface BackfillResultat {
 }
 
 interface BackfillKampRow extends FerdigKampRow {
-    score_synced_at: string | null
     game_start: string
 }
 
-// Tidspunktet en kamp ble ferdig: synket-tidspunkt om vi har det, ellers
-// kampstart + ~2 timer (full kamp).
+// Tidspunktet en kamp regnes som ferdig: kampstart + 120 minutter (full kamp).
+// Vi bruker bevisst IKKE score_synced_at: de fleste resultatene ble bulk-synket
+// 13. juni, så det tidspunktet sier ingenting om når kampen faktisk ble avgjort.
+// game_start + 120 min gir en historisk korrekt tidslinje for backfillen.
 function sluttidspunkt(row: BackfillKampRow): Date {
-    if (row.score_synced_at) return new Date(row.score_synced_at)
     return new Date(new Date(row.game_start).getTime() + 2 * TIME_MS)
 }
 
@@ -64,7 +64,7 @@ async function backfillKampposter(client: PoolClient, now: Date): Promise<number
                 ms.home_score, ms.away_score,
                 ms.home_team_override, ms.away_team_override,
                 ms.synced_home_ft, ms.synced_away_ft, ms.use_manual,
-                ms.score_synced_at::text AS score_synced_at, m.game_start::text AS game_start
+                m.game_start::text AS game_start
          FROM matches m
          JOIN match_scores ms ON ms.match_num = m.match_num
          WHERE m.status IN ('FINISHED', 'AWARDED')
@@ -73,7 +73,7 @@ async function backfillKampposter(client: PoolClient, now: Date): Promise<number
            AND NOT EXISTS (
                SELECT 1 FROM feed_posts fp WHERE fp.kind = 'kamp' AND fp.match_num = m.match_num
            )
-         ORDER BY COALESCE(ms.score_synced_at, m.game_start) ASC`,
+         ORDER BY m.game_start ASC`,
     )
 
     let postet = 0
@@ -94,9 +94,10 @@ async function backfillKampposter(client: PoolClient, now: Date): Promise<number
 
 // Oslo-datoen til den første ferdigspilte kampen — backfillens startpunkt. Alt før
 // dette er stille (ingen kamper), så det er ingen vits i å bygge snapshots der.
+// Sluttidspunkt = kampstart + 120 min (se `sluttidspunkt`), ikke score_synced_at.
 async function finnFørsteKampdato(client: PoolClient): Promise<string | null> {
     const res = await client.query<{ start: string | null }>(
-        `SELECT min(COALESCE(ms.score_synced_at, m.game_start))::text AS start
+        `SELECT min(m.game_start + interval '120 minutes')::text AS start
          FROM matches m
          JOIN match_scores ms ON ms.match_num = m.match_num
          WHERE m.status IN ('FINISHED', 'AWARDED')
@@ -142,7 +143,7 @@ async function backfillMorgenrapporter(
 
         // Vindu: siste RAPPORT_VINDU_TIMER t fram til 08:00 norsk tid på rapportdagen.
         const fra = new Date(inst.getTime() - RAPPORT_VINDU_TIMER * 60 * 60 * 1000)
-        const antallKamper = await tellFerdigeKamper(client, fra, inst)
+        const antallKamper = await tellFerdigeKamper(client, fra, inst, 'kampstart')
         if (antallKamper === 0) continue // stille dag
 
         const { leaderboard, allBets } = await hentHovedligaData(client, inst)
