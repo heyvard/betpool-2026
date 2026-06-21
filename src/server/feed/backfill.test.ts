@@ -79,7 +79,9 @@ it('backfiller alle ferdige kamper med historisk created_at = sluttidspunkt', as
                 synced_home_ft: 2,
                 synced_away_ft: 1,
                 use_manual: false,
-                score_synced_at: '2026-06-18T18:00:00.000Z',
+                // Misvisende bulk-synk (13. juni) — backfillen skal ignorere denne og
+                // bruke game_start + 120 min som sluttidspunkt.
+                score_synced_at: '2026-06-13T10:00:00.000Z',
                 game_start: '2026-06-18T16:00:00.000Z',
             },
         ],
@@ -123,7 +125,7 @@ it('backfiller alle ferdige kamper med historisk created_at = sluttidspunkt', as
     expect(kampInserts).toHaveLength(1)
     const params = kampInserts[0].params
     expect(params[0]).toBe('sjeldent') // scenario
-    // created_at ($7) = kampens sluttidspunkt (score_synced_at), ikke «nå».
+    // created_at ($7) = kampens sluttidspunkt (game_start + 120 min = 16:00 + 2t), ikke «nå».
     expect(params[6]).toBe('2026-06-18T18:00:00.000Z')
 })
 

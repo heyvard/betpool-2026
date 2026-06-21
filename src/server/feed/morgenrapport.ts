@@ -130,7 +130,23 @@ export function velgMorgenScenario(args: {
 // rapportdagen, IKKE en kalenderdato. Det grupperer hele kveldens/nattens kampslate
 // riktig — kamper som sparkes i gang sent og avgjøres etter midnatt (typisk
 // US-kampene) havner i samme rapport som de tidligere kampene samme «kveld».
-export async function tellFerdigeKamper(client: PoolClient, fra: Date, til: Date): Promise<number> {
+//
+// `tidsbasis` bestemmer hva som teller som «ferdig»-tidspunkt:
+//  - 'synk' (live): score_synced_at om satt, ellers kampstart — synk-tidspunktet
+//    er korrekt når rapporten kjører rett etter kampslaten.
+//  - 'kampstart' (backfill): kampstart + 120 min. Brukes når score_synced_at ikke
+//    er til å stole på (de fleste resultatene ble bulk-synket 13. juni), slik at
+//    backfill-historikken legger kampene på riktig dag.
+export async function tellFerdigeKamper(
+    client: PoolClient,
+    fra: Date,
+    til: Date,
+    tidsbasis: 'synk' | 'kampstart' = 'synk',
+): Promise<number> {
+    const ferdigTid =
+        tidsbasis === 'kampstart'
+            ? "(m.game_start + interval '120 minutes')"
+            : 'COALESCE(ms.score_synced_at, m.game_start)'
     const res = await client.query<{ antall: string }>(
         `SELECT count(*) AS antall
          FROM matches m
@@ -138,8 +154,8 @@ export async function tellFerdigeKamper(client: PoolClient, fra: Date, til: Date
          WHERE m.status IN ('FINISHED', 'AWARDED')
            AND ms.synced_home_ft IS NOT NULL
            AND ms.synced_away_ft IS NOT NULL
-           AND COALESCE(ms.score_synced_at, m.game_start) > $1
-           AND COALESCE(ms.score_synced_at, m.game_start) <= $2`,
+           AND ${ferdigTid} > $1
+           AND ${ferdigTid} <= $2`,
         [fra.toISOString(), til.toISOString()],
     )
     return parseInt(res.rows[0]?.antall ?? '0', 10)
