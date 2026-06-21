@@ -6,12 +6,46 @@ import { UseAllBets } from '../../queries/useAllBets'
 import React from 'react'
 import { fixLand } from '../../components/bet/BetView'
 import NextLink from 'next/link'
-import { BpCard } from '../../components/Card'
-import { Link } from '@/components/ui/typography'
+import { ChevronRight, Goal, Trophy } from 'lucide-react'
+import { cn } from '@/lib/utils'
 import { useLanguage } from '../../i18n/LanguageContext'
 import { RundeSeksjon, Legende } from '../../components/bet/PastBetView'
 import { UseUser } from '../../queries/useUser'
 import { calculateAllBetsExtended, filtrerAllBets } from '../../components/results/calculateAllBetsExtended'
+
+// Én rad i vinner/toppscorer-kortet — samme rad-språk som ResultatRad:
+// ikon-medaljong, overline-label, tippet verdi og en gull-poeng-pill med chevron.
+function BonusRad({
+    icon,
+    label,
+    verdi,
+    poengTekst,
+    borderTop,
+}: {
+    icon: React.ReactNode
+    label: string
+    verdi: string
+    poengTekst: string
+    borderTop?: boolean
+}) {
+    return (
+        <NextLink
+            href="/alle-tips"
+            className={cn(
+                'flex items-center gap-3 px-[13px] py-3 transition-colors hover:bg-stone-50 active:bg-stone-100',
+                borderTop && 'border-t border-[#f0efed]',
+            )}
+        >
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gold-100">{icon}</div>
+            <div className="min-w-0 flex-1">
+                <div className="bp-overline text-[10px] tracking-[0.14em]">{label}</div>
+                <div className="truncate text-[14px] font-bold text-stone-900">{verdi}</div>
+            </div>
+            <span className="bp-chip-gold bp-tabular shrink-0">{poengTekst}</span>
+            <ChevronRight className="h-[14px] w-[14px] shrink-0 text-[#cbc9c4]" />
+        </NextLink>
+    )
+}
 
 const AVATAR_FARGER = ['bg-rose-400', 'bg-amber-400', 'bg-emerald-500', 'bg-blue-500', 'bg-violet-500']
 
@@ -55,6 +89,7 @@ const Home: NextPage = () => {
 
     const avatarFarge = AVATAR_FARGER[Math.abs((user.name.charCodeAt(0) || 0) % AVATAR_FARGER.length)]
     const undertittel = locale === 'fr' ? 'ses résultats' : 'sine resultater'
+    const poengChip = (p: number) => `${p > 0 ? `+${p}` : p} ${t.felles.poeng}`
 
     return (
         <div className="pb-8">
@@ -92,22 +127,20 @@ const Home: NextPage = () => {
 
             {/* Vinner / Toppscorer */}
             {user.winner && (
-                <div className="mx-4 mt-4">
-                    <BpCard>
-                        <NextLink href="/alle-tips">
-                            <Link>
-                                {t.spilteKamper.vinner} {fixLand(user.winner || '', locale)} ({user.winnerPoints}{' '}
-                                {t.felles.poeng})
-                            </Link>
-                        </NextLink>
-                        <br />
-                        <NextLink href="/alle-tips">
-                            <Link>
-                                {t.spilteKamper.toppscorer} {user.topscorer_player_name} ({user.topscorerPoints}{' '}
-                                {t.felles.poeng})
-                            </Link>
-                        </NextLink>
-                    </BpCard>
+                <div className="mx-4 mt-4 overflow-hidden rounded-xl bg-white shadow-xs ring-1 ring-stone-200/70">
+                    <BonusRad
+                        icon={<Trophy className="h-[18px] w-[18px] text-gold-700" />}
+                        label={t.allesTips.toggleVinner}
+                        verdi={fixLand(user.winner || '', locale)}
+                        poengTekst={poengChip(user.winnerPoints ?? 0)}
+                    />
+                    <BonusRad
+                        icon={<Goal className="h-[18px] w-[18px] text-gold-700" />}
+                        label={t.allesTips.toggleToppscorer}
+                        verdi={user.topscorer_player_name || '–'}
+                        poengTekst={poengChip(user.topscorerPoints ?? 0)}
+                        borderTop
+                    />
                 </div>
             )}
 
