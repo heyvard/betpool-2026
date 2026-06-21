@@ -2,7 +2,15 @@ import { PoolClient } from 'pg'
 
 import { LeaderBoard } from '../../components/results/calculateAllScores'
 import { hentHovedligaData, sorterTabell } from './hovedligaData'
-import { BunnArgs, malEndring, malLederbytte, malLederHolder, MalResultat, MorgenScenario } from './maler'
+import {
+    BunnArgs,
+    malDeltLedelse,
+    malEndring,
+    malLederbytte,
+    malLederHolder,
+    MalResultat,
+    MorgenScenario,
+} from './maler'
 import { osloDato, osloInstant } from './tid'
 
 // Hvor langt bakover morgenrapporten ser etter ferdige kamper, fram til 08:00
@@ -88,8 +96,18 @@ export function velgMorgenScenario(args: {
 
     const nyPlassMap = beregnPlasseringer(tabell)
     const forrigePlassMap = new Map(forrigeRader.map((r) => [r.user_id, r.plass]))
-    const forrigeLederId = forrigeRader.find((r) => r.plass === 1)?.user_id ?? null
-    const nyLederId = tabell[0].userid
+
+    // Lederstriden regnes på konkurranseplassering («delt plass»), ikke på rå
+    // sorteringsrekkefølge: ved poenglikhet på topp deler flere 1.-plass, og da er
+    // det «delt ledelse» — ingen har gått forbi noen, selv om userid-tiebreaket i
+    // sorterTabell tilfeldigvis legger en annen øverst enn i går.
+    const nyLedereIds = tabell.filter((r) => nyPlassMap.get(r.userid) === 1).map((r) => r.userid)
+    const nyLederId = nyLedereIds[0] // === tabell[0].userid; ved ikke-delt topp den faktiske lederen
+    const deltToppen = nyLedereIds.length >= 2
+    const forrigeLederIds = forrigeRader.filter((r) => r.plass === 1).map((r) => r.user_id)
+    const forrigeLederId = forrigeLederIds[0] ?? null
+    const forrigeLederFortsattLeder = forrigeLederId != null && nyPlassMap.get(forrigeLederId) === 1
+
     const topp3 = tabell.slice(0, 3).map((r) => ({
         plass: nyPlassMap.get(r.userid)!,
         navn: r.userName,
@@ -100,9 +118,36 @@ export function velgMorgenScenario(args: {
 
     const data: Record<string, unknown> = { antallKamper }
 
-    // lederbytte (prioritert) — men bare hvis den nye lederen faktisk har poeng,
-    // så vi ikke lager støy mens alle står på 0 (vilkårlig rekkefølge).
-    if (forrigeLederId && forrigeLederId !== nyLederId && tabell[0].poeng > 0) {
+    // delt ledelse (prioritert) — det står likt på topp, og topp-settet har endret
+    // seg siden i går (noen klatret opp i delt ledelse, eller en sole-leder fikk
+    // selskap). Vi poster bare på endring i settet, så «dødt løp» ikke gjentas dag
+    // etter dag når toppen står stille. Krever poeng > 0 (ellers vilkårlig rekkefølge).
+    if (deltToppen && tabell[0].poeng > 0) {
+        const forrigeSett = new Set(forrigeLederIds)
+        const endretSett =
+            forrigeLederIds.length !== nyLedereIds.length || nyLedereIds.some((id) => !forrigeSett.has(id))
+        if (endretSett) {
+            const ledere = nyLedereIds.map((id) => tabell.find((r) => r.userid === id)!.userName)
+            // Nye utfordrere = dagens ledere som IKKE delte 1.-plass i går.
+            const nyeUtfordrere = nyLedereIds
+                .filter((id) => !forrigeSett.has(id))
+                .map((id) => tabell.find((r) => r.userid === id)!.userName)
+            // Gårsdagens leder, om fremdeles på topp — den som ble innhentet.
+            const forrigeLeder = forrigeLederFortsattLeder
+                ? tabell.find((r) => r.userid === forrigeLederId)!.userName
+                : null
+            const poeng = tabell[0].poeng
+            const mal = malDeltLedelse({ ledere, poeng, nyeUtfordrere, forrigeLeder, dager, frø })
+            Object.assign(data, { ledere, poeng, nyeUtfordrere, dager, topp3 })
+            return { scenario: 'delt_ledelse', mal, data }
+        }
+    }
+
+    // lederbytte — et REELT bytte: forrige leder er ikke lenger på 1.-plass, og det
+    // står én alene på topp nå. (Delt ledelse fanges over; ren tiebreak-omsortering
+    // ved poenglikhet teller ikke.) Bare hvis lederen faktisk har poeng, så vi ikke
+    // lager støy mens alle står på 0 (vilkårlig rekkefølge).
+    if (forrigeLederId && !deltToppen && !forrigeLederFortsattLeder && tabell[0].poeng > 0) {
         const nyLeder = tabell[0].userName
         const gammelLeder = navnMap.get(forrigeLederId) ?? 'ukjent'
         const mal = malLederbytte({ nyLeder, gammelLeder, luke: String(luke), dager, frø })
@@ -110,9 +155,9 @@ export function velgMorgenScenario(args: {
         return { scenario: 'lederbytte', mal, data }
     }
 
-    // leder_holder — samme leder som før, men har holdt stand gjennom enda en
-    // kampdag (minst to dager på rad). En egen, triumferende vinkling.
-    if (forrigeLederId && forrigeLederId === nyLederId && tabell[0].poeng > 0 && dager >= 2) {
+    // leder_holder — samme leder alene på topp som før, men har holdt stand gjennom
+    // enda en kampdag (minst to dager på rad). En egen, triumferende vinkling.
+    if (forrigeLederId && forrigeLederId === nyLederId && !deltToppen && tabell[0].poeng > 0 && dager >= 2) {
         const leder = tabell[0].userName
         const mal = malLederHolder({ leder, luke: String(luke), dager, frø })
         Object.assign(data, { leder, luke, dager, topp3 })

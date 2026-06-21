@@ -1,6 +1,7 @@
 import {
     formatResultat,
     formatTipp,
+    malDeltLedelse,
     malEndring,
     malEnstemmig,
     malIngenTraff,
@@ -203,5 +204,36 @@ describe('maler – morgenrapport', () => {
         expect(m.tittel).toContain('Ada')
         expect(m.body).toContain('4 dager')
         expect(m.body).toContain('5 poeng')
+    })
+
+    it('delt_ledelse: utfordrer innhentet lederen — nevner begge og delt poengsum', () => {
+        const m = malDeltLedelse({
+            ledere: ['Johannes Langlo', 'Dagga'],
+            poeng: 31,
+            nyeUtfordrere: ['Johannes Langlo'],
+            forrigeLeder: 'Dagga',
+            dager: 1,
+            frø: '2026-06-21',
+        })
+        expect(m.accent).toBe('gold')
+        expect(m.tittel.toLowerCase()).toMatch(/delt|dødt løp|skulder/)
+        expect(m.body).toContain('Johannes Langlo')
+        expect(m.body).toContain('Dagga')
+        expect(m.body).toContain('31 poeng')
+        // Skal aldri påstå at noen «leder med 0 poeng».
+        expect(m.body).not.toContain('0 poeng')
+    })
+
+    it('delt_ledelse: tre på topp uten utpekt utfordrer lister alle med «og»', () => {
+        const m = malDeltLedelse({
+            ledere: ['Ada', 'Bo', 'Cleo'],
+            poeng: 42,
+            nyeUtfordrere: ['Bo', 'Cleo'],
+            forrigeLeder: null,
+            dager: 0,
+            frø: '2026-06-22',
+        })
+        expect(m.body).toContain('Ada, Bo og Cleo')
+        expect(m.body).toContain('42 poeng')
     })
 })

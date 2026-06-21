@@ -119,3 +119,75 @@ describe('velgMorgenScenario – plassering ved delt plass', () => {
         expect(valg.mal.body).toContain('Ny i topp 3: c (3.).')
     })
 })
+
+describe('velgMorgenScenario – delt ledelse vs. lederbytte', () => {
+    const navnMap = (tabell: LeaderBoard[]) => new Map(tabell.map((r) => [r.userid, r.userName]))
+
+    it('lik poengsum på topp gir delt_ledelse, ikke lederbytte (ingen «0 poeng»-luke)', () => {
+        // Reproduserer bilde-buggen: gårsdagens leder «dagga» og utfordrer
+        // «johannes» står begge på 31. Sorteringen legger johannes øverst på
+        // userid-tiebreak, men ingen har egentlig gått forbi noen.
+        const tabell = [rad('johannes', 31), rad('dagga', 31), rad('bendik', 29), rad('d', 20)]
+        const forrige: SnapshotRad[] = [
+            { user_id: 'dagga', plass: 1, poeng: 28 },
+            { user_id: 'johannes', plass: 2, poeng: 24 },
+            { user_id: 'bendik', plass: 3, poeng: 22 },
+            { user_id: 'd', plass: 4, poeng: 15 },
+        ]
+        const valg = velgMorgenScenario({
+            tabell,
+            navnMap: navnMap(tabell),
+            forrigeRader: forrige,
+            antallKamper: 3,
+            dager: 1,
+            frø: '2026-06-21',
+        })!
+        expect(valg.scenario).toBe('delt_ledelse')
+        expect(valg.mal.body).not.toContain('0 poeng')
+        expect(valg.mal.body).toContain('johannes')
+        expect(valg.mal.body).toContain('dagga')
+        // Utfordreren johannes pekes ut, dagga er den innhentede forrige lederen.
+        expect(valg.data.nyeUtfordrere).toEqual(['johannes'])
+    })
+
+    it('et reelt forbisprang (forrige leder faller under) gir fortsatt lederbytte', () => {
+        const tabell = [rad('johannes', 34), rad('dagga', 30), rad('bendik', 29), rad('d', 20)]
+        const forrige: SnapshotRad[] = [
+            { user_id: 'dagga', plass: 1, poeng: 28 },
+            { user_id: 'johannes', plass: 2, poeng: 24 },
+            { user_id: 'bendik', plass: 3, poeng: 22 },
+            { user_id: 'd', plass: 4, poeng: 15 },
+        ]
+        const valg = velgMorgenScenario({
+            tabell,
+            navnMap: navnMap(tabell),
+            forrigeRader: forrige,
+            antallKamper: 3,
+            dager: 4,
+            frø: '2026-06-21',
+        })!
+        expect(valg.scenario).toBe('lederbytte')
+        expect(valg.data.nyLeder).toBe('johannes')
+        expect(valg.data.luke).toBe(4)
+    })
+
+    it('uendret delt topp gjentar ikke delt_ledelse — faller til endring', () => {
+        // Begge sto delt på topp også i går; ingen ny i teten → ikke ny «dødt løp».
+        const tabell = [rad('johannes', 31), rad('dagga', 31), rad('bendik', 29), rad('d', 20)]
+        const forrige: SnapshotRad[] = [
+            { user_id: 'johannes', plass: 1, poeng: 28 },
+            { user_id: 'dagga', plass: 1, poeng: 28 },
+            { user_id: 'bendik', plass: 3, poeng: 22 },
+            { user_id: 'd', plass: 4, poeng: 18 },
+        ]
+        const valg = velgMorgenScenario({
+            tabell,
+            navnMap: navnMap(tabell),
+            forrigeRader: forrige,
+            antallKamper: 2,
+            dager: 2,
+            frø: '2026-06-21',
+        })!
+        expect(valg.scenario).toBe('endring')
+    })
+})
