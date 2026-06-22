@@ -120,6 +120,27 @@ test('hver lagring kan angres og ruller tilbake til forrige lagrede verdi', asyn
     await expect(felt(k, BORTE)).toHaveValue('1')
 })
 
+test('joker: knappen er deaktivert med en forklaring til kampen er tippet', async ({ page }) => {
+    await page.goto('/my-bets')
+    const k = kort(page)
+
+    // Utippet kamp: «Bruk joker» er deaktivert, og det står tydelig hvorfor.
+    const jokerKnapp = k.getByRole('button', { name: 'Bruk joker' })
+    await expect(jokerKnapp).toBeDisabled()
+    await expect(k.getByText('Tipp kampen for å bruke joker')).toBeVisible()
+
+    // Etter at kampen er tippet forsvinner forklaringen og knappen blir aktiv.
+    await felt(k, HJEMME).fill('2')
+    await felt(k, BORTE).fill('1')
+    await expect(k.getByRole('button', { name: 'Fjern tips', exact: true })).toBeVisible()
+    await expect(k.getByText('Tipp kampen for å bruke joker')).toHaveCount(0)
+    await expect(jokerKnapp).toBeEnabled()
+
+    // Og da kan jokeren faktisk settes.
+    await jokerKnapp.click()
+    await expect(k.getByText('Joker aktiv — kampen teller dobbelt')).toBeVisible()
+})
+
 test('Fjern tips tømmer tipset, og handlingen kan angres', async ({ page }) => {
     await page.goto('/my-bets')
     const k = kort(page)

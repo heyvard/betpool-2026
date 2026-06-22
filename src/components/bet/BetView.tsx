@@ -308,10 +308,19 @@ function JokerSeksjon({ joker, harLagretTips, disabled, isPending, feil, onToggl
     } else {
         innhold = (
             <div className="flex items-center justify-between gap-3">
-                <span className="inline-flex items-center gap-1.5 text-xs text-stone-500 min-w-0">
+                <span
+                    className={cn(
+                        'inline-flex items-center gap-1.5 text-xs min-w-0',
+                        harLagretTips ? 'text-stone-500' : 'text-amber-700',
+                    )}
+                >
                     <Zap className="w-3.5 h-3.5 shrink-0" />
                     <span className="truncate">
-                        {joker.bruktPå ? tx(t.mineTips.jokerStarPa, { kamp: joker.bruktPå }) : t.mineTips.doblePoengene}
+                        {!harLagretTips
+                            ? t.mineTips.jokerTippFørst
+                            : joker.bruktPå
+                              ? tx(t.mineTips.jokerStarPa, { kamp: joker.bruktPå })
+                              : t.mineTips.doblePoengene}
                     </span>
                 </span>
                 <Button
