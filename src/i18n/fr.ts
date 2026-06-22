@@ -311,6 +311,15 @@ const fr: Translations = {
         vinnerToppscorerTekst2: 'Les deux peuvent être modifiés librement pendant le premier tour de poules.',
         vinnerToppscorerTekst2AndreRunde:
             "Une chance supplémentaire après le tour 1 : vous pouvez modifier chaque pari une dernière fois jusqu'au début des quarts de finale — mais les points de ce pari modifié sont divisés par deux. Après modification, le pari est verrouillé pour le reste du tournoi.",
+        byttetDetaljerTittel: 'Que signifie un changement pour les points ?',
+        byttetDetaljerHalvering:
+            'La division par deux ne touche que vous qui changez. Si vous trouvez juste après un changement, vous recevez la moitié des points bonus que le pari aurait normalement rapportés. Les points des autres ne changent pas parce que vous divisez les vôtres.',
+        byttetDetaljerPott:
+            "La cagnotte bonus — combien vaut un bon pari — est toujours calculée à partir des paris finaux de tous une fois le tournoi terminé, donc après la fermeture de la fenêtre de changement. Nous ne conservons pas d'« instantané » des paris tels qu'ils étaient avant le tour 1 ; ce sont les paris qui restent à la fin qui comptent.",
+        byttetDetaljerEffekt:
+            'Un changement affecte donc les autres indirectement : si vous passez à une réponse, elle devient un peu plus courante, et la cagnotte peut baisser pour tous ceux qui ont cette réponse. Si vous quittez une réponse, ceux qui la gardent peuvent obtenir une cagnotte plus élevée.',
+        byttetDetaljerEksempel:
+            "Vous êtes seul à avoir le bon vainqueur et visez 25 points. Si deux autres passent au même vainqueur pendant la fenêtre, vous n'êtes plus seul — tous les trois descendent à un palier inférieur, et les deux qui ont changé voient en plus leurs points divisés par deux.",
         vinnerToppscorerTekst3:
             "Pour chacune des deux questions, un bon pari rapporte des points bonus qui dépendent du nombre d'autres joueurs ayant également trouvé :",
         vinnerToppscorerTips: "Moins il y a de gagnants, plus chaque pari vaut — jusqu'à 25 points.",
