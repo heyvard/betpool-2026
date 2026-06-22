@@ -157,6 +157,7 @@ const fr: Translations = {
         jokerBruktPa: 'Joker utilisé sur {{kamp}} ce tour',
         jokerStarPa: 'Joker sur {{kamp}}',
         doblePoengene: 'Doubler les points sur un match du tour',
+        jokerTippFørst: 'Pariez le match pour utiliser le joker',
         fjernJoker: 'Supprimer',
         brukJoker: 'Utiliser joker',
         flyttHit: 'Déplacer ici',

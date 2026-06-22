@@ -151,6 +151,7 @@ const no = {
         jokerBruktPa: 'Joker brukt på {{kamp}} denne runden',
         jokerStarPa: 'Joker står på {{kamp}}',
         doblePoengene: 'Doble poengene på én kamp i runden',
+        jokerTippFørst: 'Tipp kampen for å bruke joker',
         fjernJoker: 'Fjern',
         brukJoker: 'Bruk joker',
         flyttHit: 'Flytt hit',
