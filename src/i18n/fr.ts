@@ -113,6 +113,7 @@ const fr: Translations = {
         nattenSomVar: 'La nuit passée',
         tippLenkeTittel: 'Pronostiquer les matchs',
         tippLenkeUndertekst: 'Voir et modifier vos pronostics',
+        avsparkOm: "Coup d'envoi dans",
     },
     allesTips: {
         tilbake: 'Accueil',

@@ -43,11 +43,7 @@ import type { Locale } from '../i18n/LanguageContext'
 import type { Translations } from '../i18n/no'
 import { tx } from '../i18n/interpolate'
 import type { Bet } from '../types/types'
-
-function fixLandMedLocale(s: string, locale: 'no' | 'fr') {
-    if (s === 'To be announced') return 'TBA'
-    return hentFlag(s) + ' ' + hentNavn(s, locale)
-}
+import { NedtellingBanner } from '../components/NedtellingBanner'
 
 const Home: NextPage = () => {
     const { data: megselv } = UseUser()
@@ -79,20 +75,7 @@ const Home: NextPage = () => {
                 </Alert>
             )}
             {snartKamper.map((k) => (
-                <NextLink
-                    key={k.match_num}
-                    href="/my-bets/"
-                    className="block rounded-xl bg-amber-50 px-4 py-3 ring-1 ring-amber-200"
-                >
-                    <span className="inline-flex items-center gap-2 text-sm font-semibold text-amber-800">
-                        <Clock className="h-3.5 w-3.5" />
-                        {tx(t.hjem.kampStarterKl, {
-                            home: fixLandMedLocale(k.home_team, locale),
-                            away: fixLandMedLocale(k.away_team, locale),
-                            tid: dayjs(k.game_start).format('HH:mm'),
-                        })}
-                    </span>
-                </NextLink>
+                <NedtellingBanner key={k.match_num} kamp={k} />
             ))}
 
             {!megselv.paid && megselv.i_hovedliga && <InnbetalingsAlert />}
