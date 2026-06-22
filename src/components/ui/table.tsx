@@ -1,4 +1,10 @@
+import { createContext, useContext } from 'react'
+
 import { cn } from '@/lib/utils'
+
+type TableSize = 'small' | 'default'
+
+const TableSizeContext = createContext<TableSize>('default')
 
 export function Table({
     className,
@@ -7,14 +13,16 @@ export function Table({
 }: {
     className?: string
     children: React.ReactNode
-    size?: 'small' | 'default'
+    size?: TableSize
 }) {
     return (
-        <div className="w-full overflow-auto">
-            <table className={cn('w-full caption-bottom', size === 'small' ? 'text-xs' : 'text-sm', className)}>
-                {children}
-            </table>
-        </div>
+        <TableSizeContext.Provider value={size ?? 'default'}>
+            <div className="w-full overflow-auto">
+                <table className={cn('w-full caption-bottom', size === 'small' ? 'text-xs' : 'text-sm', className)}>
+                    {children}
+                </table>
+            </div>
+        </TableSizeContext.Provider>
     )
 }
 
@@ -39,10 +47,12 @@ Table.HeaderCell = function TableHeaderCell({
     align?: 'left' | 'center' | 'right'
     className?: string
 }) {
+    const size = useContext(TableSizeContext)
     return (
         <th
             className={cn(
-                'h-10 px-3 font-semibold text-stone-600 uppercase tracking-wide text-xs',
+                'font-semibold text-stone-600 uppercase tracking-wide text-xs',
+                size === 'small' ? 'h-9 px-1.5' : 'h-10 px-3',
                 align === 'center' && 'text-center',
                 align === 'right' && 'text-right',
                 className,
@@ -62,10 +72,11 @@ Table.DataCell = function TableDataCell({
     align?: 'left' | 'center' | 'right'
     className?: string
 }) {
+    const size = useContext(TableSizeContext)
     return (
         <td
             className={cn(
-                'px-3 py-2',
+                size === 'small' ? 'px-1.5 py-2' : 'px-3 py-2',
                 align === 'center' && 'text-center',
                 align === 'right' && 'text-right',
                 className,
