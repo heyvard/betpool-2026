@@ -3,7 +3,7 @@ import type { NextPage } from 'next'
 import { Spinner } from '../components/loading/Spinner'
 import React from 'react'
 import { UseAllBets } from '../queries/useAllBets'
-import { Calculator, Clock, Flag, Info, Sparkles, Star, Trophy, Wallet, Zap } from 'lucide-react'
+import { Calculator, ChevronDown, Clock, Flag, Info, Sparkles, Star, Trophy, Wallet, Zap } from 'lucide-react'
 import { Medalje } from '../components/ui/medalje'
 import { useLanguage } from '../i18n/LanguageContext'
 import { tx } from '../i18n/interpolate'
@@ -20,6 +20,21 @@ function Seksjon({ ikon, tittel, children }: { ikon: React.ReactNode; tittel: st
             </header>
             <div className="px-4 py-4 text-sm leading-relaxed text-stone-700 space-y-3">{children}</div>
         </section>
+    )
+}
+
+function Detaljer({ tittel, children }: { tittel: string; children: React.ReactNode }) {
+    return (
+        <details className="group rounded-lg ring-1 ring-stone-200/70 [&_summary]:list-none">
+            <summary className="flex cursor-pointer select-none items-center justify-between gap-2 px-3 py-2.5 font-medium text-stone-900">
+                <span className="flex items-center gap-2">
+                    <Info className="h-4 w-4 shrink-0 text-stone-400" />
+                    {tittel}
+                </span>
+                <ChevronDown className="h-4 w-4 shrink-0 text-stone-400 transition-transform group-open:rotate-180" />
+            </summary>
+            <div className="space-y-2 px-3 pb-3 text-stone-600">{children}</div>
+        </details>
     )
 }
 
@@ -176,6 +191,14 @@ const Regler: NextPage = () => {
                     <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
                     <span>{r.vinnerToppscorerTekst2AndreRunde}</span>
                 </p>
+                <Detaljer tittel={r.byttetDetaljerTittel}>
+                    <p>{r.byttetDetaljerHalvering}</p>
+                    <p>{r.byttetDetaljerPott}</p>
+                    <p>{r.byttetDetaljerEffekt}</p>
+                    <p className="rounded-lg bg-stone-50 px-3 py-2">
+                        <span className="font-medium text-stone-700">{eksempelLabel}</span> {r.byttetDetaljerEksempel}
+                    </p>
+                </Detaljer>
                 <p>{r.vinnerToppscorerTekst3}</p>
                 <div className="divide-y divide-stone-100 rounded-lg ring-1 ring-stone-200/70">
                     {r.bonustrapper.map((rad) => (

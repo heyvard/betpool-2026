@@ -304,6 +304,15 @@ const no = {
         vinnerToppscorerTekst2: 'Begge kan endres fritt mens den første gruppespillsrunden pågår.',
         vinnerToppscorerTekst2AndreRunde:
             'Én ekstra sjanse etter runde 1: Du kan endre hvert av tipsene én siste gang frem til kvartfinalen starter — men poengene for det tipset du endrer, halveres. Etter endringen er tipset låst for resten av VM.',
+        byttetDetaljerTittel: 'Hva betyr et bytte for poengene?',
+        byttetDetaljerHalvering:
+            'Halveringen rammer bare deg som bytter. Treffer du etter et bytte, får du halvparten av bonuspoengene tipset ellers ville gitt. Ingen andres poeng endres av at du halverer dine egne.',
+        byttetDetaljerPott:
+            'Bonuspotten — hvor mye et riktig tipp er verdt — regnes alltid ut fra alles endelige tipp når VM er ferdig, altså etter at byttevinduet er stengt. Vi tar ikke vare på en «fasit» av tippene slik de var før runde 1; det er tippene som står igjen til slutt som teller.',
+        byttetDetaljerEffekt:
+            'Derfor påvirker et bytte de andre indirekte: bytter du deg inn på et svar, blir det litt vanligere, og potten kan falle for alle som har det svaret. Bytter du deg bort fra et svar, kan de som blir igjen få en høyere pott.',
+        byttetDetaljerEksempel:
+            'Du er alene om riktig vinner og ligger an til 25 poeng. Bytter to andre seg inn på samme vinner i vinduet, er dere ikke lenger alene — alle tre faller ned på en lavere sats, og de to som byttet får i tillegg sine poeng halvert.',
         vinnerToppscorerTekst3:
             'For hvert av de to spørsmålene gir en riktig gjetning et antall bonuspoeng som avhenger av hvor mange andre som også traff:',
         vinnerToppscorerTips: 'Gjetter få riktig, blir hvert tips mye verdt — opp til 25 poeng.',
