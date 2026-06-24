@@ -5,6 +5,7 @@ import { LeaderBoard } from '../../components/results/calculateAllScores'
 import { hentHovedligaData, sorterTabell } from './hovedligaData'
 import {
     BunnArgs,
+    bunnSetning,
     jokerSetning,
     JokerStatistikk,
     malDeltLedelse,
@@ -127,10 +128,16 @@ export function velgMorgenScenario(args: {
     const bunn = beregnBunn(tabell, nyPlassMap, forrigeRader)
     const jokerLinje = jokerSetning(jokerStatistikk, frø)
 
-    // Pakker et scenariovalg: fletter joker-linja inn i body-en og legger
+    // Pakker et scenariovalg: fletter bunn- og joker-linja inn i body-en og legger
     // jokerStatistikk + bunn på data, så fronten kan rendre dem som egne striper.
+    // `endring` fletter alt bunnstriden selv inn i sin body, så der hopper vi over
+    // bunn-linja for å unngå dobbelt-omtale — alle andre scenarioer får den her, slik
+    // at HVER rapport (ikke bare hver tredje) sier noe om dem som ligger sist.
     function ferdig(scenario: MorgenScenario, mal: MalResultat, data: Record<string, unknown>): MorgenScenarioValg {
-        const body = jokerLinje ? `${mal.body} ${jokerLinje}` : mal.body
+        const ekstra: string[] = []
+        if (scenario !== 'endring' && bunn) ekstra.push(bunnSetning(bunn, frø))
+        if (jokerLinje) ekstra.push(jokerLinje)
+        const body = ekstra.length > 0 ? `${mal.body} ${ekstra.join(' ')}` : mal.body
         return { scenario, mal: { ...mal, body }, data: { jokerStatistikk, bunn, ...data } }
     }
 

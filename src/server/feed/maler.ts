@@ -386,7 +386,9 @@ const BUNN_SAMME: ((b: BunnArgs) => string)[] = [
 
 // Velger riktig bunn-setning ut fra om jumboplassen byttet eier. Når det er tett
 // (≤ 2 poeng opp) og samme stakkar henger igjen, foretrekkes «tett»-varianten.
-function bunnSetning(b: BunnArgs, frø: number | string): string {
+// Eksportert så alle morgenrapport-scenarioer kan flette bunnstriden inn i body —
+// ikke bare «endring».
+export function bunnSetning(b: BunnArgs, frø: number | string): string {
     if (b.nyJumbo && b.rømling) return velgVariant(BUNN_RØMLING, frø)(b)
     if (b.nyJumbo) return velgVariant(BUNN_NY_JUMBO, frø)(b)
     if (b.luke > 0 && b.luke <= 2) return BUNN_SAMME[1](b)

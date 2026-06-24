@@ -126,12 +126,12 @@ describe('velgMorgenScenario – joker- og jager-tillegg', () => {
     })
 
     it('leder_holder navngir jageren rett bak og bærer joker-data', () => {
-        const tabell = [rad('johannes', 45), rad('dagga', 35), rad('bendik', 34), rad('d', 28)]
+        const tabell = [rad('johannes', 45), rad('dagga', 35), rad('bendik', 34), rad('langflate', 28)]
         const forrige: SnapshotRad[] = [
             { user_id: 'johannes', plass: 1, poeng: 37 },
             { user_id: 'dagga', plass: 2, poeng: 33 },
             { user_id: 'bendik', plass: 3, poeng: 31 },
-            { user_id: 'd', plass: 4, poeng: 25 },
+            { user_id: 'langflate', plass: 4, poeng: 25 },
         ]
         const valg = velgMorgenScenario({
             tabell,
@@ -146,6 +146,33 @@ describe('velgMorgenScenario – joker- og jager-tillegg', () => {
         expect(valg.data.jager).toBe('dagga')
         expect(valg.mal.body).toContain('dagga')
         expect(valg.mal.body.toLowerCase()).toContain('joker')
+        // Bunnstriden flettes inn i body også for leder_holder (jumboen er langflate).
+        expect(valg.data.bunn).not.toBeNull()
+        expect(valg.mal.body).toContain('langflate')
+        expect(valg.mal.body.toLowerCase()).toMatch(/jumbo|kjeller|sisteplass|bånn|bunn/)
+    })
+
+    it('fletter bunnstriden inn i body på ikke-endring-scenarioer (lederbytte)', () => {
+        const tabell = [rad('johannes', 34), rad('dagga', 30), rad('bendik', 29), rad('langflate', 20)]
+        const forrige: SnapshotRad[] = [
+            { user_id: 'dagga', plass: 1, poeng: 28 },
+            { user_id: 'johannes', plass: 2, poeng: 24 },
+            { user_id: 'bendik', plass: 3, poeng: 22 },
+            { user_id: 'langflate', plass: 4, poeng: 15 },
+        ]
+        const valg = velgMorgenScenario({
+            tabell,
+            navnMap: navnMap(tabell),
+            forrigeRader: forrige,
+            antallKamper: 3,
+            dager: 4,
+            jokerStatistikk: { satt: 0, brent: 0, totalt: 0 },
+            frø: '2026-06-21',
+        })!
+        expect(valg.scenario).toBe('lederbytte')
+        // Jumboen (langflate) skal nevnes i selve teksten, ikke bare i en stripe.
+        expect(valg.mal.body).toContain('langflate')
+        expect(valg.mal.body.toLowerCase()).toMatch(/jumbo|kjeller|sisteplass|bånn|bunn/)
     })
 
     it('utelater joker-linja når ingen jokere ble lagt', () => {
