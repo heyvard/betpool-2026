@@ -3,13 +3,14 @@ import { PoolClient } from 'pg'
 import { hentHovedligaData, sorterTabell } from './hovedligaData'
 import { FerdigKampRow, insertKamppost, lagKamppost } from './genererKamppost'
 import {
+    beregnJokerStatistikk,
+    hentFerdigeKampnumre,
     hentNavn,
     insertMorgenrapport,
     lagreSnapshot,
     RAPPORT_VINDU_TIMER,
     SnapshotRad,
     tellDagerPåTopp,
-    tellFerdigeKamper,
     velgMorgenScenario,
 } from './morgenrapport'
 import { osloDagFør, osloDato, osloInstant } from './tid'
@@ -143,13 +144,15 @@ async function backfillMorgenrapporter(
 
         // Vindu: siste RAPPORT_VINDU_TIMER t fram til 08:00 norsk tid på rapportdagen.
         const fra = new Date(inst.getTime() - RAPPORT_VINDU_TIMER * 60 * 60 * 1000)
-        const antallKamper = await tellFerdigeKamper(client, fra, inst, 'kampstart')
+        const ferdigeKampnumre = await hentFerdigeKampnumre(client, fra, inst, 'kampstart')
+        const antallKamper = ferdigeKampnumre.length
         if (antallKamper === 0) continue // stille dag
 
-        const { leaderboard, allBets } = await hentHovedligaData(client, inst)
+        const { leaderboard, allBets, extended } = await hentHovedligaData(client, inst)
         const tabell = sorterTabell(leaderboard)
         if (tabell.length === 0) continue
         const navnMap = new Map(allBets.users.map((u) => [u.id, u.name]))
+        const jokerStatistikk = beregnJokerStatistikk(extended, new Set(ferdigeKampnumre))
 
         const forrigeDatoRes = await client.query<{ dato: string }>(
             `SELECT max(dato)::text AS dato FROM feed_standings_snapshot WHERE dato < $1`,
@@ -176,6 +179,7 @@ async function backfillMorgenrapporter(
             forrigeRader: forrige.rows,
             antallKamper,
             dager: dagerTopp,
+            jokerStatistikk,
             frø: dato,
         })
         if (!valg) continue

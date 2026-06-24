@@ -1,6 +1,7 @@
 import {
     formatResultat,
     formatTipp,
+    jokerSetning,
     malDeltLedelse,
     malEndring,
     malEnstemmig,
@@ -199,11 +200,20 @@ describe('maler – morgenrapport', () => {
     })
 
     it('leder_holder: samme leder holder stand', () => {
-        const m = malLederHolder({ leder: 'Ada', luke: '5', dager: 4, frø: '2026-06-20' })
+        const m = malLederHolder({ leder: 'Ada', luke: '5', dager: 4, jager: null, frø: '2026-06-20' })
         expect(m.accent).toBe('gold')
         expect(m.tittel).toContain('Ada')
         expect(m.body).toContain('4 dager')
         expect(m.body).toContain('5 poeng')
+    })
+
+    it('leder_holder: navngir jageren rett bak når noen ligger der', () => {
+        // Med en jager skal teksten nevne hvem som puster lederen i nakken — så
+        // rapporten handler om mer enn at lederen «holder stand».
+        const m = malLederHolder({ leder: 'Ada', luke: '2', dager: 3, jager: 'Bo', frø: '2026-06-20' })
+        expect(m.body).toContain('Ada')
+        expect(m.body).toContain('Bo')
+        expect(m.body).toContain('3 dager')
     })
 
     it('delt_ledelse: utfordrer innhentet lederen — nevner begge og delt poengsum', () => {
@@ -222,6 +232,30 @@ describe('maler – morgenrapport', () => {
         expect(m.body).toContain('31 poeng')
         // Skal aldri påstå at noen «leder med 0 poeng».
         expect(m.body).not.toContain('0 poeng')
+    })
+
+    it('jokerSetning: null når ingen jokere ble lagt', () => {
+        expect(jokerSetning({ satt: 0, brent: 0, totalt: 0 }, '2026-06-20')).toBeNull()
+    })
+
+    it('jokerSetning: nevner både brente og satte jokere', () => {
+        const s = jokerSetning({ satt: 2, brent: 3, totalt: 5 }, '2026-06-20')!
+        expect(s).not.toBeNull()
+        expect(s.toLowerCase()).toContain('joker')
+        expect(s).toMatch(/3/)
+        expect(s).toMatch(/2/)
+    })
+
+    it('jokerSetning: egen tone når alle jokerne brant', () => {
+        const s = jokerSetning({ satt: 0, brent: 4, totalt: 4 }, '2026-06-20')!
+        expect(s.toLowerCase()).toMatch(/brant|brent/)
+        expect(s).toContain('4')
+    })
+
+    it('jokerSetning: egen tone når alle jokerne satt', () => {
+        const s = jokerSetning({ satt: 3, brent: 0, totalt: 3 }, '2026-06-20')!
+        expect(s.toLowerCase()).toContain('satt')
+        expect(s).toContain('3')
     })
 
     it('delt_ledelse: tre på topp uten utpekt utfordrer lister alle med «og»', () => {
