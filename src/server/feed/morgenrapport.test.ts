@@ -1,6 +1,8 @@
+import { AllBetsExtended } from '../../components/results/calculateAllBetsExtended'
+import { MatchBetMedScore } from '../../queries/useAllBets'
 import { LeaderBoard } from '../../components/results/calculateAllScores'
-import { BunnArgs } from './maler'
-import { beregnBunn, beregnPlasseringer, SnapshotRad, velgMorgenScenario } from './morgenrapport'
+import { BunnArgs, JokerStatistikk } from './maler'
+import { beregnBunn, beregnJokerStatistikk, beregnPlasseringer, SnapshotRad, velgMorgenScenario } from './morgenrapport'
 
 function rad(userid: string, poeng: number, userName = userid): LeaderBoard {
     return { userid, poeng, userName, paid: true, picture: null }
@@ -67,6 +69,104 @@ describe('beregnBunn – bunnstriden', () => {
         expect(bunn.jumbo.navn).toBe('d')
         expect(bunn.nyJumbo).toBe(true)
         expect(bunn.rømling).toBe('c')
+    })
+})
+
+describe('beregnJokerStatistikk – joker brent vs. satt', () => {
+    function betMedJoker(match_num: number, joker: boolean, poeng: number): MatchBetMedScore {
+        return { user_id: 'u', match_num, joker, poeng } as unknown as MatchBetMedScore
+    }
+    function ext(bets: MatchBetMedScore[]): AllBetsExtended {
+        return { users: [], bets } as unknown as AllBetsExtended
+    }
+
+    it('teller bare jokere på nattens (ferdige) kamper, og splitter satt/brent', () => {
+        const extended = ext([
+            betMedJoker(1, true, 8), // satt
+            betMedJoker(1, true, 0), // brent
+            betMedJoker(2, true, 6), // satt
+            betMedJoker(2, false, 5), // ikke joker → telles ikke
+            betMedJoker(9, true, 0), // utenfor vinduet → telles ikke
+        ])
+        const s = beregnJokerStatistikk(extended, new Set([1, 2]))
+        expect(s).toEqual({ satt: 2, brent: 1, totalt: 3 })
+    })
+
+    it('gir 0/0/0 når ingen jokere ble lagt i vinduet', () => {
+        const extended = ext([betMedJoker(1, false, 4), betMedJoker(2, false, 0)])
+        expect(beregnJokerStatistikk(extended, new Set([1, 2]))).toEqual({ satt: 0, brent: 0, totalt: 0 })
+    })
+})
+
+describe('velgMorgenScenario – joker- og jager-tillegg', () => {
+    const navnMap = (tabell: LeaderBoard[]) => new Map(tabell.map((r) => [r.userid, r.userName]))
+    const jokerStatistikk: JokerStatistikk = { satt: 1, brent: 2, totalt: 3 }
+
+    it('fletter joker-oppsummeringen inn i body og legger den på data (alle scenarioer)', () => {
+        const tabell = [rad('a', 40), rad('b', 30), rad('c', 20), rad('d', 12)]
+        const forrige: SnapshotRad[] = [
+            { user_id: 'a', plass: 1, poeng: 36 },
+            { user_id: 'b', plass: 2, poeng: 28 },
+            { user_id: 'c', plass: 3, poeng: 18 },
+            { user_id: 'd', plass: 4, poeng: 10 },
+        ]
+        const valg = velgMorgenScenario({
+            tabell,
+            navnMap: navnMap(tabell),
+            forrigeRader: forrige,
+            antallKamper: 2,
+            dager: 0,
+            jokerStatistikk,
+            frø: '2026-06-21',
+        })!
+        expect(valg.data.jokerStatistikk).toEqual(jokerStatistikk)
+        expect(valg.mal.body.toLowerCase()).toContain('joker')
+        // Bunnstriden henger også på (jumboen er d).
+        expect(valg.data.bunn).not.toBeNull()
+    })
+
+    it('leder_holder navngir jageren rett bak og bærer joker-data', () => {
+        const tabell = [rad('johannes', 45), rad('dagga', 35), rad('bendik', 34), rad('d', 28)]
+        const forrige: SnapshotRad[] = [
+            { user_id: 'johannes', plass: 1, poeng: 37 },
+            { user_id: 'dagga', plass: 2, poeng: 33 },
+            { user_id: 'bendik', plass: 3, poeng: 31 },
+            { user_id: 'd', plass: 4, poeng: 25 },
+        ]
+        const valg = velgMorgenScenario({
+            tabell,
+            navnMap: navnMap(tabell),
+            forrigeRader: forrige,
+            antallKamper: 3,
+            dager: 2,
+            jokerStatistikk,
+            frø: '2026-06-21',
+        })!
+        expect(valg.scenario).toBe('leder_holder')
+        expect(valg.data.jager).toBe('dagga')
+        expect(valg.mal.body).toContain('dagga')
+        expect(valg.mal.body.toLowerCase()).toContain('joker')
+    })
+
+    it('utelater joker-linja når ingen jokere ble lagt', () => {
+        const tabell = [rad('a', 40), rad('b', 30), rad('c', 20), rad('d', 12)]
+        const forrige: SnapshotRad[] = [
+            { user_id: 'a', plass: 1, poeng: 36 },
+            { user_id: 'b', plass: 2, poeng: 28 },
+            { user_id: 'c', plass: 3, poeng: 18 },
+            { user_id: 'd', plass: 4, poeng: 10 },
+        ]
+        const valg = velgMorgenScenario({
+            tabell,
+            navnMap: navnMap(tabell),
+            forrigeRader: forrige,
+            antallKamper: 2,
+            dager: 0,
+            jokerStatistikk: { satt: 0, brent: 0, totalt: 0 },
+            frø: '2026-06-21',
+        })!
+        expect(valg.data.jokerStatistikk).toEqual({ satt: 0, brent: 0, totalt: 0 })
+        expect(valg.mal.body.toLowerCase()).not.toContain('joker')
     })
 })
 

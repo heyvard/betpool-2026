@@ -223,6 +223,41 @@ function BunnStripe({ data }: { data: Record<string, unknown> }) {
     )
 }
 
+// Joker-stripe (alle morgenrapporter): hvor mange jokere ble lagt på nattens
+// kamper, og hvor mange brant vs. satt. Vises bare når noen faktisk satset joker.
+function JokerStripe({ data }: { data: Record<string, unknown> }) {
+    const j = data.jokerStatistikk as { satt: number; brent: number; totalt: number } | undefined
+    if (!j || j.totalt === 0) return null
+    const status =
+        j.brent > 0 && j.satt > 0
+            ? `${j.brent} brent · ${j.satt} satt`
+            : j.brent > 0
+              ? `${j.totalt} brent`
+              : `${j.totalt} satt`
+    return (
+        <div
+            className="mt-2 flex items-center gap-2.5"
+            style={{
+                padding: '8px 11px',
+                borderRadius: 12,
+                background: '#fafaf9',
+                boxShadow: 'inset 0 0 0 1px #f5f5f4',
+            }}
+        >
+            <span style={{ fontSize: 14 }}>🃏</span>
+            <span className="bp-overline" style={{ color: '#a8a29e' }}>
+                Joker
+            </span>
+            <span className="flex-1 truncate font-bold" style={{ fontSize: 13, color: '#57534e' }}>
+                {status}
+            </span>
+            <span className="bp-tabular" style={{ fontSize: 12, fontWeight: 700, color: '#a8a29e' }}>
+                {j.totalt} {j.totalt === 1 ? 'joker' : 'jokere'}
+            </span>
+        </div>
+    )
+}
+
 function KommentarRad({ post, kommentar }: { post: FeedPost; kommentar: FeedKommentar }) {
     const [pickerOpen, setPickerOpen] = useState(false)
     const reaksjon = UseMutateFeedKommentarReaksjon()
@@ -371,9 +406,12 @@ export function FeedKort({ post, meNavn, mePicture, erSuperadmin }: Props) {
                 {(post.scenario === 'lederbytte' ||
                     post.scenario === 'leder_holder' ||
                     post.scenario === 'delt_ledelse') && <MiniTopp3 data={post.data} />}
-                {post.scenario === 'endring' && (
+                {post.scenario === 'endring' && <DeltaListe data={post.data} />}
+                {/* Joker- og bunn-status henger på alle morgenrapporter, så hver rapport
+                    sier noe om nattens jokere og dem som ligger sist — ikke bare toppen. */}
+                {post.kind === 'morgenrapport' && (
                     <>
-                        <DeltaListe data={post.data} />
+                        <JokerStripe data={post.data} />
                         <BunnStripe data={post.data} />
                     </>
                 )}

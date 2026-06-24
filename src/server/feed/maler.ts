@@ -433,6 +433,40 @@ export function malEndring(a: EndringArgs): MalResultat {
     return { accent: 'royal', tittel, body: deler.join(' ') }
 }
 
+// ── Joker-oppsummering ───────────────────────────────────────────────────────
+// Hvor mange jokere ble lagt på nattens (rapportvinduets) kamper, og hvor mange
+// satt (ga poeng) vs. brant (ga null). Brukes til en egen joker-linje i
+// morgenrapporten — vi vil eksplisitt fortelle hvor mange jokere som ble brent.
+export interface JokerStatistikk {
+    satt: number // jokere som ga > 0 poeng
+    brent: number // jokere som ga 0 poeng
+    totalt: number // satt + brent
+}
+
+const JOKER_BEGGE: ((s: JokerStatistikk) => string)[] = [
+    (s) => `${s.brent} av ${s.totalt} ${flertall(s.totalt, 'joker', 'jokere')} brant i natt, ${s.satt} satt. 🃏`,
+    (s) => `Nattens jokere: ${s.brent} gikk i grøfta, ${s.satt} klaffet.`,
+]
+
+const JOKER_ALLE_BRANT: ((s: JokerStatistikk) => string)[] = [
+    (s) => `Alle ${s.totalt} ${flertall(s.totalt, 'jokeren', 'jokerne')} brant i natt. 💸`,
+    (s) => `Brutal jokernatt: ${s.totalt} lagt, ${s.totalt} brent. Au.`,
+]
+
+const JOKER_ALLE_SATT: ((s: JokerStatistikk) => string)[] = [
+    (s) => `Alle ${s.totalt} ${flertall(s.totalt, 'jokeren', 'jokerne')} satt i natt! 🃏`,
+    (s) => `Gyllen jokernatt: ${s.totalt} av ${s.totalt} satt.`,
+]
+
+// Én setning om nattens jokere. Returnerer null når ingen jokere ble lagt på
+// nattens kamper (da skal rapporten ikke nevne joker i det hele tatt).
+export function jokerSetning(s: JokerStatistikk, frø: number | string): string | null {
+    if (s.totalt === 0) return null
+    if (s.brent > 0 && s.satt > 0) return velgVariant(JOKER_BEGGE, frø)(s)
+    if (s.brent > 0) return velgVariant(JOKER_ALLE_BRANT, frø)(s)
+    return velgVariant(JOKER_ALLE_SATT, frø)(s)
+}
+
 export interface LederbytteArgs {
     nyLeder: string
     gammelLeder: string
@@ -469,6 +503,8 @@ export interface LederHolderArgs {
     leder: string
     luke: string
     dager: number
+    // Nærmeste jager (navn) — den som ligger rett bak lederen. null om ingen bak.
+    jager: string | null
     frø: number | string
 }
 
@@ -480,18 +516,21 @@ const LEDER_HOLDER_TITTEL: ((leder: string) => string)[] = [
 
 export function malLederHolder(a: LederHolderArgs): MalResultat {
     const tittel = velgVariant(LEDER_HOLDER_TITTEL, a.frø)(a.leder)
+    // Jager-frasen navngir den som puster lederen i nakken — så rapporten handler om
+    // mer enn at lederen «holder stand»: hvem er rett bak, og hvor tett er det?
+    const jager = a.jager ? visningsnavn(a.jager) : null
     const body = velgVariant(
         [
             `Nok en natt på toppen for ${visningsnavn(a.leder)}, som har ledet ${a.dager} ${flertall(
                 a.dager,
                 'dag',
                 'dager',
-            )} på rad og har ${a.luke} poeng ned til neste. 💪`,
+            )} på rad og har ${a.luke} poeng ned til ${jager ?? 'neste'}. 💪`,
             `${visningsnavn(a.leder)} ga seg ikke i natt heller — ${a.dager} ${flertall(
                 a.dager,
                 'dag',
                 'dager',
-            )} sammenhengende på topp, ${a.luke} poeng klar.`,
+            )} sammenhengende på topp${jager ? `, og ${jager} puster ${a.luke} bak` : `, ${a.luke} poeng klar`}.`,
         ],
         a.frø,
     )

@@ -1,9 +1,12 @@
 import { PoolClient } from 'pg'
 
+import { AllBetsExtended } from '../../components/results/calculateAllBetsExtended'
 import { LeaderBoard } from '../../components/results/calculateAllScores'
 import { hentHovedligaData, sorterTabell } from './hovedligaData'
 import {
     BunnArgs,
+    jokerSetning,
+    JokerStatistikk,
     malDeltLedelse,
     malEndring,
     malLederbytte,
@@ -80,6 +83,22 @@ export function beregnBunn(
     }
 }
 
+// Joker-oppsummering for nattens kamper: hvor mange jokere ble lagt på de ferdige
+// kampene (`ferdigeKampnumre`), og hvor mange satt (ga poeng) vs. brant (0). Teller
+// over HELE hovedligaen — ikke bare toppen — fordi vi vil fortelle hvor mange jokere
+// som ble brent i natt. Norge-kamp-jokere er allerede nullet i `calculateAllBetsExtended`
+// (joker er ikke tillatt der), så de teller verken som satt eller brent.
+export function beregnJokerStatistikk(extended: AllBetsExtended, ferdigeKampnumre: Set<number>): JokerStatistikk {
+    let satt = 0
+    let brent = 0
+    for (const b of extended.bets) {
+        if (!b.joker || !ferdigeKampnumre.has(b.match_num)) continue
+        if (b.poeng > 0) satt++
+        else brent++
+    }
+    return { satt, brent, totalt: satt + brent }
+}
+
 // Velger morgenrapport-scenario ut fra dagens tabell og forrige snapshot. Ren
 // funksjon (ingen DB) så den kan gjenbrukes av både live-cronen og backfillen.
 // `dager` = antall sammenhengende dager forrige leder lå øverst (precomputed).
@@ -89,13 +108,31 @@ export function velgMorgenScenario(args: {
     forrigeRader: SnapshotRad[]
     antallKamper: number
     dager: number
+    // Joker-oppsummering for nattens kamper. Default 0/0/0 (ingen jokere) når den
+    // ikke er oppgitt, slik at eldre kall/tester ikke trenger å sette den.
+    jokerStatistikk?: JokerStatistikk
     frø: string
 }): MorgenScenarioValg | null {
     const { tabell, navnMap, forrigeRader, antallKamper, dager, frø } = args
+    const jokerStatistikk = args.jokerStatistikk ?? { satt: 0, brent: 0, totalt: 0 }
     if (tabell.length === 0) return null
 
     const nyPlassMap = beregnPlasseringer(tabell)
     const forrigePlassMap = new Map(forrigeRader.map((r) => [r.user_id, r.plass]))
+
+    // Bunnstriden og joker-oppsummeringen henges på ALLE scenarioer (ikke bare
+    // «endring»), slik at hver morgenrapport også sier noe om dem rett bak teten og
+    // dem som ligger sist — ikke bare at lederen holder stand. `bunn` er null i små
+    // puljer / før noen har poeng (se beregnBunn).
+    const bunn = beregnBunn(tabell, nyPlassMap, forrigeRader)
+    const jokerLinje = jokerSetning(jokerStatistikk, frø)
+
+    // Pakker et scenariovalg: fletter joker-linja inn i body-en og legger
+    // jokerStatistikk + bunn på data, så fronten kan rendre dem som egne striper.
+    function ferdig(scenario: MorgenScenario, mal: MalResultat, data: Record<string, unknown>): MorgenScenarioValg {
+        const body = jokerLinje ? `${mal.body} ${jokerLinje}` : mal.body
+        return { scenario, mal: { ...mal, body }, data: { jokerStatistikk, bunn, ...data } }
+    }
 
     // Lederstriden regnes på konkurranseplassering («delt plass»), ikke på rå
     // sorteringsrekkefølge: ved poenglikhet på topp deler flere 1.-plass, og da er
@@ -139,7 +176,7 @@ export function velgMorgenScenario(args: {
             const poeng = tabell[0].poeng
             const mal = malDeltLedelse({ ledere, poeng, nyeUtfordrere, forrigeLeder, dager, frø })
             Object.assign(data, { ledere, poeng, nyeUtfordrere, dager, topp3 })
-            return { scenario: 'delt_ledelse', mal, data }
+            return ferdig('delt_ledelse', mal, data)
         }
     }
 
@@ -152,7 +189,7 @@ export function velgMorgenScenario(args: {
         const gammelLeder = navnMap.get(forrigeLederId) ?? 'ukjent'
         const mal = malLederbytte({ nyLeder, gammelLeder, luke: String(luke), dager, frø })
         Object.assign(data, { nyLeder, gammelLeder, luke, dager, topp3 })
-        return { scenario: 'lederbytte', mal, data }
+        return ferdig('lederbytte', mal, data)
     }
 
     // leder_holder — samme leder alene på topp som før, men har holdt stand gjennom
@@ -171,9 +208,12 @@ export function velgMorgenScenario(args: {
     if (forrigeLederId && forrigeLederId === nyLederId && !deltToppen && tabell[0].poeng > 0 && dager >= 2) {
         const leder = tabell[0].userName
         const dagerPåRad = dager + 1
-        const mal = malLederHolder({ leder, luke: String(luke), dager: dagerPåRad, frø })
-        Object.assign(data, { leder, luke, dager: dagerPåRad, topp3 })
-        return { scenario: 'leder_holder', mal, data }
+        // Jageren = den som ligger rett bak (plass 2). Navngis i teksten så rapporten
+        // også handler om dem rett bak teten, ikke bare om at lederen holder stand.
+        const jager = tabell.length > 1 ? tabell[1].userName : null
+        const mal = malLederHolder({ leder, luke: String(luke), dager: dagerPåRad, jager, frø })
+        Object.assign(data, { leder, luke, dager: dagerPåRad, jager, topp3 })
+        return ferdig('leder_holder', mal, data)
     }
 
     // endring
@@ -205,14 +245,10 @@ export function velgMorgenScenario(args: {
         .sort((a, b) => a.plass - b.plass)
     const nyTopp3 = nyeITopp3.length > 0
 
-    // Bunnstriden: hvem ligger sist (jumbo), og byttet kjelleren eier i natt? Vi
-    // dropper bunn-vinkelen tidlig i turneringen (alle på 0 → vilkårlig rekkefølge)
-    // og i bittesmå puljer der «sisteplass» ikke er noe poeng.
-    const bunn = beregnBunn(tabell, nyPlassMap, forrigeRader)
-
+    // Bunnstriden (`bunn`) er beregnet øverst og deles av alle scenarioer.
     const mal = malEndring({ antallKamper, størsteKlatrer, størsteFaller, nyTopp3, nyeITopp3, bunn, frø })
-    Object.assign(data, { størsteKlatrer, størsteFaller, nyTopp3, nyeITopp3, bunn, delta: bevegelser.slice(0, 4) })
-    return { scenario: 'endring', mal, data }
+    Object.assign(data, { størsteKlatrer, størsteFaller, nyTopp3, nyeITopp3, delta: bevegelser.slice(0, 4) })
+    return ferdig('endring', mal, data)
 }
 
 // Antall hovedliga-kamper som ble ferdige i tidsvinduet (fra, til]. Morgenrapporten
@@ -227,18 +263,18 @@ export function velgMorgenScenario(args: {
 //  - 'kampstart' (backfill): kampstart + 120 min. Brukes når score_synced_at ikke
 //    er til å stole på (de fleste resultatene ble bulk-synket 13. juni), slik at
 //    backfill-historikken legger kampene på riktig dag.
-export async function tellFerdigeKamper(
+export async function hentFerdigeKampnumre(
     client: PoolClient,
     fra: Date,
     til: Date,
     tidsbasis: 'synk' | 'kampstart' = 'synk',
-): Promise<number> {
+): Promise<number[]> {
     const ferdigTid =
         tidsbasis === 'kampstart'
             ? "(m.game_start + interval '120 minutes')"
             : 'COALESCE(ms.score_synced_at, m.game_start)'
-    const res = await client.query<{ antall: string }>(
-        `SELECT count(*) AS antall
+    const res = await client.query<{ match_num: number }>(
+        `SELECT m.match_num
          FROM matches m
          JOIN match_scores ms ON ms.match_num = m.match_num
          WHERE m.status IN ('FINISHED', 'AWARDED')
@@ -248,7 +284,17 @@ export async function tellFerdigeKamper(
            AND ${ferdigTid} <= $2`,
         [fra.toISOString(), til.toISOString()],
     )
-    return parseInt(res.rows[0]?.antall ?? '0', 10)
+    return res.rows.map((r) => r.match_num)
+}
+
+// Antall ferdige kamper i vinduet — tynn wrapper over hentFerdigeKampnumre.
+export async function tellFerdigeKamper(
+    client: PoolClient,
+    fra: Date,
+    til: Date,
+    tidsbasis: 'synk' | 'kampstart' = 'synk',
+): Promise<number> {
+    return (await hentFerdigeKampnumre(client, fra, til, tidsbasis)).length
 }
 
 // Lagrer (upsert) en tabell-snapshot for en gitt Oslo-dato. Lagrer
@@ -321,14 +367,16 @@ export async function genererMorgenrapport(client: PoolClient, now: Date = new D
     // Stille dag → ingen post. Vindu: siste RAPPORT_VINDU_TIMER t fram til 08:00 i dag.
     const til = osloInstant(iDag, 8)
     const fra = new Date(til.getTime() - RAPPORT_VINDU_TIMER * 60 * 60 * 1000)
-    const antallKamper = await tellFerdigeKamper(client, fra, til)
+    const ferdigeKampnumre = await hentFerdigeKampnumre(client, fra, til)
+    const antallKamper = ferdigeKampnumre.length
     if (antallKamper === 0) return { postet: false, grunn: 'stille_dag' }
 
     // Dagens stilling.
-    const { leaderboard, allBets } = await hentHovedligaData(client, now)
+    const { leaderboard, allBets, extended } = await hentHovedligaData(client, now)
     const tabell = sorterTabell(leaderboard)
     if (tabell.length === 0) return { postet: false, grunn: 'stille_dag' }
     const navnMap = new Map(allBets.users.map((u) => [u.id, u.name]))
+    const jokerStatistikk = beregnJokerStatistikk(extended, new Set(ferdigeKampnumre))
 
     // Forrige snapshot (siste dato før i dag).
     const forrigeDatoRes = await client.query<{ dato: string }>(
@@ -362,7 +410,15 @@ export async function genererMorgenrapport(client: PoolClient, now: Date = new D
     // innsetting). `velgMorgenScenario`/`velgVariant` er fortsatt rene og
     // deterministiske på `frø`-input, så tester og scenariovalg er upåvirket.
     const frø = `${iDag}-${Math.floor(Math.random() * 1_000_000)}`
-    const valg = velgMorgenScenario({ tabell, navnMap, forrigeRader: forrige.rows, antallKamper, dager, frø })
+    const valg = velgMorgenScenario({
+        tabell,
+        navnMap,
+        forrigeRader: forrige.rows,
+        antallKamper,
+        dager,
+        jokerStatistikk,
+        frø,
+    })
     if (!valg) {
         await lagreSnapshot(client, iDag, tabell)
         return { postet: false, grunn: 'stille_dag' }
