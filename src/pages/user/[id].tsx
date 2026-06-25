@@ -6,7 +6,7 @@ import { UseAllBets } from '../../queries/useAllBets'
 import React from 'react'
 import { fixLand } from '../../components/bet/BetView'
 import NextLink from 'next/link'
-import { ChevronRight, Goal, Trophy } from 'lucide-react'
+import { CheckCheck, ChevronRight, Goal, Target, Trophy } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useLanguage } from '../../i18n/LanguageContext'
 import { RundeSeksjon, Legende } from '../../components/bet/PastBetView'
@@ -75,10 +75,15 @@ const Home: NextPage = () => {
 
     // Toppsum = ferdigspilte kamp-poeng + vinner/toppscorer-bonus, akkurat som
     // calculateLeaderboard summerer på ledertavla.
+    const ferdigeBets = userBets.filter((b) => !b.foreløpig)
     const totalPoeng =
-        userBets.filter((b) => !b.foreløpig).reduce((sum, b) => sum + b.poeng, 0) +
-        (user.winnerPoints ?? 0) +
-        (user.topscorerPoints ?? 0)
+        ferdigeBets.reduce((sum, b) => sum + b.poeng, 0) + (user.winnerPoints ?? 0) + (user.topscorerPoints ?? 0)
+
+    // Treff-statistikk over ferdigspilte kamper (samme populasjon som totalPoeng).
+    // riktigUtfall inkluderer riktigResultat (eksakt skår er også riktig utfall),
+    // slik at antall utfall alltid er ≥ antall resultat.
+    const antallRiktigUtfall = ferdigeBets.filter((b) => b.riktigUtfall).length
+    const antallRiktigResultat = ferdigeBets.filter((b) => b.riktigResultat).length
 
     const rundeMap = new Map<number, typeof userBets>()
     userBets.forEach((bet) => {
@@ -123,6 +128,30 @@ const Home: NextPage = () => {
                         </div>
                     </div>
                 </div>
+
+                {/* Treff-statistikk — antall riktig utfall og riktig resultat */}
+                {ferdigeBets.length > 0 && (
+                    <div className="mt-3 flex items-center gap-2">
+                        <span className="inline-flex items-center gap-1.5 rounded-full bg-[#fef3c7] px-2.5 py-1">
+                            <Target className="h-3.5 w-3.5 shrink-0 text-[#f59e0b]" />
+                            <span className="bp-tabular text-[13px] font-extrabold text-[#92400e]">
+                                {antallRiktigUtfall}
+                            </span>
+                            <span className="text-[11px] font-semibold text-[#92400e]">
+                                {t.spilteKamper.riktigUtfall.toLowerCase()}
+                            </span>
+                        </span>
+                        <span className="inline-flex items-center gap-1.5 rounded-full bg-[#dcfce7] px-2.5 py-1">
+                            <CheckCheck className="h-3.5 w-3.5 shrink-0 text-[#16a34a]" />
+                            <span className="bp-tabular text-[13px] font-extrabold text-[#15803d]">
+                                {antallRiktigResultat}
+                            </span>
+                            <span className="text-[11px] font-semibold text-[#15803d]">
+                                {t.spilteKamper.riktigResultat.toLowerCase()}
+                            </span>
+                        </span>
+                    </div>
+                )}
             </div>
 
             {/* Vinner / Toppscorer */}
