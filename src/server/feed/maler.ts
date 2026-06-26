@@ -336,9 +336,22 @@ export interface EndringArgs {
     nyTopp3: boolean
     // Hvem som gikk inn i topp 3 siden i går (med ny plass). Tom = ingen nye.
     nyeITopp3?: { navn: string; plass: number }[]
+    // Nattens poenghøst — hovedvinkelen i morgenrapporten. Utelatt når ingen sanket
+    // poeng (alle bommet) eller første aktive dag (ingen baseline).
+    fangst?: NattensFangst | null
     // Bunnstriden. Utelatt tidlig i turneringen (alle på 0) og i små puljer.
     bunn?: BunnArgs | null
     frø: number | string
+}
+
+// Nattens poengkonge: hvem sanket flest poeng siden forrige snapshot. Dette er
+// hovedvinkelen morgenrapporten skal lede med — ikke hvem som ligger sist.
+export interface NattensFangst {
+    // Toppsankeren i natt (visningsklart navn).
+    topp: { navn: string; poeng: number; deltaPoeng: number; plass: number }
+    // Andre som sanket NØYAKTIG like mange poeng i natt (visningsklare navn). Tom
+    // = soloprestasjon. Brukes til «X og Y meide inn like mange».
+    delere: string[]
 }
 
 // «Ada (2.)» / «Ada (2.) og Bo (3.)» / «Ada, Bo og Cleo». Norsk liste med «og».
@@ -348,10 +361,48 @@ function listeMedOg(navn: string[]): string {
 }
 
 const ENDRING_TITTEL: ((antallKamper: number) => string)[] = [
-    (k) => `${k} ${flertall(k, 'kamp', 'kamper')} avgjort i går`,
-    (k) => `Natta ga ${k} ${flertall(k, 'kamp', 'kamper')} — og bevegelse i tabellen`,
-    (k) => `Tabellen rørte på seg: ${k} ${flertall(k, 'kamp', 'kamper')} i boks`,
+    (k) => `${k} ${flertall(k, 'kamp', 'kamper')} unnagjort — og full fart i tabellen`,
+    (k) => `Natta ga ${k} ${flertall(k, 'kamp', 'kamper')} — og bevegelse i feltet`,
+    (k) => `Tabellen rister: ${k} ${flertall(k, 'kamp', 'kamper')} i boks`,
+    (k) => `For en omgang! ${k} ${flertall(k, 'kamp', 'kamper')} ferdigspilt i natt`,
+    (k) => `Dommeren har blåst av ${k} ${flertall(k, 'kamp', 'kamper')} — her er fasiten`,
+    (k) => `${k} ${flertall(k, 'kamp', 'kamper')} i kassa, og kortene er stokket om`,
 ]
+
+// ── Nattens poengkonge ───────────────────────────────────────────────────────
+// Hovedvinkelen: hvem meide inn flest poeng siden forrige rapport. Ren
+// TV-kommentator-tone med fotball-metaforer. Egne varianter for solosanker vs.
+// delt toppscorertittel («X og Y sanket like mange»).
+
+const FANGST_ALENE: ((f: NattensFangst) => string)[] = [
+    (f) => `Nattens toppscorer på kupongen: ${visningsnavn(f.topp.navn)} banket inn +${f.topp.deltaPoeng} poeng! 🔥`,
+    (f) =>
+        `Og DER, mine damer og herrer — ${visningsnavn(f.topp.navn)} meide inn +${f.topp.deltaPoeng} poeng i natt. For en forestilling!`,
+    (f) => `Full klaff foran mål for ${visningsnavn(f.topp.navn)}: +${f.topp.deltaPoeng} poeng mens resten så på. ⚡`,
+    (f) =>
+        `${visningsnavn(f.topp.navn)} herjet i natt og dro i land +${f.topp.deltaPoeng} poeng — natta tilhørte ${visningsnavn(
+            f.topp.navn,
+        )}.`,
+    (f) =>
+        `Nydelig av ${visningsnavn(f.topp.navn)}! +${f.topp.deltaPoeng} poeng plukket i natt, mest av alle på kupongen.`,
+    (f) => `Nattens skarpskytter er ${visningsnavn(f.topp.navn)}, som fyrte inn +${f.topp.deltaPoeng} poeng. 🎯`,
+]
+
+const FANGST_DELT: ((navn: string, delta: number) => string)[] = [
+    (n, d) => `Dødt løp om nattens toppscorertittel: ${n} banket inn +${d} poeng hver! 🔥`,
+    (n, d) => `Skulder ved skulder på poengjakten i natt — ${n} meide inn +${d} poeng hver.`,
+    (n, d) => `${n} delte rollen som nattens skarpskyttere med +${d} poeng hver. Ikke en luke imellom.`,
+]
+
+// Én setning om nattens poengkonge. Forutsetter at fangsten finnes (kalleren
+// sjekker null først). Navn er allerede visningsklare på server-spørringen.
+export function fangstSetning(f: NattensFangst, frø: number | string): string {
+    if (f.delere.length > 0) {
+        const navn = listeMedOg([f.topp.navn, ...f.delere].map(visningsnavn))
+        return velgVariant(FANGST_DELT, frø)(navn, f.topp.deltaPoeng)
+    }
+    return velgVariant(FANGST_ALENE, frø)(f)
+}
 
 // ── Bunnstriden ────────────────────────────────────────────────────────────
 // Sportskommentar-vinkel på dem som ligger langt ned: jumboplassen og kjelleren.
@@ -398,13 +449,22 @@ export function bunnSetning(b: BunnArgs, frø: number | string): string {
 export function malEndring(a: EndringArgs): MalResultat {
     const tittel = velgVariant(ENDRING_TITTEL, a.frø)(a.antallKamper)
     const deler: string[] = []
+    // Nattens poengkonge leder an — det er denne rapporten skal handle om.
+    if (a.fangst) {
+        deler.push(fangstSetning(a.fangst, a.frø))
+    }
     if (a.størsteKlatrer) {
         const k = a.størsteKlatrer
         deler.push(
             velgVariant(
                 [
                     `${visningsnavn(k.navn)} spurtet ${k.n} ${flertall(k.n, 'plass', 'plasser')} opp til ${k.plass}. 📈`,
-                    `${visningsnavn(k.navn)} klatret ${k.n} ${flertall(k.n, 'plass', 'plasser')} til ${k.plass}.`,
+                    `${visningsnavn(k.navn)} klatret ${k.n} ${flertall(k.n, 'plass', 'plasser')} til ${k.plass}. plass.`,
+                    `Fullt opprykk for ${visningsnavn(k.navn)}: ${k.n} ${flertall(
+                        k.n,
+                        'plass',
+                        'plasser',
+                    )} opp til ${k.plass}.`,
                 ],
                 a.frø,
             ),
@@ -415,8 +475,13 @@ export function malEndring(a: EndringArgs): MalResultat {
         deler.push(
             velgVariant(
                 [
-                    `${visningsnavn(f.navn)} raste ${f.n} ned til ${f.plass}. 📉`,
-                    `${visningsnavn(f.navn)} falt ${f.n} til ${f.plass}.`,
+                    `${visningsnavn(f.navn)} raste ${f.n} ${flertall(f.n, 'plass', 'plasser')} ned til ${f.plass}. 📉`,
+                    `${visningsnavn(f.navn)} datt ${f.n} ${flertall(f.n, 'plass', 'plasser')} til ${f.plass}. plass.`,
+                    `Tungt for ${visningsnavn(f.navn)}, som tapte ${f.n} ${flertall(
+                        f.n,
+                        'plass',
+                        'plasser',
+                    )} og havnet på ${f.plass}.`,
                 ],
                 a.frø,
             ),
@@ -425,11 +490,24 @@ export function malEndring(a: EndringArgs): MalResultat {
     const nyeITopp3 = a.nyeITopp3 ?? []
     if (nyeITopp3.length > 0) {
         const navn = listeMedOg(nyeITopp3.map((n) => `${visningsnavn(n.navn)} (${n.plass}.)`))
-        deler.push(`Ny i topp 3: ${navn}.`)
+        deler.push(
+            velgVariant(
+                [
+                    `Ny i topp 3: ${navn}.`,
+                    `Inn på medaljeplass: ${navn}.`,
+                    `Frisk luft i toppstriden — ny i topp 3: ${navn}.`,
+                ],
+                a.frø,
+            ),
+        )
     } else {
-        deler.push('Topp 3 står som støpt.')
+        deler.push(
+            velgVariant(['Topp 3 står som støpt.', 'Pallen rikker seg ikke.', 'Medaljeplassene holder stand.'], a.frø),
+        )
     }
-    if (a.bunn) {
+    // Bunnstriden nevnes kun ved reell dramatikk (ny jumbo) — vi gidder ikke kjefte
+    // på den samme stakkaren hver eneste morgen.
+    if (a.bunn?.nyJumbo) {
         deler.push(bunnSetning(a.bunn, a.frø))
     }
     return { accent: 'royal', tittel, body: deler.join(' ') }
@@ -447,17 +525,20 @@ export interface JokerStatistikk {
 
 const JOKER_BEGGE: ((s: JokerStatistikk) => string)[] = [
     (s) => `${s.brent} av ${s.totalt} ${flertall(s.totalt, 'joker', 'jokere')} brant i natt, ${s.satt} satt. 🃏`,
-    (s) => `Nattens jokere: ${s.brent} gikk i grøfta, ${s.satt} klaffet.`,
+    (s) => `Nattens jokere: ${s.brent} gikk rett i grøfta, ${s.satt} traff blink.`,
+    (s) => `Blandet jokerdrama: ${s.satt} klaffet, ${s.brent} endte på tribunen. 🃏`,
 ]
 
 const JOKER_ALLE_BRANT: ((s: JokerStatistikk) => string)[] = [
     (s) => `Alle ${s.totalt} ${flertall(s.totalt, 'jokeren', 'jokerne')} brant i natt. 💸`,
-    (s) => `Brutal jokernatt: ${s.totalt} lagt, ${s.totalt} brent. Au.`,
+    (s) => `Brutal jokernatt: ${s.totalt} lagt, ${s.totalt} skutt over mål. Au.`,
+    (s) => `Kalddusj ved jokerbordet — ${s.totalt} av ${s.totalt} gikk i bakken.`,
 ]
 
 const JOKER_ALLE_SATT: ((s: JokerStatistikk) => string)[] = [
-    (s) => `Alle ${s.totalt} ${flertall(s.totalt, 'jokeren', 'jokerne')} satt i natt! 🃏`,
-    (s) => `Gyllen jokernatt: ${s.totalt} av ${s.totalt} satt.`,
+    (s) => `Alle ${s.totalt} ${flertall(s.totalt, 'jokeren', 'jokerne')} satt som et skudd i natt! 🃏`,
+    (s) => `Gyllen jokernatt: ${s.totalt} av ${s.totalt} traff rett i krysset.`,
+    (s) => `Full pott på jokerne — ${s.totalt} av ${s.totalt} klaffet. 🎯`,
 ]
 
 // Én setning om nattens jokere. Returnerer null når ingen jokere ble lagt på
@@ -479,22 +560,29 @@ export interface LederbytteArgs {
 
 const LEDERBYTTE_TITTEL: ((nyLeder: string) => string)[] = [
     (n) => `${visningsnavn(n)} har kuppet ledelsen 🔥`,
-    (n) => `Maktskifte! ${visningsnavn(n)} er ny leder`,
-    (n) => `${visningsnavn(n)} har tatt ledelsen`,
+    (n) => `Maktskifte på toppen! ${visningsnavn(n)} har overtatt`,
+    (n) => `${visningsnavn(n)} har revet til seg gultrøya`,
+    (n) => `Ny mann i tet — ${visningsnavn(n)} har slått til 👑`,
+    (n) => `Tronskifte! ${visningsnavn(n)} troner øverst`,
 ]
 
 export function malLederbytte(a: LederbytteArgs): MalResultat {
     const tittel = velgVariant(LEDERBYTTE_TITTEL, a.frø)(a.nyLeder)
     const body = velgVariant(
         [
-            `Snek seg forbi ${visningsnavn(a.gammelLeder)} i natt og leder nå med ${a.luke} poeng. ${visningsnavn(
+            `Snek seg forbi ${visningsnavn(a.gammelLeder)} på overtid og leder nå med ${a.luke} poeng. ${visningsnavn(
                 a.gammelLeder,
-            )} satt på tronen i ${a.dager} ${flertall(a.dager, 'dag', 'dager')}.`,
+            )} satt på tronen i ${a.dager} ${flertall(a.dager, 'dag', 'dager')} før smellen.`,
             `${visningsnavn(a.gammelLeder)} måtte gi tapt etter ${a.dager} ${flertall(
                 a.dager,
                 'dag',
                 'dager',
-            )} på topp. ${visningsnavn(a.nyLeder)} leder nå med ${a.luke} poeng.`,
+            )} på topp. ${visningsnavn(a.nyLeder)} fører nå an med ${a.luke} poeng.`,
+            `Og der raknet det for ${visningsnavn(a.gammelLeder)} etter ${a.dager} ${flertall(
+                a.dager,
+                'dag',
+                'dager',
+            )} i tet! ${visningsnavn(a.nyLeder)} har tatt over og leder med ${a.luke} poeng. 🔥`,
         ],
         a.frø,
     )
@@ -511,9 +599,11 @@ export interface LederHolderArgs {
 }
 
 const LEDER_HOLDER_TITTEL: ((leder: string) => string)[] = [
-    (l) => `${visningsnavn(l)} sitter trygt på tronen 👑`,
-    (l) => `Lederen vakler ikke — ${visningsnavn(l)} leder fortsatt`,
-    (l) => `${visningsnavn(l)} holder stand på topp`,
+    (l) => `${visningsnavn(l)} sitter bom fast på tronen 👑`,
+    (l) => `Lederen vakler ikke — ${visningsnavn(l)} fører fortsatt an`,
+    (l) => `${visningsnavn(l)} holder unna helt i tet`,
+    (l) => `Ingen får has på ${visningsnavn(l)} på topp`,
+    (l) => `${visningsnavn(l)} kontrollerer kampen fra tetposisjon`,
 ]
 
 export function malLederHolder(a: LederHolderArgs): MalResultat {
@@ -523,7 +613,7 @@ export function malLederHolder(a: LederHolderArgs): MalResultat {
     const jager = a.jager ? visningsnavn(a.jager) : null
     const body = velgVariant(
         [
-            `Nok en natt på toppen for ${visningsnavn(a.leder)}, som har ledet ${a.dager} ${flertall(
+            `Nok en natt på toppen for ${visningsnavn(a.leder)}, som har ført an ${a.dager} ${flertall(
                 a.dager,
                 'dag',
                 'dager',
@@ -532,7 +622,12 @@ export function malLederHolder(a: LederHolderArgs): MalResultat {
                 a.dager,
                 'dag',
                 'dager',
-            )} sammenhengende på topp${jager ? `, og ${jager} puster ${a.luke} bak` : `, ${a.luke} poeng klar`}.`,
+            )} sammenhengende i tet${jager ? `, og ${jager} puster ${a.luke} poeng bak` : `, ${a.luke} poeng klar`}.`,
+            `Rutinert ledelse fra ${visningsnavn(a.leder)}, som holder unna ${a.dager} ${flertall(
+                a.dager,
+                'dag',
+                'dager',
+            )} på rad${jager ? `. ${jager} jager ${a.luke} poeng bak.` : ` med ${a.luke} poengs luke.`} 👑`,
         ],
         a.frø,
     )
@@ -559,8 +654,10 @@ export interface DeltLedelseArgs {
 
 const DELT_LEDELSE_TITTEL: string[] = [
     'Dødt løp i toppen! 🤝',
-    'Delt ledelse — ingen vil gi seg',
-    'Skulder ved skulder helt på topp 🔝',
+    'Delt ledelse — ingen vil gi seg en tomme',
+    'Skulder ved skulder helt i tet 🔝',
+    'Maktkamp på topp: det skilles ikke et poeng',
+    'Tronstrid! Flere deler ledelsen',
 ]
 
 export function malDeltLedelse(a: DeltLedelseArgs): MalResultat {
@@ -576,7 +673,8 @@ export function malDeltLedelse(a: DeltLedelseArgs): MalResultat {
         body = velgVariant(
             [
                 `${utfordrer} har tatt igjen ${leder} på topp — begge står med ${poeng}. ${leder} ledet alene i ${dagerTekst} før dette. Nå er det åpent igjen! 🔥`,
-                `Innhentet! ${utfordrer} klatret helt opp i delt ledelse med ${leder}, og det står ${poeng} på begge i teten. Ikke en luke å gå på.`,
+                `Innhentet! ${utfordrer} kontret seg helt opp i delt ledelse med ${leder}, og det står ${poeng} på begge i teten. Ikke en luke å gå på.`,
+                `For et comeback av ${utfordrer}, som har spist opp hele forspranget til ${leder}! Begge står med ${poeng} etter at ${leder} ledet alene i ${dagerTekst}. Nervepirrende!`,
             ],
             a.frø,
         )
@@ -584,7 +682,8 @@ export function malDeltLedelse(a: DeltLedelseArgs): MalResultat {
         body = velgVariant(
             [
                 `${ledereTekst} står helt likt på topp med ${poeng} hver. Ingen luke i teten — her avgjøres alt på neste kampdag. 🔥`,
-                `Tett som hagl i toppen: ${ledereTekst} deler førsteplassen på ${poeng}. Marginene er ute.`,
+                `Tett som hagl i toppen: ${ledereTekst} deler tetposisjonen på ${poeng}. Marginene rår.`,
+                `Maktkamp uten vinner foreløpig: ${ledereTekst} deler ledelsen på ${poeng} hver. Her skilles det ikke et poeng. 🤝`,
             ],
             a.frø,
         )

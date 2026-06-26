@@ -1,4 +1,5 @@
 import {
+    fangstSetning,
     formatResultat,
     formatTipp,
     jokerSetning,
@@ -121,10 +122,24 @@ describe('maler – morgenrapport', () => {
         expect(m.tittel).toContain('4 kamper')
         expect(m.body).toContain('Robin')
         expect(m.body).toContain('Marius')
-        expect(m.body).toContain('Topp 3 står som støpt.')
+        // Topp-3-status varierer; en av de stabile variantene skal være med.
+        expect(m.body).toMatch(/Topp 3 står som støpt|Pallen rikker seg ikke|Medaljeplassene holder stand/)
     })
 
-    it('endring: bunn-vinkel når jumboplassen byttet eier', () => {
+    it('endring: leder med nattens poengkonge når fangst er satt', () => {
+        const m = malEndring({
+            antallKamper: 3,
+            størsteKlatrer: null,
+            størsteFaller: null,
+            nyTopp3: false,
+            fangst: { topp: { navn: 'Robin', poeng: 40, deltaPoeng: 12, plass: 2 }, delere: [] },
+            frø: '2026-06-20',
+        })
+        expect(m.body).toContain('Robin')
+        expect(m.body).toContain('12')
+    })
+
+    it('endring: bunn-vinkel når jumboplassen byttet eier (ny jumbo)', () => {
         const m = malEndring({
             antallKamper: 3,
             størsteKlatrer: null,
@@ -151,7 +166,7 @@ describe('maler – morgenrapport', () => {
         expect(m.body).toContain('Bo')
     })
 
-    it('endring: bunn-vinkel når samme stakkar henger igjen nederst', () => {
+    it('endring: nevner IKKE bunnen når samme stakkar bare henger igjen (ikke ny jumbo)', () => {
         const m = malEndring({
             antallKamper: 1,
             størsteKlatrer: null,
@@ -160,7 +175,8 @@ describe('maler – morgenrapport', () => {
             bunn: { jumbo: { navn: 'Cleo', plass: 16, poeng: 3 }, nyJumbo: false, rømling: null, luke: 5 },
             frø: '2026-06-22',
         })
-        expect(m.body).toContain('Cleo')
+        expect(m.body).not.toContain('Cleo')
+        expect(m.body.toLowerCase()).not.toMatch(/jumbo|kjeller|sisteplass/)
     })
 
     it('endring: uten bunn-data nevnes ingen jumbo', () => {
@@ -186,8 +202,9 @@ describe('maler – morgenrapport', () => {
             ],
             frø: '2026-06-21',
         })
-        expect(m.body).toContain('Ny i topp 3: Robin (2.) og Ada (3.).')
-        expect(m.body).not.toContain('Topp 3 står som støpt.')
+        // Navnelista er stabil på tvers av variantene; selve prefikset varierer.
+        expect(m.body).toContain('Robin (2.) og Ada (3.).')
+        expect(m.body).not.toMatch(/står som støpt|Pallen rikker seg ikke|Medaljeplassene holder stand/)
     })
 
     it('lederbytte: ny leder, luke og dager', () => {
@@ -232,6 +249,31 @@ describe('maler – morgenrapport', () => {
         expect(m.body).toContain('31 poeng')
         // Skal aldri påstå at noen «leder med 0 poeng».
         expect(m.body).not.toContain('0 poeng')
+    })
+
+    it('fangstSetning: alene nevner navn og poenghøst', () => {
+        const s = fangstSetning({ topp: { navn: 'Ada', poeng: 50, deltaPoeng: 9, plass: 1 }, delere: [] }, '2026-06-20')
+        expect(s).toContain('Ada')
+        expect(s).toContain('9')
+    })
+
+    it('fangstSetning: delt-topp nevner alle som sanket like mange', () => {
+        const s = fangstSetning(
+            { topp: { navn: 'Ada', poeng: 50, deltaPoeng: 9, plass: 1 }, delere: ['Bo'] },
+            '2026-06-20',
+        )
+        expect(s).toContain('Ada')
+        expect(s).toContain('Bo')
+        expect(s).toContain('9')
+    })
+
+    it('fangstSetning: kutter e-post i navn (visningsnavn)', () => {
+        const s = fangstSetning(
+            { topp: { navn: 'ola@example.com', poeng: 20, deltaPoeng: 5, plass: 3 }, delere: [] },
+            '2026-06-20',
+        )
+        expect(s).toContain('ola')
+        expect(s).not.toContain('@example.com')
     })
 
     it('jokerSetning: null når ingen jokere ble lagt', () => {
