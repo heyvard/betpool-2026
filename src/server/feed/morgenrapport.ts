@@ -304,6 +304,37 @@ export async function tellFerdigeKamper(
     return (await hentFerdigeKampnumre(client, fra, til, tidsbasis)).length
 }
 
+// Rapport-bøtte (Oslo-dato) for en kamp, som SQL-uttrykk på `matches m`. Hver
+// morgenrapport dekker vinduet fram til 08:00 norsk tid på rapportdagen, så en
+// kamp tilhører rapporten for det neste 08:00-skiftet etter kampstart:
+//   (timezone('Europe/Oslo', game_start) - interval '8 hours')::date + 1
+// (19:00-kampen kvelden før og 04:00-kampen samme natt → samme rapportdato;
+// 08:00-kampen tilhører neste døgn.)
+const RAPPORT_BØTTE_SQL = `((timezone('Europe/Oslo', m.game_start) - interval '8 hours')::date + 1)::text`
+
+// Gitt kampene som akkurat ble ferdige i en synk (`nyligFerdige`): returnér
+// rapportdatoene der HELE døgnets kampslate nå er ferdigspilt — dvs. ingen flere
+// kamper i samme bøtte venter på å bli ferdige. Brukes til å fyre morgenrapporten
+// i det nattens siste kamp er ferdig, i stedet for på klokka. POSTPONED/CANCELLED
+// teller IKKE som ventende (en utsatt kamp skal ikke blokkere rapporten for godt).
+// Tom liste inn → tom liste ut.
+export async function nattFerdigRapportDatoer(client: PoolClient, nyligFerdige: number[]): Promise<string[]> {
+    if (nyligFerdige.length === 0) return []
+    const res = await client.query<{ rdato: string }>(
+        `SELECT ${RAPPORT_BØTTE_SQL} AS rdato
+         FROM matches m
+         WHERE ${RAPPORT_BØTTE_SQL} IN (
+             SELECT ${RAPPORT_BØTTE_SQL} FROM matches m WHERE m.match_num = ANY($1)
+         )
+         GROUP BY rdato
+         HAVING count(*) FILTER (
+             WHERE m.status IN ('TIMED', 'IN_PLAY', 'PAUSED', 'SUSPENDED', 'SCHEDULED')
+         ) = 0`,
+        [nyligFerdige],
+    )
+    return res.rows.map((r) => r.rdato)
+}
+
 // Lagrer (upsert) en tabell-snapshot for en gitt Oslo-dato. Lagrer
 // konkurranseplassering («delt plass»), ikke rå radnummer, så endringene
 // morgenrapporten regner ut dagen etter stemmer med ledertavla.
@@ -362,10 +393,22 @@ export async function insertMorgenrapport(
 
 // Morgenrapport for hovedligaen (Æresligaen). Oppsummerer endringer i tabellen
 // siden forrige (aktive) dag. Poster ingenting på stille dager (ingen kamper ble
-// ferdige i går). Forutsetter at klokka allerede er sjekket til 08 i Oslo av
-// cron-handleren — UNIQUE på dato hindrer dobbel-post uansett.
-export async function genererMorgenrapport(client: PoolClient, now: Date = new Date()): Promise<MorgenrapportResultat> {
-    const iDag = osloDato(now)
+// ferdige i går). UNIQUE på dato hindrer dobbel-post uansett.
+//
+// `opts.now` (default nå) brukes til å hente stillingen «som av nå».
+// `opts.rapportDato` overstyrer hvilken Oslo-rapportdato (08:00-anker/vindu/dedup)
+// rapporten gjelder — nødvendig når event-triggeren fyrer rett etter at en
+// kampslate ble ferdig før midnatt (sluttspill), der kampene tilhører neste døgns
+// rapport og `osloDato(now)` ville pekt på feil dag. Utelatt → `osloDato(now)`
+// (cron/admin som kjører i morgenvinduet treffer riktig dato av seg selv).
+// `opts.createdAt` setter feed-postens tidspunkt (brukes til å legge rapporten
+// rett over nattens siste kamppost); utelatt → now().
+export async function genererMorgenrapport(
+    client: PoolClient,
+    opts: { now?: Date; rapportDato?: string; createdAt?: Date } = {},
+): Promise<MorgenrapportResultat> {
+    const now = opts.now ?? new Date()
+    const iDag = opts.rapportDato ?? osloDato(now)
 
     // Idempotent: allerede postet i dag?
     const finnes = await client.query(`SELECT 1 FROM feed_posts WHERE kind = 'morgenrapport' AND dato = $1`, [iDag])
@@ -431,7 +474,7 @@ export async function genererMorgenrapport(client: PoolClient, now: Date = new D
         return { postet: false, grunn: 'stille_dag' }
     }
 
-    await insertMorgenrapport(client, { dato: iDag, valg })
+    await insertMorgenrapport(client, { dato: iDag, valg, createdAt: opts.createdAt })
     await lagreSnapshot(client, iDag, tabell)
 
     return { postet: true, scenario: valg.scenario, antallKamper }
@@ -443,4 +486,41 @@ export async function hentNavn(client: PoolClient, userId: string): Promise<stri
         [userId],
     )
     return res.rows[0]?.name ?? 'ukjent'
+}
+
+// Tidspunktet morgenrapporten skal få for å havne rett OVER døgnets siste kamppost
+// i feeden (sortert created_at DESC): seneste created_at blant kamp-postene i
+// bøtta + 1 sek. Ingen kampposter (f.eks. siste kamp uten hovedliga-tips) →
+// undefined, som lar insert-en falle tilbake til now().
+async function nattKamppostCreatedAt(client: PoolClient, dato: string): Promise<Date | undefined> {
+    const res = await client.query<{ siste: string | null }>(
+        `SELECT max(fp.created_at)::text AS siste
+         FROM feed_posts fp
+         JOIN matches m ON m.match_num = fp.match_num
+         WHERE fp.kind = 'kamp' AND ${RAPPORT_BØTTE_SQL} = $1`,
+        [dato],
+    )
+    const siste = res.rows[0]?.siste
+    if (!siste) return undefined
+    return new Date(new Date(siste).getTime() + 1000)
+}
+
+// Fyrer morgenrapporten for hvert døgn der nattens siste kamp akkurat ble ferdig
+// (se nattFerdigRapportDatoer) — i stedet for å vente på morgen-cronen. Rapporten
+// legges rett over døgnets siste kamppost slik at den havner øverst i feeden.
+// Idempotent: UNIQUE på dato gjør at gjentatte synker ikke dobbel-poster, så dette
+// er trygt å kalle etter hver score-synk. Returnerer datoene som faktisk ble postet.
+export async function fyrMorgenrapportVedNattslutt(
+    client: PoolClient,
+    nyligFerdige: number[],
+    now: Date = new Date(),
+): Promise<string[]> {
+    const datoer = await nattFerdigRapportDatoer(client, nyligFerdige)
+    const postet: string[] = []
+    for (const dato of datoer) {
+        const createdAt = await nattKamppostCreatedAt(client, dato)
+        const res = await genererMorgenrapport(client, { now, rapportDato: dato, createdAt })
+        if (res.postet) postet.push(dato)
+    }
+    return postet
 }
