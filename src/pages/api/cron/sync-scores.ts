@@ -3,7 +3,7 @@ import { PoolClient } from 'pg'
 
 import { getPool } from '../../../auth/authHandler'
 import { syncScores } from '../../../server/syncScores'
-import { genererKampposter } from '../../../server/feed/genererKamppost'
+import { genererFeedTrygt } from '../../../server/syncAll'
 
 // Cron-jobb trigget av GHA hvert 15. minutt. Henter scores for pågående og
 // nylig ferdige kamper fra football-data.org og upserter synced_*-kolonner
@@ -19,15 +19,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     try {
         client = await getPool().connect()
         const resultat = await syncScores(client)
-        // Generer feed-kampposter KUN for kamper som akkurat ble ferdige denne
-        // synken. Aldri en blokkering.
-        if (resultat.nyligFerdige.length > 0) {
-            try {
-                await genererKampposter(client, resultat.nyligFerdige)
-            } catch (e) {
-                console.error('[feed] kunne ikke generere kampposter', e)
-            }
-        }
+        // Generer feed-poster (kampposter + ev. morgenrapport når nattens siste
+        // kamp ble ferdig) KUN for kamper som akkurat ble ferdige denne synken.
+        // genererFeedTrygt svelger egne feil — aldri en blokkering for synken.
+        await genererFeedTrygt(client, resultat.nyligFerdige)
         res.status(200).json(resultat)
     } catch (e) {
         console.error('sync-scores feilet', e)
