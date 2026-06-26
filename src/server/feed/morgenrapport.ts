@@ -6,6 +6,7 @@ import { hentHovedligaData, sorterTabell } from './hovedligaData'
 import {
     BunnArgs,
     bunnSetning,
+    fangstSetning,
     jokerSetning,
     JokerStatistikk,
     malDeltLedelse,
@@ -14,6 +15,7 @@ import {
     malLederHolder,
     MalResultat,
     MorgenScenario,
+    NattensFangst,
 } from './maler'
 import { osloDato, osloInstant } from './tid'
 
@@ -84,6 +86,39 @@ export function beregnBunn(
     }
 }
 
+// Nattens poengkonge: hvem sanket flest poeng siden forrige snapshot. Sammenligner
+// dagens poeng mot forrige snapshots poeng (begge ligger i feed_standings_snapshot)
+// per bruker, og plukker ut toppsankeren + ev. andre med nøyaktig samme høst.
+// Returnerer null når ingen sanket poeng (alle bommet) eller det ikke finnes noen
+// baseline ennå. Dette er hovedvinkelen morgenrapporten skal lede med — ikke hvem
+// som ligger sist. `tabell` er ferdigsortert (synkende poeng).
+export function beregnNattensFangst(
+    tabell: LeaderBoard[],
+    nyPlassMap: Map<string, number>,
+    forrigeRader: SnapshotRad[],
+): NattensFangst | null {
+    if (forrigeRader.length === 0) return null
+    const forrigePoeng = new Map(forrigeRader.map((r) => [r.user_id, r.poeng]))
+    const gevinster = tabell
+        .filter((r) => forrigePoeng.has(r.userid))
+        .map((r) => ({
+            navn: r.userName,
+            deltaPoeng: r.poeng - forrigePoeng.get(r.userid)!,
+            poeng: r.poeng,
+            plass: nyPlassMap.get(r.userid)!,
+        }))
+        .filter((g) => g.deltaPoeng > 0)
+        .sort((a, b) => b.deltaPoeng - a.deltaPoeng)
+    if (gevinster.length === 0) return null
+
+    const topp = gevinster[0]
+    const delere = gevinster.filter((g) => g !== topp && g.deltaPoeng === topp.deltaPoeng).map((g) => g.navn)
+    return {
+        topp: { navn: topp.navn, poeng: topp.poeng, deltaPoeng: topp.deltaPoeng, plass: topp.plass },
+        delere,
+    }
+}
+
 // Joker-oppsummering for nattens kamper: hvor mange jokere ble lagt på de ferdige
 // kampene (`ferdigeKampnumre`), og hvor mange satt (ga poeng) vs. brant (0). Teller
 // over HELE hovedligaen — ikke bare toppen — fordi vi vil fortelle hvor mange jokere
@@ -121,24 +156,27 @@ export function velgMorgenScenario(args: {
     const nyPlassMap = beregnPlasseringer(tabell)
     const forrigePlassMap = new Map(forrigeRader.map((r) => [r.user_id, r.plass]))
 
-    // Bunnstriden og joker-oppsummeringen henges på ALLE scenarioer (ikke bare
-    // «endring»), slik at hver morgenrapport også sier noe om dem rett bak teten og
-    // dem som ligger sist — ikke bare at lederen holder stand. `bunn` er null i små
-    // puljer / før noen har poeng (se beregnBunn).
+    // Nattens poengkonge, bunnstriden og joker-oppsummeringen henges på ALLE
+    // scenarioer (ikke bare «endring»), slik at hver morgenrapport leder med hvem som
+    // sanket mest poeng i natt og også sier noe om nattens jokere. `fangst`/`bunn` er
+    // null i små puljer / før noen har poeng (se beregnNattensFangst/beregnBunn).
+    const fangst = beregnNattensFangst(tabell, nyPlassMap, forrigeRader)
+    const fangstLinje = fangst ? fangstSetning(fangst, frø) : null
     const bunn = beregnBunn(tabell, nyPlassMap, forrigeRader)
     const jokerLinje = jokerSetning(jokerStatistikk, frø)
 
-    // Pakker et scenariovalg: fletter bunn- og joker-linja inn i body-en og legger
-    // jokerStatistikk + bunn på data, så fronten kan rendre dem som egne striper.
-    // `endring` fletter alt bunnstriden selv inn i sin body, så der hopper vi over
-    // bunn-linja for å unngå dobbelt-omtale — alle andre scenarioer får den her, slik
-    // at HVER rapport (ikke bare hver tredje) sier noe om dem som ligger sist.
+    // Pakker et scenariovalg: fletter fangst-, bunn- og joker-linja inn i body-en og
+    // legger fangst + jokerStatistikk + bunn på data, så fronten kan rendre dem som
+    // egne striper. «endring» fletter fangsten selv inn i sin body, så der hopper vi
+    // over fangst-linja her for å unngå dobbelt-omtale. Bunnstriden nevnes kun ved
+    // reell dramatikk (ny jumbo) — vi gidder ikke kjefte på samme stakkar hver morgen.
     function ferdig(scenario: MorgenScenario, mal: MalResultat, data: Record<string, unknown>): MorgenScenarioValg {
         const ekstra: string[] = []
-        if (scenario !== 'endring' && bunn) ekstra.push(bunnSetning(bunn, frø))
+        if (scenario !== 'endring' && fangstLinje) ekstra.push(fangstLinje)
+        if (scenario !== 'endring' && bunn?.nyJumbo) ekstra.push(bunnSetning(bunn, frø))
         if (jokerLinje) ekstra.push(jokerLinje)
         const body = ekstra.length > 0 ? `${mal.body} ${ekstra.join(' ')}` : mal.body
-        return { scenario, mal: { ...mal, body }, data: { jokerStatistikk, bunn, ...data } }
+        return { scenario, mal: { ...mal, body }, data: { jokerStatistikk, bunn, fangst, ...data } }
     }
 
     // Lederstriden regnes på konkurranseplassering («delt plass»), ikke på rå
@@ -252,8 +290,9 @@ export function velgMorgenScenario(args: {
         .sort((a, b) => a.plass - b.plass)
     const nyTopp3 = nyeITopp3.length > 0
 
-    // Bunnstriden (`bunn`) er beregnet øverst og deles av alle scenarioer.
-    const mal = malEndring({ antallKamper, størsteKlatrer, størsteFaller, nyTopp3, nyeITopp3, bunn, frø })
+    // Nattens poengkonge (`fangst`) leder an i «endring»-body-en; bunnstriden (`bunn`)
+    // nevnes kun ved ny jumbo. Begge er beregnet øverst og deles av alle scenarioer.
+    const mal = malEndring({ antallKamper, størsteKlatrer, størsteFaller, nyTopp3, nyeITopp3, fangst, bunn, frø })
     Object.assign(data, { størsteKlatrer, størsteFaller, nyTopp3, nyeITopp3, delta: bevegelser.slice(0, 4) })
     return ferdig('endring', mal, data)
 }

@@ -223,6 +223,41 @@ function BunnStripe({ data }: { data: Record<string, unknown> }) {
     )
 }
 
+// Fangst-stripe (alle morgenrapporter): nattens poengkonge — hvem sanket flest
+// poeng siden forrige rapport. Hovedvinkelen, så den vises øverst blant stripene.
+// Returnerer null når ingen sanket poeng (alle bommet) eller ingen baseline ennå.
+function FangstStripe({ data }: { data: Record<string, unknown> }) {
+    const f = data.fangst as
+        | { topp: { navn: string; deltaPoeng: number; plass: number }; delere: string[] }
+        | null
+        | undefined
+    if (!f?.topp) return null
+    const delt = (f.delere?.length ?? 0) > 0
+    const navn = delt ? `${visningsnavn(f.topp.navn)} +${f.delere.length}` : visningsnavn(f.topp.navn)
+    return (
+        <div
+            className="mt-2 flex items-center gap-2.5"
+            style={{
+                padding: '8px 11px',
+                borderRadius: 12,
+                background: 'linear-gradient(90deg,#fffbeb,#fafaf9)',
+                boxShadow: 'inset 0 0 0 1px #fde68a',
+            }}
+        >
+            <span style={{ fontSize: 14 }}>🔥</span>
+            <span className="bp-overline" style={{ color: '#b45309' }}>
+                Nattens poengkonge
+            </span>
+            <span className="flex-1 truncate font-bold" style={{ fontSize: 13, color: '#1c1917' }}>
+                {navn}
+            </span>
+            <span className="bp-tabular" style={{ fontSize: 12, fontWeight: 800, color: '#16a34a' }}>
+                +{f.topp.deltaPoeng}
+            </span>
+        </div>
+    )
+}
+
 // Joker-stripe (alle morgenrapporter): hvor mange jokere ble lagt på nattens
 // kamper, og hvor mange brant vs. satt. Vises bare når noen faktisk satset joker.
 function JokerStripe({ data }: { data: Record<string, unknown> }) {
@@ -407,12 +442,14 @@ export function FeedKort({ post, meNavn, mePicture, erSuperadmin }: Props) {
                     post.scenario === 'leder_holder' ||
                     post.scenario === 'delt_ledelse') && <MiniTopp3 data={post.data} />}
                 {post.scenario === 'endring' && <DeltaListe data={post.data} />}
-                {/* Joker- og bunn-status henger på alle morgenrapporter, så hver rapport
-                    sier noe om nattens jokere og dem som ligger sist — ikke bare toppen. */}
+                {/* Nattens poengkonge er hovedvinkelen og vises øverst. Joker-status
+                    henger på alle morgenrapporter; bunnstriden vises kun ved reell
+                    dramatikk (ny jumbo) — ikke samme stakkar hver morgen. */}
                 {post.kind === 'morgenrapport' && (
                     <>
+                        <FangstStripe data={post.data} />
                         <JokerStripe data={post.data} />
-                        <BunnStripe data={post.data} />
+                        {(post.data.bunn as { nyJumbo?: boolean } | null)?.nyJumbo && <BunnStripe data={post.data} />}
                     </>
                 )}
 

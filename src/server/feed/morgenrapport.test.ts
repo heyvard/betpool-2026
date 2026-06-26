@@ -1,8 +1,15 @@
 import { AllBetsExtended } from '../../components/results/calculateAllBetsExtended'
 import { MatchBetMedScore } from '../../queries/useAllBets'
 import { LeaderBoard } from '../../components/results/calculateAllScores'
-import { BunnArgs, JokerStatistikk } from './maler'
-import { beregnBunn, beregnJokerStatistikk, beregnPlasseringer, SnapshotRad, velgMorgenScenario } from './morgenrapport'
+import { BunnArgs, JokerStatistikk, NattensFangst } from './maler'
+import {
+    beregnBunn,
+    beregnJokerStatistikk,
+    beregnNattensFangst,
+    beregnPlasseringer,
+    SnapshotRad,
+    velgMorgenScenario,
+} from './morgenrapport'
 
 function rad(userid: string, poeng: number, userName = userid): LeaderBoard {
     return { userid, poeng, userName, paid: true, picture: null }
@@ -69,6 +76,60 @@ describe('beregnBunn – bunnstriden', () => {
         expect(bunn.jumbo.navn).toBe('d')
         expect(bunn.nyJumbo).toBe(true)
         expect(bunn.rømling).toBe('c')
+    })
+})
+
+describe('beregnNattensFangst – nattens poengkonge', () => {
+    const plasser = (tabell: LeaderBoard[]) => beregnPlasseringer(tabell)
+
+    it('returnerer null uten baseline (ingen forrige snapshot)', () => {
+        const tabell = [rad('a', 10), rad('b', 6)]
+        expect(beregnNattensFangst(tabell, plasser(tabell), [])).toBeNull()
+    })
+
+    it('returnerer null når ingen sanket poeng i natt', () => {
+        const tabell = [rad('a', 10), rad('b', 6)]
+        const forrige: SnapshotRad[] = [
+            { user_id: 'a', plass: 1, poeng: 10 },
+            { user_id: 'b', plass: 2, poeng: 6 },
+        ]
+        expect(beregnNattensFangst(tabell, plasser(tabell), forrige)).toBeNull()
+    })
+
+    it('plukker ut toppsankeren og poenghøsten', () => {
+        // a +5, b +8, c +2 → b er nattens poengkonge.
+        const tabell = [rad('a', 40), rad('b', 38), rad('c', 22)]
+        const forrige: SnapshotRad[] = [
+            { user_id: 'a', plass: 1, poeng: 35 },
+            { user_id: 'b', plass: 2, poeng: 30 },
+            { user_id: 'c', plass: 3, poeng: 20 },
+        ]
+        const fangst = beregnNattensFangst(tabell, plasser(tabell), forrige) as NattensFangst
+        expect(fangst.topp.navn).toBe('b')
+        expect(fangst.topp.deltaPoeng).toBe(8)
+        expect(fangst.topp.plass).toBe(2)
+        expect(fangst.delere).toEqual([])
+    })
+
+    it('lister delere som sanket nøyaktig like mange poeng', () => {
+        // a +7, b +7, c +2 → delt toppscorertittel mellom a og b.
+        const tabell = [rad('a', 40), rad('b', 38), rad('c', 22)]
+        const forrige: SnapshotRad[] = [
+            { user_id: 'a', plass: 1, poeng: 33 },
+            { user_id: 'b', plass: 2, poeng: 31 },
+            { user_id: 'c', plass: 3, poeng: 20 },
+        ]
+        const fangst = beregnNattensFangst(tabell, plasser(tabell), forrige) as NattensFangst
+        expect(fangst.topp.deltaPoeng).toBe(7)
+        expect([fangst.topp.navn, ...fangst.delere].sort()).toEqual(['a', 'b'])
+    })
+
+    it('ignorerer brukere som mangler i forrige snapshot', () => {
+        const tabell = [rad('ny', 9), rad('a', 12)]
+        const forrige: SnapshotRad[] = [{ user_id: 'a', plass: 1, poeng: 4 }]
+        const fangst = beregnNattensFangst(tabell, plasser(tabell), forrige) as NattensFangst
+        expect(fangst.topp.navn).toBe('a')
+        expect(fangst.topp.deltaPoeng).toBe(8)
     })
 })
 
@@ -146,13 +207,18 @@ describe('velgMorgenScenario – joker- og jager-tillegg', () => {
         expect(valg.data.jager).toBe('dagga')
         expect(valg.mal.body).toContain('dagga')
         expect(valg.mal.body.toLowerCase()).toContain('joker')
-        // Bunnstriden flettes inn i body også for leder_holder (jumboen er langflate).
+        // Nattens poengkonge (johannes, +8) flettes inn i body og legges på data.
+        const fangst = valg.data.fangst as NattensFangst
+        expect(fangst.topp.navn).toBe('johannes')
+        expect(fangst.topp.deltaPoeng).toBe(8)
+        // Bunnstriden beregnes fortsatt og legges på data, men nevnes ikke i body når
+        // jumboen (langflate) ikke er ny.
         expect(valg.data.bunn).not.toBeNull()
-        expect(valg.mal.body).toContain('langflate')
-        expect(valg.mal.body.toLowerCase()).toMatch(/jumbo|kjeller|sisteplass|bånn|bunn/)
+        expect((valg.data.bunn as BunnArgs).nyJumbo).toBe(false)
+        expect(valg.mal.body).not.toContain('langflate')
     })
 
-    it('fletter bunnstriden inn i body på ikke-endring-scenarioer (lederbytte)', () => {
+    it('nevner IKKE bunnen i body når jumboen ikke er ny (lederbytte)', () => {
         const tabell = [rad('johannes', 34), rad('dagga', 30), rad('bendik', 29), rad('langflate', 20)]
         const forrige: SnapshotRad[] = [
             { user_id: 'dagga', plass: 1, poeng: 28 },
@@ -170,9 +236,14 @@ describe('velgMorgenScenario – joker- og jager-tillegg', () => {
             frø: '2026-06-21',
         })!
         expect(valg.scenario).toBe('lederbytte')
-        // Jumboen (langflate) skal nevnes i selve teksten, ikke bare i en stripe.
-        expect(valg.mal.body).toContain('langflate')
-        expect(valg.mal.body.toLowerCase()).toMatch(/jumbo|kjeller|sisteplass|bånn|bunn/)
+        // langflate er fortsatt sist, men ikke NY jumbo → ikke nevnt i body.
+        expect((valg.data.bunn as BunnArgs).nyJumbo).toBe(false)
+        expect(valg.mal.body).not.toContain('langflate')
+        expect(valg.mal.body.toLowerCase()).not.toMatch(/jumbo|kjeller|sisteplass|bånn/)
+        // Nattens poengkonge leder an i stedet (johannes sanket +10).
+        const fangst = valg.data.fangst as NattensFangst
+        expect(fangst.topp.navn).toBe('johannes')
+        expect(fangst.topp.deltaPoeng).toBe(10)
     })
 
     it('utelater joker-linja når ingen jokere ble lagt', () => {
@@ -243,7 +314,8 @@ describe('velgMorgenScenario – plassering ved delt plass', () => {
         })!
         const nye = valg.data.nyeITopp3 as { navn: string; plass: number }[]
         expect(nye).toEqual([{ navn: 'c', plass: 3 }])
-        expect(valg.mal.body).toContain('Ny i topp 3: c (3.).')
+        // Prefikset varierer mellom variantene; navnelista «c (3.)» er stabil.
+        expect(valg.mal.body).toContain('c (3.).')
     })
 })
 
