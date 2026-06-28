@@ -496,6 +496,16 @@ export function FeedKort({ post, meNavn, mePicture, erSuperadmin }: Props) {
                         <FangstStripe data={post.data} />
                         <JokerStripe data={post.data} />
                         {(post.data.bunn as { nyJumbo?: boolean } | null)?.nyJumbo && <BunnStripe data={post.data} />}
+                        {/* AI-rapporter får en liten signatur som markerer at teksten er maskingenerert. */}
+                        {post.scenario === 'ai' && (
+                            <div
+                                className="mt-2 flex items-center gap-1"
+                                style={{ fontSize: 11, color: '#a8a29e', fontWeight: 600 }}
+                            >
+                                <span>🤖</span>
+                                <span>AI-generert</span>
+                            </div>
+                        )}
                     </>
                 )}
 
