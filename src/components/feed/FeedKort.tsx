@@ -293,6 +293,47 @@ function JokerStripe({ data }: { data: Record<string, unknown> }) {
     )
 }
 
+// AI-morgenrapportens seksjoner (scenario === 'ai'): Claude-skrevne deler med emoji,
+// overskrift og brødtekst. Hver seksjon vises som et nedtonet kort. Erstatter
+// fangst-/joker-/bunn-stripene for AI-rapporter (de har ikke de data-feltene).
+function AiSeksjoner({ data }: { data: Record<string, unknown> }) {
+    const seksjoner = (data.seksjoner as { emoji: string; overskrift: string; tekst: string }[] | undefined) ?? []
+    if (seksjoner.length === 0) return null
+    return (
+        <div className="flex flex-col gap-2" style={{ marginTop: 12 }}>
+            {seksjoner.map((s, i) => (
+                <div
+                    key={i}
+                    style={{
+                        padding: '10px 12px',
+                        borderRadius: 12,
+                        background: '#fafaf9',
+                        boxShadow: 'inset 0 0 0 1px #f5f5f4',
+                    }}
+                >
+                    <div className="flex items-center gap-2">
+                        <span style={{ fontSize: 15 }}>{s.emoji}</span>
+                        <span className="bp-overline" style={{ color: '#57534e' }}>
+                            {s.overskrift}
+                        </span>
+                    </div>
+                    <p
+                        style={{
+                            fontSize: 13.5,
+                            color: '#44403c',
+                            lineHeight: 1.5,
+                            marginTop: 5,
+                            whiteSpace: 'pre-line',
+                        }}
+                    >
+                        {s.tekst}
+                    </p>
+                </div>
+            ))}
+        </div>
+    )
+}
+
 function KommentarRad({ post, kommentar }: { post: FeedPost; kommentar: FeedKommentar }) {
     const [pickerOpen, setPickerOpen] = useState(false)
     const reaksjon = UseMutateFeedKommentarReaksjon()
@@ -434,7 +475,9 @@ export function FeedKort({ post, meNavn, mePicture, erSuperadmin }: Props) {
                 >
                     {post.tittel}
                 </h3>
-                <p style={{ fontSize: 13.5, color: '#57534e', lineHeight: 1.5, marginTop: 6 }}>{post.body}</p>
+                <p style={{ fontSize: 13.5, color: '#57534e', lineHeight: 1.5, marginTop: 6, whiteSpace: 'pre-line' }}>
+                    {post.body}
+                </p>
 
                 {/* Strukturert tillegg */}
                 {post.kind === 'kamp' && <ScoreBlokk data={post.data} matchNum={post.match_num} />}
@@ -447,6 +490,9 @@ export function FeedKort({ post, meNavn, mePicture, erSuperadmin }: Props) {
                     dramatikk (ny jumbo) — ikke samme stakkar hver morgen. */}
                 {post.kind === 'morgenrapport' && (
                     <>
+                        {/* AI-rapporter (scenario 'ai') rendres som seksjoner; de malbaserte
+                            som stripene under (som returnerer null for AI-data). */}
+                        <AiSeksjoner data={post.data} />
                         <FangstStripe data={post.data} />
                         <JokerStripe data={post.data} />
                         {(post.data.bunn as { nyJumbo?: boolean } | null)?.nyJumbo && <BunnStripe data={post.data} />}

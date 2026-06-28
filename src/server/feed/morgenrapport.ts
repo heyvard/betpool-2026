@@ -531,7 +531,7 @@ export async function hentNavn(client: PoolClient, userId: string): Promise<stri
 // i feeden (sortert created_at DESC): seneste created_at blant kamp-postene i
 // bøtta + 1 sek. Ingen kampposter (f.eks. siste kamp uten hovedliga-tips) →
 // undefined, som lar insert-en falle tilbake til now().
-async function nattKamppostCreatedAt(client: PoolClient, dato: string): Promise<Date | undefined> {
+export async function nattKamppostCreatedAt(client: PoolClient, dato: string): Promise<Date | undefined> {
     const res = await client.query<{ siste: string | null }>(
         `SELECT max(fp.created_at)::text AS siste
          FROM feed_posts fp

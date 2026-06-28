@@ -539,7 +539,7 @@ function MorgenrapportKnapp() {
 
     const grunnTekst: Record<string, string> = {
         allerede_postet: 'Allerede postet i dag — ingen ny rapport laget.',
-        stille_dag: 'Stille dag — ingen ferdige kamper i vinduet (30 t), ingen rapport.',
+        stille_dag: 'Stille dag — ingen ferdige kamper i vinduet (24 t), ingen rapport.',
         ingen_baseline: 'Ingen baseline ennå — snapshot lagret, men ingen rapport.',
     }
 
@@ -549,8 +549,9 @@ function MorgenrapportKnapp() {
                 <div className="min-w-0">
                     <p className="text-sm font-medium text-stone-900">Kjør morgenrapport</p>
                     <p className="text-xs text-stone-500">
-                        Lager morgenrapporten for i dag manuelt (uten å vente til kl 8). Ser 30 timer bakover etter
-                        ferdige kamper. Idempotent — lager ikke to rapporter for samme dag.
+                        Lager og poster den AI-genererte morgenrapporten (Claude) for i dag manuelt (uten å vente til kl
+                        8). Ser 24 timer bakover etter ferdige kamper. Idempotent — lager ikke to rapporter for samme
+                        dag.
                     </p>
                 </div>
                 <div className="flex shrink-0 gap-2">
@@ -568,7 +569,8 @@ function MorgenrapportKnapp() {
             {isSuccess && data && (
                 <p className="rounded-lg bg-green-50 px-3 py-1.5 text-xs text-green-700">
                     {data.postet
-                        ? `Morgenrapport postet · scenario: ${data.scenario} · kamper: ${data.antallKamper}`
+                        ? `Morgenrapport postet · kamper: ${data.antallKamper}` +
+                          (data.kostnad ? ` · $${data.kostnad.usd.toFixed(4)}` : '')
                         : (data.grunn && grunnTekst[data.grunn]) || 'Ingen rapport laget.'}
                 </p>
             )}

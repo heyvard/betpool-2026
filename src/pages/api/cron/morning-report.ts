@@ -2,9 +2,15 @@ import { NextApiRequest, NextApiResponse } from 'next'
 import { PoolClient } from 'pg'
 
 import { getPool } from '../../../auth/authHandler'
-import { genererMorgenrapport } from '../../../server/feed/morgenrapport'
+import { genererOgLagreAiMorgenrapport } from '../../../server/feed/morgenrapportAi'
 import { osloTime } from '../../../server/feed/tid'
 import { syncMatches } from '../../../server/syncMatches'
+
+// Claude-kallet (AI-morgenrapporten) kan ta titalls sekunder; gi ruten rikelig tid.
+// Selve kallet er hardt tidsavbrutt på 55 s i genererAiMorgenrapport, godt under.
+export const config = {
+    maxDuration: 60,
+}
 
 // Morgenrapport-cron, ment å treffe morgenen norsk tid. GHA-cron kjører i UTC og
 // leveres ofte 1–2 timer for sent (observert: planlagt 06:00 UTC, faktisk kjørt
@@ -44,7 +50,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         } catch (syncFeil) {
             console.warn('morning-report: kamp-synk feilet, fortsetter med rapport', syncFeil)
         }
-        const resultat = await genererMorgenrapport(client)
+        const resultat = await genererOgLagreAiMorgenrapport(client)
         res.status(200).json(resultat)
     } catch (e) {
         console.error('morning-report feilet', e)

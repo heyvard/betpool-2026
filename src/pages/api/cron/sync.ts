@@ -4,6 +4,13 @@ import { PoolClient } from 'pg'
 import { getPool } from '../../../auth/authHandler'
 import { syncAll } from '../../../server/syncAll'
 
+// syncAll → genererFeedTrygt kan fyre den AI-genererte morgenrapporten (Claude) når
+// nattens siste kamp blir ferdig — det kallet tar titalls sekunder. Gi ruten rikelig
+// tid så den ikke drepes midt i kallet. Claude-kallet er hardt tidsavbrutt på 55 s.
+export const config = {
+    maxDuration: 60,
+}
+
 // Cron-jobb (GitHub Actions). Gjør én fetch mot football-data.org og oppdaterer
 // både kampoppsett og scores i samme kjøring. Beskyttet av CRON_SECRET.
 export default async function handler(req: NextApiRequest, res: NextApiResponse): Promise<void> {
