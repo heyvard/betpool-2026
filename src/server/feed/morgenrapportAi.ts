@@ -86,6 +86,15 @@ export interface AiTabellRad {
     deltaPlass: number | null // plasser klatret (+) / falt (−) i natt, null uten baseline
 }
 
+// Gårsdagens stilling (forrige snapshot) — rå plass/poeng per deltaker, slik at
+// Claude selv kan regne ut diffen mot dagens `tabell` og kommentere hvordan ting
+// utvikler seg. Tom liste når det ikke finnes baseline ennå.
+export interface AiForrigeTabellRad {
+    plass: number
+    navn: string
+    poeng: number
+}
+
 export interface AiBesteTips {
     navn: string
     kamp: string // «🇳🇴 Norge – Brasil 🇧🇷»
@@ -112,10 +121,12 @@ export interface AiNorgeKontekst {
 
 export interface MorgenrapportAiKontekst {
     rapportDato: string
+    forrigeDato: string | null // datoen gårsdagens stilling (forrigeTabell) er hentet fra
     antallKamper: number
     harBaseline: boolean
     kamper: AiKampKontekst[]
-    tabell: AiTabellRad[]
+    tabell: AiTabellRad[] // dagens stilling (hele ligaen), med nattens delta
+    forrigeTabell: AiForrigeTabellRad[] // gårsdagens stilling (hele ligaen) — for diff
     nattensPoengkonge: { navn: string; deltaPoeng: number; plass: number; delere: string[] } | null
     bunnstrid: { jumbo: string; poeng: number; nyJumbo: boolean; rømling: string | null; luke: number } | null
     besteTips: AiBesteTips[]
@@ -238,8 +249,10 @@ export async function byggMorgenrapportAiKontekst(
         .filter((k): k is AiKampKontekst => k !== null)
         .sort((a, b) => a.runde - b.runde || a.matchNum - b.matchNum)
 
-    // Ledertavla — topp 10 med nattens poeng-/plass-endring.
-    const aiTabell: AiTabellRad[] = tabell.slice(0, 10).map((r: LeaderBoard) => {
+    // Dagens ledertavle — hele ligaen, med nattens poeng-/plass-endring. Vi sender
+    // hele tabellen (ikke bare toppen) slik at Claude kan regne diffen mot gårsdagen
+    // for alle deltakere, ikke bare teten.
+    const aiTabell: AiTabellRad[] = tabell.map((r: LeaderBoard) => {
         const fp = forrigePoeng.get(r.userid)
         const flp = forrigePlass.get(r.userid)
         return {
@@ -250,6 +263,17 @@ export async function byggMorgenrapportAiKontekst(
             deltaPlass: flp !== undefined ? flp - nyPlassMap.get(r.userid)! : null,
         }
     })
+
+    // Gårsdagens ledertavle (forrige snapshot) — rå plass/poeng per deltaker. Navn
+    // slås opp i dagens navn-map (de aller fleste går igjen); ukjente faller tilbake
+    // til «ukjent». Sortert på plass slik at Claude lett kan sammenligne med dagens.
+    const forrigeTabell: AiForrigeTabellRad[] = forrigeRader
+        .map((r) => ({
+            plass: r.plass,
+            navn: navnMap.get(r.user_id) ?? 'ukjent',
+            poeng: r.poeng,
+        }))
+        .sort((a, b) => a.plass - b.plass || b.poeng - a.poeng)
 
     const fangst = beregnNattensFangst(tabell, nyPlassMap, forrigeRader)
     const bunn = beregnBunn(tabell, nyPlassMap, forrigeRader)
@@ -303,10 +327,12 @@ export async function byggMorgenrapportAiKontekst(
 
     return {
         rapportDato,
+        forrigeDato,
         antallKamper: kamper.length,
         harBaseline,
         kamper,
         tabell: aiTabell,
+        forrigeTabell,
         nattensPoengkonge: fangst
             ? {
                   navn: fangst.topp.navn,
@@ -342,6 +368,15 @@ Tone og stil:
 - Bruk gjerne tørre ordspill og lett erting, både på lagene som spilte OG på deltakerne som tippet på dem. Hold det vennlig — dette er kompiser.
 - Emoji er lov og oppmuntret, men ikke overdriv (1–2 per seksjon).
 - Vær konkret: bruk faktiske navn, resultater og poeng fra dataene. Aldri dikt opp tall, kamper eller navn som ikke står i konteksten.
+- Du kan bruke linjeskift i seksjonsteksten (og ingressen) for å dele opp i flere avsnitt når det gjør teksten lettere å lese. Skriv et reelt linjeskift mellom avsnittene.
+
+Fotballkunnskap og overraskelser:
+- Bruk din egen kunnskap om landenes fotballhistorie og -nivå til å fargelegge kampene: nasjonale spillestiler og klisjeer (brasiliansk samba og «o jogo bonito», tysk effektivitet, italiensk catenaccio, engelsk «it's coming home»-håp, nederlandsk totalfotball osv.) er gode å spille på — men hold det vennlig og ikke nedlatende.
+- Vurder hvert resultat opp mot hva man kunne forvente: en stormakt som taper eller spiller uavgjort mot en outsider er en overraskelse verdt å løfte fram, mens en favoritt som vinner stort er som forventet. Si tydelig fra når noe er et sjokkresultat — og knytt det gjerne til hvem i ligaen som turte (eller bommet på) å tippe det.
+- Ikke dikt opp fakta om lagene (skader, spillere, tidligere kamper i akkurat dette VM-et). Hold deg til generell, velkjent fotballkunnskap og det som faktisk står i konteksten.
+
+Tabell-utvikling:
+- Konteksten har både «tabell» (dagens stilling, hele ligaen) og «forrigeTabell» (gårsdagens stilling). Bruk de to til å fortelle hvordan ting utvikler seg: hvem klatret, hvem falt, hvem nærmer seg teten. «tabell» har også ferdig utregnet deltaPoeng/deltaPlass for natten du kan lene deg på.
 
 Vokabular (følg dette nøyaktig):
 - Handlingen heter å «tippe»; et innsendt tipp er «tipset». Aldri «bette»/«gjette».
@@ -368,7 +403,11 @@ const RAPPORT_SCHEMA = {
     additionalProperties: false,
     properties: {
         tittel: { type: 'string', description: 'Kort, fengende tittel på rapporten (gjerne med ett ordspill).' },
-        ingress: { type: 'string', description: 'Én til to setninger som setter scenen for natten.' },
+        ingress: {
+            type: 'string',
+            description:
+                'Én til to setninger som setter scenen for natten. Linjeskift er lov hvis du vil dele opp i avsnitt.',
+        },
         seksjoner: {
             type: 'array',
             description: 'Rapportens deler — én per vinkel (kamper, tabell, beste tips, joker, Norge ...).',
@@ -378,7 +417,11 @@ const RAPPORT_SCHEMA = {
                 properties: {
                     emoji: { type: 'string', description: 'Én emoji som passer seksjonen.' },
                     overskrift: { type: 'string', description: 'Kort overskrift for seksjonen.' },
-                    tekst: { type: 'string', description: 'Selve kommentaren for seksjonen.' },
+                    tekst: {
+                        type: 'string',
+                        description:
+                            'Selve kommentaren for seksjonen. Bruk gjerne linjeskift for å dele opp i flere avsnitt.',
+                    },
                 },
                 required: ['emoji', 'overskrift', 'tekst'],
             },

@@ -682,7 +682,9 @@ function AiMorgenrapportKnapp() {
                         <div className="space-y-2">
                             <div>
                                 <p className="text-base font-bold text-stone-900">{data.rapport.tittel}</p>
-                                <p className="text-sm italic text-stone-600">{data.rapport.ingress}</p>
+                                <p className="whitespace-pre-line text-sm italic text-stone-600">
+                                    {data.rapport.ingress}
+                                </p>
                             </div>
                             <div className="space-y-1.5">
                                 {data.rapport.seksjoner.map((s, i) => (
