@@ -320,9 +320,9 @@ export async function syncScores(
                 `[sync-scores] oppdaterte kamp ${m.id}: ${score.fullTime.home}–${score.fullTime.away} (${m.status})`,
             )
         }
-        // Ferdige kamper synket denne kjøringen er kandidater for feed-post.
-        // genererKampposter er idempotent, så gjentatte runder i 6-timersvinduet
-        // (kampen er fortsatt «relevant») lager ikke duplikater.
+        // Ferdige kamper synket denne kjøringen brukes til å avgjøre om nattens
+        // siste kamp er ferdig (→ morgenrapport). Morgenrapporten er idempotent
+        // (UNIQUE på dato), så gjentatte runder i 6-timersvinduet lager ikke duplikater.
         if (erFerdig) nyligFerdige.push(m.id)
     }
 

@@ -1,33 +1,15 @@
 import {
     fangstSetning,
-    formatResultat,
-    formatTipp,
     jokerSetning,
     malDeltLedelse,
     malEndring,
-    malEnstemmig,
-    malIngenTraff,
-    malJoker,
     malLederbytte,
     malLederHolder,
-    malSjeldent,
-    malSjokk,
     velgVariant,
     visningsnavn,
 } from './maler'
 
 describe('maler – formatering', () => {
-    it('bruker tankestrek i resultat', () => {
-        expect(formatResultat(2, 1)).toBe('2–1')
-        expect(formatResultat(2, 1)).not.toContain('-')
-    })
-
-    it('formaterer tipp med vinnerlag, uavgjort uten lag', () => {
-        expect(formatTipp(2, 0, 'BRA', 'ARG')).toBe('2–0 til Brasil')
-        expect(formatTipp(0, 2, 'BRA', 'ARG')).toBe('0–2 til Argentina')
-        expect(formatTipp(1, 1, 'BRA', 'ARG')).toBe('1–1')
-    })
-
     it('kutter e-post i visningsnavn', () => {
         expect(visningsnavn('ola@example.com')).toBe('ola')
         expect(visningsnavn('Kari')).toBe('Kari')
@@ -41,71 +23,6 @@ describe('velgVariant', () => {
         expect(velgVariant(arr, 'foo')).toBe(velgVariant(arr, 'foo'))
         const valgte = new Set([0, 1, 2, 3, 4, 5, 6, 7].map((f) => velgVariant(arr, f)))
         expect(valgte.size).toBeGreaterThan(1)
-    })
-})
-
-describe('maler – kamp-scenarioer', () => {
-    it('sjeldent: alene-tittel nevner spilleren, og rundevekt/poeng i body', () => {
-        const m = malSjeldent({ spillere: ['Ola'], resultat: '2–1', antall: 1, totalt: 12, vekt: 3, poeng: 15, frø: 1 })
-        expect(m.accent).toBe('gold')
-        expect(m.tittel).toContain('Ola')
-        expect(m.tittel).toContain('2–1')
-        expect(m.body).toContain('av 12')
-        expect(m.body).toContain('×3')
-        expect(m.body).toContain('+15 poeng')
-        expect(m.body).not.toContain('største napp')
-    })
-
-    it('sjeldent: flertall-tittel når flere traff', () => {
-        const m = malSjeldent({
-            spillere: ['A', 'B'],
-            resultat: '0–0',
-            antall: 2,
-            totalt: 20,
-            vekt: 1,
-            poeng: 5,
-            frø: 1,
-        })
-        expect(m.tittel).toContain('2')
-        expect(m.tittel).toContain('0–0')
-    })
-
-    it('ingen_traff: deler utfallspoeng', () => {
-        const m = malIngenTraff({
-            totalt: 10,
-            resultat: '3–2',
-            utfall: 'H',
-            homeTla: 'BRA',
-            awayTla: 'ARG',
-            antallUtfall: 4,
-            frø: 1,
-        })
-        expect(m.accent).toBe('stone')
-        expect(m.body).toContain('3–2')
-        expect(m.body).toContain('seier til Brasil')
-    })
-
-    it('enstemmig: alle traff utfallet', () => {
-        const m = malEnstemmig({ totalt: 8, resultat: '1–0', utfall: 'H', homeTla: 'BRA', awayTla: 'ARG', frø: 2 })
-        expect(m.accent).toBe('win')
-        expect(m.body).toContain('seier til Brasil')
-        expect(m.body).toContain('1–0')
-    })
-
-    it('sjokk: ingen traff utfallet', () => {
-        const m = malSjokk({ totalt: 9, resultat: '0–3', utfall: 'B', homeTla: 'BRA', awayTla: 'ARG', frø: 3 })
-        expect(m.accent).toBe('live')
-        expect(m.body).toContain('0–3')
-    })
-
-    it('joker: ulik tone om jokeren satt eller brant', () => {
-        const satt = malJoker({ navn: 'Ola', poeng: 12, resultat: '2–1', satt: true, frø: 4 })
-        expect(satt.accent).toBe('gold')
-        expect(satt.tittel).toContain('Ola')
-        expect(satt.body).toContain('12')
-        const brant = malJoker({ navn: 'Ola', poeng: 0, resultat: '2–1', satt: false, frø: 4 })
-        expect(brant.tittel).toContain('Ola')
-        expect(brant.tittel).not.toBe(satt.tittel)
     })
 })
 

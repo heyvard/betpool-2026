@@ -85,7 +85,6 @@ export interface FeedBackfillResultat {
     fraDato: string | null
     tilDato: string
     dager: number
-    kampposter: number
     morgenrapporter: number
 }
 

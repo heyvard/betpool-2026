@@ -1,7 +1,6 @@
 import { PoolClient } from 'pg'
 
 import { hentHovedligaData, sorterTabell } from './hovedligaData'
-import { FerdigKampRow, insertKamppost, lagKamppost } from './genererKamppost'
 import {
     beregnJokerStatistikk,
     hentFerdigeKampnumre,
@@ -15,80 +14,24 @@ import {
 } from './morgenrapport'
 import { osloDagFør, osloDato, osloInstant } from './tid'
 
-// Full backfill av feeden: fyller på med kamp-poster og morgenrapporter for HELE
-// turneringen — fra første ferdigspilte kamp til i dag — i én kjøring. Hver post
-// får et historisk korrekt `created_at`, og standings beregnes som-av tidspunktet
-// eventet skulle vært fra (slik at «leder med X poeng» reflekterer stillingen da,
-// ikke nå).
+// Full backfill av feeden: fyller på med morgenrapporter for HELE turneringen —
+// fra første ferdigspilte kamp til i dag — i én kjøring. Hver post får et historisk
+// korrekt `created_at`, og standings beregnes som-av tidspunktet rapporten skulle
+// vært fra (slik at «leder med X poeng» reflekterer stillingen da, ikke nå).
 //
-// Trygt å kjøre flere ganger, også når feeden allerede er delvis fylt: kamp-poster
-// har UNIQUE på (kind, scenario, match_num) og hentes kun når de mangler post,
-// morgenrapporter har UNIQUE på dato — eksisterende poster røres ikke. Dvs.
-// dedup på kamp (match_num) og dato.
-
-const TIME_MS = 60 * 60 * 1000
+// Trygt å kjøre flere ganger, også når feeden allerede er delvis fylt:
+// morgenrapporter har UNIQUE på dato — eksisterende poster røres ikke (dedup på dato).
 
 export interface BackfillResultat {
     fraDato: string | null
     tilDato: string
     dager: number
-    kampposter: number
     morgenrapporter: number
 }
 
-interface BackfillKampRow extends FerdigKampRow {
-    game_start: string
-}
-
-// Tidspunktet en kamp regnes som ferdig: kampstart + 120 minutter (full kamp).
-// Vi bruker bevisst IKKE score_synced_at: de fleste resultatene ble bulk-synket
-// 13. juni, så det tidspunktet sier ingenting om når kampen faktisk ble avgjort.
-// game_start + 120 min gir en historisk korrekt tidslinje for backfillen.
-function sluttidspunkt(row: BackfillKampRow): Date {
-    return new Date(new Date(row.game_start).getTime() + 2 * TIME_MS)
-}
-
 export async function backfillFeed(client: PoolClient, now: Date = new Date()): Promise<BackfillResultat> {
-    const kampposter = await backfillKampposter(client, now)
     const { morgenrapporter, fraDato, dager } = await backfillMorgenrapporter(client, now)
-    return { fraDato, tilDato: osloDato(now), dager, kampposter, morgenrapporter }
-}
-
-// ── Kamp-poster ────────────────────────────────────────────────────────────
-
-// Alle ferdigspilte hovedliga-kamper som ennå mangler en feed-post — uten
-// tidsvindu. Dedup på match_num via NOT EXISTS, så allerede-postede kamper hoppes
-// over. Eldste først, slik at created_at-rekkefølgen i feeden blir kronologisk.
-async function backfillKampposter(client: PoolClient, now: Date): Promise<number> {
-    const ferdige = await client.query<BackfillKampRow>(
-        `SELECT m.match_num, m.round, m.home_team, m.away_team,
-                ms.home_score, ms.away_score,
-                ms.home_team_override, ms.away_team_override,
-                ms.synced_home_ft, ms.synced_away_ft, ms.use_manual,
-                m.game_start::text AS game_start
-         FROM matches m
-         JOIN match_scores ms ON ms.match_num = m.match_num
-         WHERE m.status IN ('FINISHED', 'AWARDED')
-           AND ms.synced_home_ft IS NOT NULL
-           AND ms.synced_away_ft IS NOT NULL
-           AND NOT EXISTS (
-               SELECT 1 FROM feed_posts fp WHERE fp.kind = 'kamp' AND fp.match_num = m.match_num
-           )
-         ORDER BY m.game_start ASC`,
-    )
-
-    let postet = 0
-    for (const kamp of ferdige.rows) {
-        const T = sluttidspunkt(kamp)
-        if (T.getTime() > now.getTime()) continue // skulle ikke kunne skje, men vær trygg
-        // Standings som-av kampens slutt: hentHovedligaData filtrerer bort kamper
-        // som startet etter T, så vi får den historiske stillingen.
-        const hd = await hentHovedligaData(client, T)
-        const post = lagKamppost(kamp, hd)
-        if (!post) continue
-        if (await insertKamppost(client, kamp.match_num, post, T)) postet++
-    }
-    return postet
+    return { fraDato, tilDato: osloDato(now), dager, morgenrapporter }
 }
 
 // ── Morgenrapporter ────────────────────────────────────────────────────────
