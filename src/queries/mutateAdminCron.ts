@@ -113,6 +113,56 @@ export function UseMutateMorgenrapport() {
     })
 }
 
+// ── AI-morgenrapport (dry run) ───────────────────────────────────────────────
+
+export interface AiMorgenrapportSeksjon {
+    emoji: string
+    overskrift: string
+    tekst: string
+}
+
+export interface AiMorgenrapport {
+    tittel: string
+    ingress: string
+    seksjoner: AiMorgenrapportSeksjon[]
+}
+
+export interface AiMorgenrapportKostnad {
+    inputTokens: number
+    outputTokens: number
+    usd: number
+}
+
+// Speiler AiMorgenrapportDryRun fra server/feed/morgenrapportAi.ts. `kontekst` er
+// rådataene (typet løst her — vises kun som JSON i UI-en).
+export interface AiMorgenrapportDryRunResultat {
+    rapportDato: string
+    antallKamper: number
+    harBaseline: boolean
+    kontekst: unknown
+    rapport: AiMorgenrapport | null
+    grunn?: 'ingen_kamper'
+    usage?: { input_tokens: number; output_tokens: number }
+    kostnad?: AiMorgenrapportKostnad
+}
+
+export function UseAiMorgenrapport() {
+    const authedFetch = useAuthedFetch()
+    return useMutation({
+        mutationFn: async (dato: string) => {
+            const response = await authedFetch(
+                `/api/v1/admin/cron/morning-report-ai?dato=${encodeURIComponent(dato)}`,
+                { method: 'POST' },
+            )
+            if (!response.ok) {
+                const feil = (await response.json().catch(() => null)) as { error?: string } | null
+                throw new Error(feil?.error ?? `Serverfeil: ${response.status}`)
+            }
+            return response.json() as Promise<AiMorgenrapportDryRunResultat>
+        },
+    })
+}
+
 export function UseMutateAdminSync() {
     const authedFetch = useAuthedFetch()
     return useMutation({
