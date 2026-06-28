@@ -16,9 +16,16 @@ import {
     EttermiddagsVarselDryRunBruker,
 } from '../queries/mutateAdminCron'
 import { UseMutateSyncPlayers } from '../queries/mutateSyncPlayers'
-import { UseMutateFeedBackfill, UseMutateMorgenrapport } from '../queries/mutateAdminCron'
+import {
+    UseMutateFeedBackfill,
+    UseMutateMorgenrapport,
+    UseAiMorgenrapport,
+    AiMorgenrapportSeksjon,
+    AiModellId,
+    AI_MODELL_VALG,
+} from '../queries/mutateAdminCron'
 import { Button } from '@/components/ui/button'
-import { RefreshCw, Bell, Eye, Trophy, Users, Radio, Sunrise } from 'lucide-react'
+import { RefreshCw, Bell, Eye, Trophy, Users, Radio, Sunrise, Sparkles } from 'lucide-react'
 
 function formaterFeltVerdi(felt: string, verdi: string | number | null): string {
     if (verdi === null) return 'null'
@@ -572,6 +579,124 @@ function MorgenrapportKnapp() {
     )
 }
 
+// Gårsdagens dato (YYYY-MM-DD) i nettleserens tidssone — default for natt-velgeren.
+function iGårISO(): string {
+    const d = new Date()
+    d.setDate(d.getDate() - 1)
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
+
+function AiSeksjon({ seksjon }: { seksjon: AiMorgenrapportSeksjon }) {
+    return (
+        <div className="rounded-lg bg-white px-3 py-2 ring-1 ring-stone-200/70">
+            <p className="text-sm font-semibold text-stone-900">
+                <span className="mr-1.5">{seksjon.emoji}</span>
+                {seksjon.overskrift}
+            </p>
+            <p className="mt-0.5 whitespace-pre-line text-sm text-stone-700">{seksjon.tekst}</p>
+        </div>
+    )
+}
+
+function AiMorgenrapportKnapp() {
+    const { mutate, isPending, data, error, isSuccess } = UseAiMorgenrapport()
+    const [dato, setDato] = React.useState(iGårISO)
+    const [modell, setModell] = React.useState<AiModellId>('claude-sonnet-4-6')
+    const [visJson, setVisJson] = React.useState(false)
+
+    const modellNavn = (id: AiModellId) => AI_MODELL_VALG.find((m) => m.id === id)?.navn ?? id
+
+    return (
+        <div className="flex flex-col gap-2 py-3 first:pt-0 last:pb-0">
+            <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                    <p className="text-sm font-medium text-stone-900">AI-morgenrapport (dry run)</p>
+                    <p className="text-xs text-stone-500">
+                        Lar Claude (velg Sonnet eller Haiku) skrive en kommentator-oppsummering av natten — kamper,
+                        tabell-endringer, beste tips, joker og Norge. Poster ingenting; viser kun rapporten +
+                        API-kostnaden for valgt natt og modell.
+                    </p>
+                </div>
+                <div className="flex shrink-0 items-center gap-2">
+                    <select
+                        value={modell}
+                        onChange={(e) => setModell(e.target.value as AiModellId)}
+                        className="rounded-lg border border-stone-300 px-2 py-1 text-xs text-stone-700"
+                        aria-label="Modell"
+                    >
+                        {AI_MODELL_VALG.map((m) => (
+                            <option key={m.id} value={m.id}>
+                                {m.navn}
+                            </option>
+                        ))}
+                    </select>
+                    <input
+                        type="date"
+                        value={dato}
+                        onChange={(e) => setDato(e.target.value)}
+                        className="rounded-lg border border-stone-300 px-2 py-1 text-xs text-stone-700"
+                        aria-label="Rapportdato (natt)"
+                    />
+                    <Button
+                        variant="outline"
+                        size="small"
+                        loading={isPending}
+                        icon={<Sparkles className="h-4 w-4" />}
+                        onClick={() => mutate({ dato, modell })}
+                    >
+                        Kjør
+                    </Button>
+                </div>
+            </div>
+            {error && (
+                <p className="rounded-lg bg-red-50 px-3 py-1.5 text-xs text-red-700">
+                    {error instanceof Error ? error.message : 'Kunne ikke kjøre — prøv igjen.'}
+                </p>
+            )}
+            {isSuccess && data && data.rapport === null && (
+                <p className="rounded-lg bg-amber-50 px-3 py-1.5 text-xs text-amber-700">
+                    Ingen ferdige kamper i vinduet for {data.rapportDato} — ingen rapport laget.
+                </p>
+            )}
+            {isSuccess && data && data.rapport && (
+                <div className="space-y-2 rounded-lg bg-blue-50 px-3 py-2">
+                    <div className="flex items-center justify-between gap-2">
+                        <p className="text-xs font-medium text-blue-800">
+                            {data.rapportDato} · {modellNavn(data.modell)} · {data.antallKamper} kamper
+                            {data.kostnad &&
+                                ` · $${data.kostnad.usd.toFixed(4)} (${data.kostnad.inputTokens} in / ${data.kostnad.outputTokens} ut)`}
+                            {!data.harBaseline && ' · ingen baseline (mangler gårsdagens snapshot)'}
+                        </p>
+                        <button
+                            className="shrink-0 font-mono text-[10px] text-blue-600 hover:text-blue-800"
+                            onClick={() => setVisJson((v) => !v)}
+                        >
+                            {visJson ? 'Skjul JSON' : 'Vis JSON'}
+                        </button>
+                    </div>
+                    {visJson ? (
+                        <pre className="max-h-96 overflow-x-auto rounded bg-white p-2 text-[10px] text-stone-700">
+                            {JSON.stringify({ rapport: data.rapport, kontekst: data.kontekst }, null, 2)}
+                        </pre>
+                    ) : (
+                        <div className="space-y-2">
+                            <div>
+                                <p className="text-base font-bold text-stone-900">{data.rapport.tittel}</p>
+                                <p className="text-sm italic text-stone-600">{data.rapport.ingress}</p>
+                            </div>
+                            <div className="space-y-1.5">
+                                {data.rapport.seksjoner.map((s, i) => (
+                                    <AiSeksjon key={i} seksjon={s} />
+                                ))}
+                            </div>
+                        </div>
+                    )}
+                </div>
+            )}
+        </div>
+    )
+}
+
 const CronPage: NextPage = () => {
     const { data: me } = UseUser()
 
@@ -586,6 +711,7 @@ const CronPage: NextPage = () => {
                     <SyncSpillereKnapp />
                     <FeedBackfillKnapp />
                     <MorgenrapportKnapp />
+                    <AiMorgenrapportKnapp />
                     <SendPåminnelserKnapp />
                     <SendEttermiddagsVarselKnapp />
                     <SendVmStartKnapp />

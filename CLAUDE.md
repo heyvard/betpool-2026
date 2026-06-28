@@ -124,7 +124,7 @@ Den fulle design-handoff-pakken (med prototyper og 6 ikon-/5 loading-screen-vari
 
 ### Environment
 
-`PG_URI`, `VM` (optional), `NEXT_PUBLIC_MOCK` (optional), `NEXT_PUBLIC_TEST_AUTH` (optional, test/e2e only — see request flow point 5), `NEXT_PUBLIC_FIREBASE_*` (apiKey, authDomain, storageBucket, messagingSenderId, appId), `CRON_SECRET` (Bearer-token for `/api/cron/*`), and `FOOTBALL_DATA_TOKEN` (football-data.org API-token for kamp-synk — `scripts/hent-fixtures-football-data.mjs` og `/api/cron/sync-matches`).
+`PG_URI`, `VM` (optional), `NEXT_PUBLIC_MOCK` (optional), `NEXT_PUBLIC_TEST_AUTH` (optional, test/e2e only — see request flow point 5), `NEXT_PUBLIC_FIREBASE_*` (apiKey, authDomain, storageBucket, messagingSenderId, appId), `CRON_SECRET` (Bearer-token for `/api/cron/*`), `FOOTBALL_DATA_TOKEN` (football-data.org API-token for kamp-synk — `scripts/hent-fixtures-football-data.mjs` og `/api/cron/sync-matches`), and `ANTHROPIC_API_KEY` (Claude API-nøkkel for den AI-genererte morgenrapporten — `src/server/feed/morgenrapportAi.ts`, dry run via `/api/v1/admin/cron/morning-report-ai`).
 
 ### Integration & e2e tests
 
