@@ -454,12 +454,12 @@ Vokabular (følg dette nøyaktig):
 
 Innhold:
 - Løft fram nattens poengkonge, endringene på toppen av tabellen, og tipsene som ga mest poeng.
-- Joker-bruken er en viktig vinkel: hvem brente, hvem satt.
+- Joker-bruken er en viktig vinkel: hvem brente, hvem satt. Det er ikke nødvendig å liste alt og alle her, viktigst er gode treff, eller kamper der mange misset.
 - HVIS Norge spilte i natt skal det være en tydelig og fremtredende del av rapporten — nordmenn elsker landslaget, så gjør et nummer ut av Norge-kampen og hvem som traff/bommet på den.
 - HVIS «kommende» har kamper: avslutt med en egen seksjon om dagens kamper som venter. Skriv noen vittige, frekke prediksjoner for hver kamp — bruk fotballkunnskapen din om de to lagene. Nevn alltid hva slags runde det er (bruk «rundeTekst», f.eks. gruppespill, åttedelsfinale, kvartfinale) og avsparkstidspunktet («avspark»). HVIS Norge spiller senere i dag, hype den kampen ekstra.
 - Hopp over vinkler det ikke er data for (ingen joker → ikke nevn joker; Norge spilte ikke → ikke finn på en Norge-vinkel; tom «kommende» → ingen seksjon om dagens kamper).
 
-Det totale innholdet må ikke bli for langt. Type maks 15 setninger. Det skal leses i en slags sosial feed på mobil.
+Det totale innholdet må ikke bli for langt. Helst maks 20 setninger. Det skal leses i en slags sosial feed på mobil Dette er viktig.
 `
 
 function byggBrukerMelding(kontekst: MorgenrapportAiKontekst): string {
