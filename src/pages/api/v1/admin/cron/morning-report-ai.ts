@@ -7,6 +7,14 @@ import {
 } from '../../../../../server/feed/morgenrapportAi'
 import { osloGårsdagDato } from '../../../../../server/feed/tid'
 
+// Claude-kallet kan ta titalls sekunder (særlig førstegangs-skjemakompilering for
+// structured output). Standard serverless-timeout (~10–15 s) drepte funksjonen midt
+// i kallet, så ruten «bare spant» uten å returnere. Gi den rikelig tid; selve
+// Claude-kallet er hardt tidsavbrutt på 55 s i genererAiMorgenrapport, godt under.
+export const config = {
+    maxDuration: 60,
+}
+
 // Dry run av den AI-genererte morgenrapporten. Kun superadmin. Bygger konteksten
 // om natten og lar Claude (Sonnet) skrive rapporten, og returnerer både rapporten,
 // rådataene og API-kostnaden. POSTER ingenting og skriver ikke til DB — dette er en
