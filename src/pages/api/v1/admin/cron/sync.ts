@@ -4,6 +4,13 @@ import { hentKamperFraApi, syncAll } from '../../../../../server/syncAll'
 import { syncMatches } from '../../../../../server/syncMatches'
 import { syncScores } from '../../../../../server/syncScores'
 
+// syncAll → genererFeedTrygt kan fyre den AI-genererte morgenrapporten (Claude) når
+// nattens siste kamp blir ferdig — det kallet tar titalls sekunder. Gi ruten rikelig
+// tid så den ikke drepes midt i kallet. Claude-kallet er hardt tidsavbrutt på 55 s.
+export const config = {
+    maxDuration: 60,
+}
+
 const handler = async function ({ req, user, res, client }: ApiHandlerOpts): Promise<void> {
     if (!user?.superadmin) {
         res.status(403).end()

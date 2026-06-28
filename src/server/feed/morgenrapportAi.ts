@@ -13,20 +13,25 @@ import {
     beregnNattensFangst,
     beregnPlasseringer,
     hentFerdigeKampnumre,
+    lagreSnapshot,
+    nattFerdigRapportDatoer,
+    nattKamppostCreatedAt,
     RAPPORT_VINDU_TIMER,
     SnapshotRad,
 } from './morgenrapport'
-import { osloInstant } from './tid'
+import { osloDato, osloInstant } from './tid'
 
-// AI-generert morgenrapport (dry run). Bygger en rik, serialiserbar kontekst om
-// natten — nattens kamper, hvordan ledertavla endret seg, og hvilke tips som ga
-// mest poeng — og lar Claude (Sonnet) skrive en sportskommentator-aktig
-// oppsummering med tørre ordspill, joker-vinkling og ekstra trøkk på Norge.
+// AI-generert morgenrapport. Bygger en rik, serialiserbar kontekst om natten —
+// nattens kamper, hvordan ledertavla endret seg, og hvilke tips som ga mest poeng
+// — og lar Claude (Sonnet) skrive en sportskommentator-aktig oppsummering med tørre
+// ordspill, joker-vinkling og ekstra trøkk på Norge.
 //
-// Dette er en parallell vei til den malbaserte genererMorgenrapport: den POSTER
-// ingenting og skriver ingen snapshots. Kun superadmin trigger den manuelt og ser
-// resultatet + API-kostnaden. Når teksten er god nok migreres strukturen inn i
-// feeden og erstatter dagens morgenrapport.
+// Dette er morgenrapporten som faktisk postes i feeden: genererOgLagreAiMorgenrapport
+// speiler kontrakten til den malbaserte genererMorgenrapport (idempotent på Oslo-dato,
+// stille_dag/ingen_baseline-grunner, snapshot-lagring) og POSTER rapporten + lagrer
+// snapshot. Den trigges fra cron-/synk-veiene (se fyrAiMorgenrapportVedNattslutt) og
+// manuelt av superadmin. kjørAiMorgenrapportDryRun er fortsatt en ren forhåndsvisning
+// (skriver ingenting) som superadmin kan kjøre for å se teksten + API-kostnaden.
 
 // Modellene superadmin kan velge mellom i dry run-en, med pris per million
 // tokens (USD) for kostnadsutregningen. `støtterEffort` skiller Sonnet (som tar
@@ -181,11 +186,11 @@ function kampNavn(k: AiKampKontekst): string {
 // hovedliga-data, scoring-laget og morgenrapportens beregninger. Speiler vinduet
 // til genererMorgenrapport: siste RAPPORT_VINDU_TIMER t fram til 08:00 Oslo på
 // rapportdatoen.
-export async function byggMorgenrapportAiKontekst(
+async function byggKontekstMedTabell(
     client: PoolClient,
     rapportDato: string,
     now: Date = new Date(),
-): Promise<MorgenrapportAiKontekst> {
+): Promise<{ kontekst: MorgenrapportAiKontekst; tabell: LeaderBoard[] }> {
     const til = osloInstant(rapportDato, 8)
     const fra = new Date(til.getTime() - RAPPORT_VINDU_TIMER * 60 * 60 * 1000)
     const ferdigeKampnumre = await hentFerdigeKampnumre(client, fra, til)
@@ -393,7 +398,7 @@ export async function byggMorgenrapportAiKontekst(
             poeng: b.poeng,
         }))
 
-    return {
+    const kontekst: MorgenrapportAiKontekst = {
         rapportDato,
         forrigeDato,
         antallKamper: kamper.length,
@@ -428,6 +433,17 @@ export async function byggMorgenrapportAiKontekst(
             bommet: norgeBets.filter((b) => b.poeng === 0).length,
         },
     }
+    return { kontekst, tabell }
+}
+
+// Bygger bare konteksten (uten den interne LeaderBoard-tabellen) — brukt av dry
+// run-en, som ikke skal lagre snapshot.
+export async function byggMorgenrapportAiKontekst(
+    client: PoolClient,
+    rapportDato: string,
+    now: Date = new Date(),
+): Promise<MorgenrapportAiKontekst> {
+    return (await byggKontekstMedTabell(client, rapportDato, now)).kontekst
 }
 
 const SYSTEM_PROMPT = `Du er en skarp, lattermild sportskommentator for en privat tippeliga blant venner under fotball-VM 2026. Du skriver morgenrapporten: en oppsummering av nattens kamper og hva som skjedde i ligaen.
@@ -650,4 +666,110 @@ export async function kjørAiMorgenrapportDryRun(
         usage,
         kostnad,
     }
+}
+
+// ── Persistering: AI-morgenrapporten som faktisk postes i feeden ──────────────
+
+export interface AiMorgenrapportLagreResultat {
+    postet: boolean
+    grunn?: 'allerede_postet' | 'stille_dag' | 'ingen_baseline'
+    antallKamper?: number
+    modell?: AiModellId
+    kostnad?: AiMorgenrapportKostnad
+}
+
+// Aksenten AI-morgenrapporten får i feeden — gull/soloppgang, samme varme tone som
+// resten av morgenrapportene. (Scenario-feltet settes til 'ai' så fronten skiller
+// den fra de malbaserte rapportene og rendrer seksjonene i stedet for stripene.)
+const AI_ACCENT = 'gold'
+
+// Inserter AI-morgenrapporten i feed_posts. tittel/ingress legges på de vanlige
+// kolonnene (så de rendres som overskrift/ingress), mens seksjonene + modell og
+// kostnad ligger i data-jsonb-en. ON CONFLICT på dato gjør innsettingen idempotent.
+async function insertAiMorgenrapport(
+    client: PoolClient,
+    args: {
+        dato: string
+        rapport: AiMorgenrapport
+        modell: AiModellId
+        kostnad: AiMorgenrapportKostnad
+        createdAt?: Date
+    },
+): Promise<boolean> {
+    const { dato, rapport, modell, kostnad, createdAt } = args
+    const data = { ai: true, modell, seksjoner: rapport.seksjoner, kostnad }
+    const res = await client.query(
+        `INSERT INTO feed_posts (kind, scenario, dato, accent, tittel, body, data, created_at)
+         VALUES ('morgenrapport', 'ai', $1, $2, $3, $4, $5, COALESCE($6, now()))
+         ON CONFLICT (dato) WHERE dato IS NOT NULL DO NOTHING`,
+        [
+            dato,
+            AI_ACCENT,
+            rapport.tittel,
+            rapport.ingress,
+            JSON.stringify(data),
+            createdAt ? createdAt.toISOString() : null,
+        ],
+    )
+    return !!(res.rowCount && res.rowCount > 0)
+}
+
+// Den postende AI-morgenrapporten. Speiler kontrakten til genererMorgenrapport:
+// idempotent på Oslo-dato, hopper over stille dager / dager uten baseline, og lagrer
+// tabell-snapshot så morgendagens rapport har noe å sammenligne med. Forskjellen er
+// at selve teksten skrives av Claude i stedet for malene.
+//
+// Snapshotet lagres FØR Claude-kallet på en aktiv dag med baseline: da er morgendagens
+// baseline trygg selv om Claude henger/feiler (synk-veien retryer hvert kvarter, og
+// morgen-cronen prøver igjen). Et feilet Claude-kall kaster — kalleren (genererFeedTrygt
+// svelger, cron/admin returnerer 500) avgjør hva som skjer videre.
+export async function genererOgLagreAiMorgenrapport(
+    client: PoolClient,
+    opts: { now?: Date; rapportDato?: string; createdAt?: Date; modell?: AiModellId } = {},
+): Promise<AiMorgenrapportLagreResultat> {
+    const now = opts.now ?? new Date()
+    const dato = opts.rapportDato ?? osloDato(now)
+    const modell = opts.modell ?? STANDARD_AI_MODELL
+
+    // Idempotent: allerede postet i dag? (Gjelder begge varianter — UNIQUE på dato.)
+    const finnes = await client.query(`SELECT 1 FROM feed_posts WHERE kind = 'morgenrapport' AND dato = $1`, [dato])
+    if (finnes.rowCount && finnes.rowCount > 0) return { postet: false, grunn: 'allerede_postet' }
+
+    const { kontekst, tabell } = await byggKontekstMedTabell(client, dato, now)
+    // Stille dag (ingen ferdige kamper i vinduet) eller tom liga → ingen rapport.
+    if (kontekst.antallKamper === 0 || tabell.length === 0) return { postet: false, grunn: 'stille_dag' }
+
+    // Ingen baseline (første aktive dag) → kan ikke regne endring. Lagre snapshot,
+    // men ikke post (samme som den malbaserte varianten).
+    if (!kontekst.harBaseline) {
+        await lagreSnapshot(client, dato, tabell)
+        return { postet: false, grunn: 'ingen_baseline' }
+    }
+
+    // Snapshot før Claude-kallet, så morgendagens baseline er trygg uansett.
+    await lagreSnapshot(client, dato, tabell)
+
+    const { rapport, kostnad } = await genererAiMorgenrapport(kontekst, modell)
+    await insertAiMorgenrapport(client, { dato, rapport, modell, kostnad, createdAt: opts.createdAt })
+
+    return { postet: true, antallKamper: kontekst.antallKamper, modell, kostnad }
+}
+
+// AI-variant av fyrMorgenrapportVedNattslutt: fyrer den postende AI-morgenrapporten
+// for hvert døgn der nattens siste kamp akkurat ble ferdig (se nattFerdigRapportDatoer),
+// og legger den rett over døgnets siste kamppost. Idempotent via UNIQUE på dato, så
+// trygt å kalle etter hver score-synk. Returnerer datoene som faktisk ble postet.
+export async function fyrAiMorgenrapportVedNattslutt(
+    client: PoolClient,
+    nyligFerdige: number[],
+    now: Date = new Date(),
+): Promise<string[]> {
+    const datoer = await nattFerdigRapportDatoer(client, nyligFerdige)
+    const postet: string[] = []
+    for (const dato of datoer) {
+        const createdAt = await nattKamppostCreatedAt(client, dato)
+        const res = await genererOgLagreAiMorgenrapport(client, { now, rapportDato: dato, createdAt })
+        if (res.postet) postet.push(dato)
+    }
+    return postet
 }

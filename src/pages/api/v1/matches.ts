@@ -6,6 +6,15 @@ import { LIVE_SYNC_INTERVAL_SEKUNDER } from '../../../utils/liveSync'
 import { syncLive } from '../../../server/syncAll'
 import { MatchAdminData } from '../../../types/types'
 
+// Live-synken (kun forespørselen som claimer 15s-slotet) kan via genererFeedTrygt fyre
+// den AI-genererte morgenrapporten (Claude) i det nattens siste kamp blir ferdig — det
+// kallet tar titalls sekunder. Skjer maks én gang per natt (idempotent på dato), men
+// gi ruten rikelig tid så den ene synken ikke drepes midt i kallet. Hardt tidsavbrutt
+// på 55 s i genererAiMorgenrapport.
+export const config = {
+    maxDuration: 60,
+}
+
 interface ScoreRow {
     match_num: number
     home_score: number | null

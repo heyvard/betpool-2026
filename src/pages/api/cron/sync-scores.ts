@@ -5,6 +5,13 @@ import { getPool } from '../../../auth/authHandler'
 import { syncScores } from '../../../server/syncScores'
 import { genererFeedTrygt } from '../../../server/syncAll'
 
+// genererFeedTrygt kan fyre den AI-genererte morgenrapporten (Claude) når nattens
+// siste kamp blir ferdig — det kallet tar titalls sekunder. Gi ruten rikelig tid så
+// den ikke drepes midt i kallet. Claude-kallet er hardt tidsavbrutt på 55 s.
+export const config = {
+    maxDuration: 60,
+}
+
 // Cron-jobb trigget av GHA hvert 15. minutt. Henter scores for pågående og
 // nylig ferdige kamper fra football-data.org og upserter synced_*-kolonner
 // i match_scores. Beskyttet av CRON_SECRET.

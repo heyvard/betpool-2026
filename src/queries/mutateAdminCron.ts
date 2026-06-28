@@ -95,11 +95,15 @@ export function UseMutateFeedBackfill() {
     })
 }
 
+// Resultatet fra /api/v1/admin/cron/morning-report — speiler AiMorgenrapportLagreResultat
+// i server/feed/morgenrapportAi.ts. Den manuelle triggeren poster den AI-genererte
+// morgenrapporten (Claude) i feeden.
 export interface MorgenrapportResultat {
     postet: boolean
     grunn?: 'allerede_postet' | 'stille_dag' | 'ingen_baseline'
-    scenario?: 'endring' | 'lederbytte'
     antallKamper?: number
+    modell?: AiModellId
+    kostnad?: AiMorgenrapportKostnad
 }
 
 export function UseMutateMorgenrapport() {
