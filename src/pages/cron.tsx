@@ -21,6 +21,8 @@ import {
     UseMutateMorgenrapport,
     UseAiMorgenrapport,
     AiMorgenrapportSeksjon,
+    AiModellId,
+    AI_MODELL_VALG,
 } from '../queries/mutateAdminCron'
 import { Button } from '@/components/ui/button'
 import { RefreshCw, Bell, Eye, Trophy, Users, Radio, Sunrise, Sparkles } from 'lucide-react'
@@ -599,7 +601,10 @@ function AiSeksjon({ seksjon }: { seksjon: AiMorgenrapportSeksjon }) {
 function AiMorgenrapportKnapp() {
     const { mutate, isPending, data, error, isSuccess } = UseAiMorgenrapport()
     const [dato, setDato] = React.useState(iGårISO)
+    const [modell, setModell] = React.useState<AiModellId>('claude-sonnet-4-6')
     const [visJson, setVisJson] = React.useState(false)
+
+    const modellNavn = (id: AiModellId) => AI_MODELL_VALG.find((m) => m.id === id)?.navn ?? id
 
     return (
         <div className="flex flex-col gap-2 py-3 first:pt-0 last:pb-0">
@@ -607,12 +612,24 @@ function AiMorgenrapportKnapp() {
                 <div className="min-w-0">
                     <p className="text-sm font-medium text-stone-900">AI-morgenrapport (dry run)</p>
                     <p className="text-xs text-stone-500">
-                        Lar Claude (Sonnet) skrive en kommentator-oppsummering av natten — kamper, tabell-endringer,
-                        beste tips, joker og Norge. Poster ingenting; viser kun rapporten + API-kostnaden for valgt
-                        natt.
+                        Lar Claude (velg Sonnet eller Haiku) skrive en kommentator-oppsummering av natten — kamper,
+                        tabell-endringer, beste tips, joker og Norge. Poster ingenting; viser kun rapporten +
+                        API-kostnaden for valgt natt og modell.
                     </p>
                 </div>
                 <div className="flex shrink-0 items-center gap-2">
+                    <select
+                        value={modell}
+                        onChange={(e) => setModell(e.target.value as AiModellId)}
+                        className="rounded-lg border border-stone-300 px-2 py-1 text-xs text-stone-700"
+                        aria-label="Modell"
+                    >
+                        {AI_MODELL_VALG.map((m) => (
+                            <option key={m.id} value={m.id}>
+                                {m.navn}
+                            </option>
+                        ))}
+                    </select>
                     <input
                         type="date"
                         value={dato}
@@ -625,7 +642,7 @@ function AiMorgenrapportKnapp() {
                         size="small"
                         loading={isPending}
                         icon={<Sparkles className="h-4 w-4" />}
-                        onClick={() => mutate(dato)}
+                        onClick={() => mutate({ dato, modell })}
                     >
                         Kjør
                     </Button>
@@ -645,7 +662,7 @@ function AiMorgenrapportKnapp() {
                 <div className="space-y-2 rounded-lg bg-blue-50 px-3 py-2">
                     <div className="flex items-center justify-between gap-2">
                         <p className="text-xs font-medium text-blue-800">
-                            {data.rapportDato} · {data.antallKamper} kamper
+                            {data.rapportDato} · {modellNavn(data.modell)} · {data.antallKamper} kamper
                             {data.kostnad &&
                                 ` · $${data.kostnad.usd.toFixed(4)} (${data.kostnad.inputTokens} in / ${data.kostnad.outputTokens} ut)`}
                             {!data.harBaseline && ' · ingen baseline (mangler gårsdagens snapshot)'}

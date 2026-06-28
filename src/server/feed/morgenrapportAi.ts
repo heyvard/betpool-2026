@@ -28,12 +28,42 @@ import { osloInstant } from './tid'
 // resultatet + API-kostnaden. Når teksten er god nok migreres strukturen inn i
 // feeden og erstatter dagens morgenrapport.
 
-// Sonnet 4.6-pris per million tokens (USD). Brukes til å regne ut kostnaden vi
-// returnerer til superadmin i dry run-en.
-const SONNET_INPUT_USD_PER_MTOK = 3
-const SONNET_OUTPUT_USD_PER_MTOK = 15
+// Modellene superadmin kan velge mellom i dry run-en, med pris per million
+// tokens (USD) for kostnadsutregningen. `støtterEffort` skiller Sonnet (som tar
+// output_config.effort) fra Haiku 4.5 (som IKKE støtter effort — den 400-er på
+// parameteren). `navn` er etiketten UI-et viser.
+export type AiModellId = 'claude-sonnet-4-6' | 'claude-haiku-4-5'
 
-export const AI_MORGENRAPPORT_MODELL = 'claude-sonnet-4-6'
+export interface AiModell {
+    id: AiModellId
+    navn: string
+    inputUsdPerMtok: number
+    outputUsdPerMtok: number
+    støtterEffort: boolean
+}
+
+export const AI_MODELLER: Record<AiModellId, AiModell> = {
+    'claude-sonnet-4-6': {
+        id: 'claude-sonnet-4-6',
+        navn: 'Sonnet',
+        inputUsdPerMtok: 3,
+        outputUsdPerMtok: 15,
+        støtterEffort: true,
+    },
+    'claude-haiku-4-5': {
+        id: 'claude-haiku-4-5',
+        navn: 'Haiku',
+        inputUsdPerMtok: 1,
+        outputUsdPerMtok: 5,
+        støtterEffort: false,
+    },
+}
+
+export const STANDARD_AI_MODELL: AiModellId = 'claude-sonnet-4-6'
+
+export function erGyldigModell(id: string): id is AiModellId {
+    return id in AI_MODELLER
+}
 
 export interface AiKampKontekst {
     matchNum: number
@@ -112,6 +142,7 @@ export interface AiMorgenrapportKostnad {
 }
 
 export interface GenererAiMorgenrapportResultat {
+    modell: AiModellId
     rapport: AiMorgenrapport
     usage: { input_tokens: number; output_tokens: number }
     kostnad: AiMorgenrapportKostnad
@@ -356,25 +387,29 @@ const RAPPORT_SCHEMA = {
     required: ['tittel', 'ingress', 'seksjoner'],
 } as const
 
-// Kaller Claude (Sonnet) med konteksten og returnerer den strukturerte rapporten
-// + token-bruk og utregnet USD-kostnad. Kaster hvis ANTHROPIC_API_KEY mangler
-// eller kallet/parsingen feiler.
+// Kaller valgt Claude-modell (Sonnet/Haiku) med konteksten og returnerer den
+// strukturerte rapporten + token-bruk og utregnet USD-kostnad. Kaster hvis
+// ANTHROPIC_API_KEY mangler eller kallet/parsingen feiler.
 export async function genererAiMorgenrapport(
     kontekst: MorgenrapportAiKontekst,
+    modell: AiModellId = STANDARD_AI_MODELL,
 ): Promise<GenererAiMorgenrapportResultat> {
     if (!process.env.ANTHROPIC_API_KEY) {
         throw new Error('Mangler ANTHROPIC_API_KEY')
     }
+    const valgtModell = AI_MODELLER[modell]
     const client = new Anthropic()
 
+    // effort tas kun med for modeller som støtter det (Sonnet); Haiku 4.5 400-er på
+    // parameteren. Begge får structured output via format.
+    const format = { type: 'json_schema' as const, schema: RAPPORT_SCHEMA }
+    const output_config = valgtModell.støtterEffort ? { effort: 'medium' as const, format } : { format }
+
     const response = await client.messages.create({
-        model: AI_MORGENRAPPORT_MODELL,
+        model: modell,
         max_tokens: 2000,
         thinking: { type: 'disabled' },
-        output_config: {
-            effort: 'medium',
-            format: { type: 'json_schema', schema: RAPPORT_SCHEMA },
-        },
+        output_config,
         system: SYSTEM_PROMPT,
         messages: [{ role: 'user', content: byggBrukerMelding(kontekst) }],
     })
@@ -393,9 +428,11 @@ export async function genererAiMorgenrapport(
     const inputTokens = response.usage.input_tokens
     const outputTokens = response.usage.output_tokens
     const usd =
-        (inputTokens / 1_000_000) * SONNET_INPUT_USD_PER_MTOK + (outputTokens / 1_000_000) * SONNET_OUTPUT_USD_PER_MTOK
+        (inputTokens / 1_000_000) * valgtModell.inputUsdPerMtok +
+        (outputTokens / 1_000_000) * valgtModell.outputUsdPerMtok
 
     return {
+        modell,
         rapport,
         usage: { input_tokens: inputTokens, output_tokens: outputTokens },
         kostnad: { inputTokens, outputTokens, usd },
@@ -404,6 +441,7 @@ export async function genererAiMorgenrapport(
 
 export interface AiMorgenrapportDryRun {
     rapportDato: string
+    modell: AiModellId
     antallKamper: number
     harBaseline: boolean
     kontekst: MorgenrapportAiKontekst
@@ -413,17 +451,19 @@ export interface AiMorgenrapportDryRun {
     kostnad?: AiMorgenrapportKostnad
 }
 
-// Hele dry run-flyten: bygg kontekst → (hvis kamper) kall Claude. Returnerer alt
-// superadmin trenger å se, uten å skrive noe til DB.
+// Hele dry run-flyten: bygg kontekst → (hvis kamper) kall Claude med valgt modell.
+// Returnerer alt superadmin trenger å se, uten å skrive noe til DB.
 export async function kjørAiMorgenrapportDryRun(
     client: PoolClient,
     rapportDato: string,
+    modell: AiModellId = STANDARD_AI_MODELL,
     now: Date = new Date(),
 ): Promise<AiMorgenrapportDryRun> {
     const kontekst = await byggMorgenrapportAiKontekst(client, rapportDato, now)
     if (kontekst.antallKamper === 0) {
         return {
             rapportDato,
+            modell,
             antallKamper: 0,
             harBaseline: kontekst.harBaseline,
             kontekst,
@@ -431,9 +471,10 @@ export async function kjørAiMorgenrapportDryRun(
             grunn: 'ingen_kamper',
         }
     }
-    const { rapport, usage, kostnad } = await genererAiMorgenrapport(kontekst)
+    const { rapport, usage, kostnad } = await genererAiMorgenrapport(kontekst, modell)
     return {
         rapportDato,
+        modell,
         antallKamper: kontekst.antallKamper,
         harBaseline: kontekst.harBaseline,
         kontekst,

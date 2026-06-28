@@ -1,6 +1,10 @@
 import { ApiHandlerOpts } from '../../../../../types/apiHandlerOpts'
 import { auth } from '../../../../../auth/authHandler'
-import { kjørAiMorgenrapportDryRun } from '../../../../../server/feed/morgenrapportAi'
+import {
+    erGyldigModell,
+    kjørAiMorgenrapportDryRun,
+    STANDARD_AI_MODELL,
+} from '../../../../../server/feed/morgenrapportAi'
 import { osloGårsdagDato } from '../../../../../server/feed/tid'
 
 // Dry run av den AI-genererte morgenrapporten. Kun superadmin. Bygger konteksten
@@ -23,9 +27,19 @@ const handler = async function ({ req, user, res, client }: ApiHandlerOpts): Pro
     }
     const rapportDato = datoParam ?? osloGårsdagDato()
 
-    console.log(`[admin/cron/morning-report-ai] dry run for ${rapportDato}, trigget av ${user.email}`)
+    let modell = STANDARD_AI_MODELL
+    const modellParam = typeof req.query.modell === 'string' ? req.query.modell : undefined
+    if (modellParam !== undefined) {
+        if (!erGyldigModell(modellParam)) {
+            res.status(400).json({ error: 'Ugyldig modell' })
+            return
+        }
+        modell = modellParam
+    }
+
+    console.log(`[admin/cron/morning-report-ai] dry run for ${rapportDato} (${modell}), trigget av ${user.email}`)
     try {
-        const resultat = await kjørAiMorgenrapportDryRun(client, rapportDato)
+        const resultat = await kjørAiMorgenrapportDryRun(client, rapportDato, modell)
         res.status(200).json(resultat)
     } catch (e) {
         const melding = e instanceof Error ? e.message : 'intern feil'

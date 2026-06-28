@@ -133,10 +133,21 @@ export interface AiMorgenrapportKostnad {
     usd: number
 }
 
+// Modellene superadmin kan velge i UI-et. Holdt synk med AI_MODELLER i
+// server/feed/morgenrapportAi.ts (id-ene må matche). Definert her så klienten ikke
+// importerer server-modulen (som drar inn Anthropic-SDK-en).
+export type AiModellId = 'claude-sonnet-4-6' | 'claude-haiku-4-5'
+
+export const AI_MODELL_VALG: { id: AiModellId; navn: string }[] = [
+    { id: 'claude-sonnet-4-6', navn: 'Sonnet' },
+    { id: 'claude-haiku-4-5', navn: 'Haiku' },
+]
+
 // Speiler AiMorgenrapportDryRun fra server/feed/morgenrapportAi.ts. `kontekst` er
 // rådataene (typet løst her — vises kun som JSON i UI-en).
 export interface AiMorgenrapportDryRunResultat {
     rapportDato: string
+    modell: AiModellId
     antallKamper: number
     harBaseline: boolean
     kontekst: unknown
@@ -149,9 +160,9 @@ export interface AiMorgenrapportDryRunResultat {
 export function UseAiMorgenrapport() {
     const authedFetch = useAuthedFetch()
     return useMutation({
-        mutationFn: async (dato: string) => {
+        mutationFn: async ({ dato, modell }: { dato: string; modell: AiModellId }) => {
             const response = await authedFetch(
-                `/api/v1/admin/cron/morning-report-ai?dato=${encodeURIComponent(dato)}`,
+                `/api/v1/admin/cron/morning-report-ai?dato=${encodeURIComponent(dato)}&modell=${encodeURIComponent(modell)}`,
                 { method: 'POST' },
             )
             if (!response.ok) {
