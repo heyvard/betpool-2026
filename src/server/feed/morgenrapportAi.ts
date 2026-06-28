@@ -390,6 +390,13 @@ const RAPPORT_SCHEMA = {
 // Kaller valgt Claude-modell (Sonnet/Haiku) med konteksten og returnerer den
 // strukturerte rapporten + token-bruk og utregnet USD-kostnad. Kaster hvis
 // ANTHROPIC_API_KEY mangler eller kallet/parsingen feiler.
+// Hard øvre grense for hvor lenge vi venter på Claude før vi gir opp. Må ligge
+// trygt under maxDuration på API-ruten (60 s) slik at vi alltid returnerer et
+// svar selv om Anthropic-kallet henger — i stedet for at funksjonen blir drept
+// midt i et await (som tidligere lot ruten «bare spinne» uten å returnere, og i
+// verste fall lekket den ene pool-tilkoblingen auth-wrapperen holder).
+const CLAUDE_TIMEOUT_MS = 55_000
+
 export async function genererAiMorgenrapport(
     kontekst: MorgenrapportAiKontekst,
     modell: AiModellId = STANDARD_AI_MODELL,
@@ -398,21 +405,58 @@ export async function genererAiMorgenrapport(
         throw new Error('Mangler ANTHROPIC_API_KEY')
     }
     const valgtModell = AI_MODELLER[modell]
-    const client = new Anthropic()
+    // maxRetries: 1 — én rask retry på transiente nettfeil, men ikke det
+    // SDK-standard 2-retry × 10-min-timeout-budsjettet som kan henge i evigheter.
+    const client = new Anthropic({ maxRetries: 1 })
 
     // effort tas kun med for modeller som støtter det (Sonnet); Haiku 4.5 400-er på
     // parameteren. Begge får structured output via format.
     const format = { type: 'json_schema' as const, schema: RAPPORT_SCHEMA }
     const output_config = valgtModell.støtterEffort ? { effort: 'medium' as const, format } : { format }
 
-    const response = await client.messages.create({
-        model: modell,
-        max_tokens: 2000,
-        thinking: { type: 'disabled' },
-        output_config,
-        system: SYSTEM_PROMPT,
-        messages: [{ role: 'user', content: byggBrukerMelding(kontekst) }],
-    })
+    // Streaming + AbortController gir en hard tidsgrense på hele kallet (skill-rådet
+    // er å strømme lange/store svar for å unngå request-timeouts). Uten dette kunne
+    // førstegangs-skjemakompilering + kald start sprenge serverless-timeouten.
+    const controller = new AbortController()
+    const timer = setTimeout(() => controller.abort(), CLAUDE_TIMEOUT_MS)
+    const t0 = Date.now()
+    console.log(
+        `[ai-morgenrapport] kaller ${modell} (max_tokens=2000, kontekst≈${byggBrukerMelding(kontekst).length} tegn) …`,
+    )
+
+    let response: Anthropic.Message
+    try {
+        response = await client.messages
+            .stream(
+                {
+                    model: modell,
+                    max_tokens: 2000,
+                    thinking: { type: 'disabled' },
+                    output_config,
+                    system: SYSTEM_PROMPT,
+                    messages: [{ role: 'user', content: byggBrukerMelding(kontekst) }],
+                },
+                { signal: controller.signal },
+            )
+            .finalMessage()
+    } catch (e) {
+        if (controller.signal.aborted) {
+            throw new Error(`Claude-kallet (${modell}) tidsavbrutt etter ${CLAUDE_TIMEOUT_MS / 1000} s`)
+        }
+        const detalj = e instanceof Error ? e.message : String(e)
+        throw new Error(`Claude-kallet (${modell}) feilet: ${detalj}`)
+    } finally {
+        clearTimeout(timer)
+    }
+
+    console.log(
+        `[ai-morgenrapport] ${modell} svarte etter ${Date.now() - t0} ms ` +
+            `(stop=${response.stop_reason}, in=${response.usage.input_tokens}, ut=${response.usage.output_tokens})`,
+    )
+
+    if (response.stop_reason === 'refusal') {
+        throw new Error(`Claude (${modell}) avviste forespørselen`)
+    }
 
     const tekst = response.content
         .filter((b): b is Anthropic.TextBlock => b.type === 'text')
@@ -459,7 +503,13 @@ export async function kjørAiMorgenrapportDryRun(
     modell: AiModellId = STANDARD_AI_MODELL,
     now: Date = new Date(),
 ): Promise<AiMorgenrapportDryRun> {
+    const tStart = Date.now()
+    console.log(`[ai-morgenrapport] bygger kontekst for ${rapportDato} …`)
     const kontekst = await byggMorgenrapportAiKontekst(client, rapportDato, now)
+    console.log(
+        `[ai-morgenrapport] kontekst bygd på ${Date.now() - tStart} ms ` +
+            `(kamper=${kontekst.antallKamper}, baseline=${kontekst.harBaseline})`,
+    )
     if (kontekst.antallKamper === 0) {
         return {
             rapportDato,
@@ -472,6 +522,7 @@ export async function kjørAiMorgenrapportDryRun(
         }
     }
     const { rapport, usage, kostnad } = await genererAiMorgenrapport(kontekst, modell)
+    console.log(`[ai-morgenrapport] ferdig for ${rapportDato} på totalt ${Date.now() - tStart} ms`)
     return {
         rapportDato,
         modell,
