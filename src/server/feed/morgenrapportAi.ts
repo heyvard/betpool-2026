@@ -78,6 +78,19 @@ export interface AiKampKontekst {
     antallRiktigResultat: number // hvor mange traff eksakt resultat
 }
 
+// En kamp som kommer senere i dag (etter morgenrapportens vindu) — grunnlag for en
+// «dagens kamper»-seksjon med vittige prediksjoner. Lag kan være «Ikke avgjort» for
+// sluttspillkamper der motstanderne ikke er klare ennå.
+export interface AiKommendeKamp {
+    matchNum: number
+    hjemme: { tla: string; navn: string; flagg: string }
+    borte: { tla: string; navn: string; flagg: string }
+    runde: number
+    rundeTekst: string
+    avspark: string // klokkeslett i norsk tid, f.eks. «21:00»
+    erNorgeKamp: boolean
+}
+
 export interface AiTabellRad {
     plass: number
     navn: string
@@ -125,6 +138,7 @@ export interface MorgenrapportAiKontekst {
     antallKamper: number
     harBaseline: boolean
     kamper: AiKampKontekst[]
+    kommende: AiKommendeKamp[] // dagens kamper som kommer (etter rapportvinduet)
     tabell: AiTabellRad[] // dagens stilling (hele ligaen), med nattens delta
     forrigeTabell: AiForrigeTabellRad[] // gårsdagens stilling (hele ligaen) — for diff
     nattensPoengkonge: { navn: string; deltaPoeng: number; plass: number; delere: string[] } | null
@@ -249,6 +263,60 @@ export async function byggMorgenrapportAiKontekst(
         .filter((k): k is AiKampKontekst => k !== null)
         .sort((a, b) => a.runde - b.runde || a.matchNum - b.matchNum)
 
+    // Dagens kamper som kommer: kamper som starter etter rapportvinduet (08:00) og
+    // innen det neste døgnet. Grunnlag for en «dagens kamper»-seksjon med vittige
+    // prediksjoner. For sluttspillkamper kan motstanderne være uavklart ennå.
+    const kommendeFra = til
+    const kommendeTil = new Date(til.getTime() + RAPPORT_VINDU_TIMER * 60 * 60 * 1000)
+    const kommendeKamper = alleKamper
+        .filter((m) => {
+            const start = new Date(m.game_start)
+            return start > kommendeFra && start <= kommendeTil
+        })
+        .sort((a, b) => new Date(a.game_start).getTime() - new Date(b.game_start).getTime())
+    // Sluttspill-override (lag satt via /sluttspill) ligger i match_scores selv om
+    // kampen ikke er spilt — slå dem opp så vi viser riktige motstandere.
+    const kommendeNums = kommendeKamper.map((m) => m.match_num)
+    const kommendeOverrideRows = kommendeNums.length
+        ? (
+              await client.query<{
+                  match_num: number
+                  home_team_override: string | null
+                  away_team_override: string | null
+              }>(
+                  `SELECT match_num, home_team_override, away_team_override
+                   FROM match_scores WHERE match_num = ANY($1)`,
+                  [kommendeNums],
+              )
+          ).rows
+        : []
+    const kommendeOverrideMap = new Map(kommendeOverrideRows.map((r) => [r.match_num, r]))
+    const osloKlokke = new Intl.DateTimeFormat('en-GB', {
+        timeZone: 'Europe/Oslo',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false,
+    })
+    const lagInfo = (tla: string) => ({
+        tla,
+        navn: tla ? hentNorsk(tla) : 'Ikke avgjort',
+        flagg: hentFlag(tla),
+    })
+    const kommende: AiKommendeKamp[] = kommendeKamper.map((m): AiKommendeKamp => {
+        const ov = kommendeOverrideMap.get(m.match_num)
+        const homeTla = ov?.home_team_override ?? m.home_team
+        const awayTla = ov?.away_team_override ?? m.away_team
+        return {
+            matchNum: m.match_num,
+            hjemme: lagInfo(homeTla),
+            borte: lagInfo(awayTla),
+            runde: m.round,
+            rundeTekst: rundeTilTekst(m.round),
+            avspark: osloKlokke.format(new Date(m.game_start)),
+            erNorgeKamp: erNorgeKamp(homeTla, awayTla),
+        }
+    })
+
     // Dagens ledertavle — hele ligaen, med nattens poeng-/plass-endring. Vi sender
     // hele tabellen (ikke bare toppen) slik at Claude kan regne diffen mot gårsdagen
     // for alle deltakere, ikke bare teten.
@@ -331,6 +399,7 @@ export async function byggMorgenrapportAiKontekst(
         antallKamper: kamper.length,
         harBaseline,
         kamper,
+        kommende,
         tabell: aiTabell,
         forrigeTabell,
         nattensPoengkonge: fangst
@@ -361,7 +430,7 @@ export async function byggMorgenrapportAiKontekst(
     }
 }
 
-const SYSTEM_PROMPT = `Du er en skarp, lattermild sportskommentator for «Æresligaen» — en privat tippeliga blant venner under fotball-VM 2026. Du skriver morgenrapporten: en oppsummering av nattens kamper og hva som skjedde i ligaen.
+const SYSTEM_PROMPT = `Du er en skarp, lattermild sportskommentator for en privat tippeliga blant venner under fotball-VM 2026. Du skriver morgenrapporten: en oppsummering av nattens kamper og hva som skjedde i ligaen.
 
 Tone og stil:
 - Skriv på norsk bokmål (ikke dialekt). Levende, leken kommentatorstil — som en radiokommentator med glimt i øyet.
@@ -387,7 +456,8 @@ Innhold:
 - Løft fram nattens poengkonge, endringene på toppen av tabellen, og tipsene som ga mest poeng.
 - Joker-bruken er en viktig vinkel: hvem brente, hvem satt.
 - HVIS Norge spilte i natt skal det være en tydelig og fremtredende del av rapporten — nordmenn elsker landslaget, så gjør et nummer ut av Norge-kampen og hvem som traff/bommet på den.
-- Hopp over vinkler det ikke er data for (ingen joker → ikke nevn joker; Norge spilte ikke → ikke finn på en Norge-vinkel).`
+- HVIS «kommende» har kamper: avslutt med en egen seksjon om dagens kamper som venter. Skriv noen vittige, frekke prediksjoner for hver kamp — bruk fotballkunnskapen din om de to lagene. Nevn alltid hva slags runde det er (bruk «rundeTekst», f.eks. gruppespill, åttedelsfinale, kvartfinale) og avsparkstidspunktet («avspark»). Hvis et lag står som «Ikke avgjort» (sluttspill ikke klart), spøk gjerne med det heller enn å gjette motstander. HVIS Norge spiller senere i dag, hype den kampen ekstra.
+- Hopp over vinkler det ikke er data for (ingen joker → ikke nevn joker; Norge spilte ikke → ikke finn på en Norge-vinkel; tom «kommende» → ingen seksjon om dagens kamper).`
 
 function byggBrukerMelding(kontekst: MorgenrapportAiKontekst): string {
     return [
@@ -410,7 +480,8 @@ const RAPPORT_SCHEMA = {
         },
         seksjoner: {
             type: 'array',
-            description: 'Rapportens deler — én per vinkel (kamper, tabell, beste tips, joker, Norge ...).',
+            description:
+                'Rapportens deler — én per vinkel (kamper, tabell, beste tips, joker, Norge, dagens kommende kamper ...).',
             items: {
                 type: 'object',
                 additionalProperties: false,
