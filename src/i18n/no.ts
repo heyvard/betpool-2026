@@ -23,6 +23,7 @@ const no = {
         loggUt: 'Logg ut',
         varsler: 'Varsler',
         grupper: 'Grupper',
+        sluttspill: 'Sluttspill',
         ligaer: 'Mine ligaer',
         redigerSluttspill: 'Rediger sluttspill',
         redigerResultater: 'Rediger resultater',

@@ -25,6 +25,7 @@ const fr: Translations = {
         loggUt: 'Déconnexion',
         varsler: 'Notifications',
         grupper: 'Groupes',
+        sluttspill: 'Phase finale',
         ligaer: 'Mes ligues',
         redigerSluttspill: 'Modifier phases finales',
         redigerResultater: 'Modifier résultats',
