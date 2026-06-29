@@ -1,6 +1,6 @@
 import React from 'react'
 import { Match } from '../../types/types'
-import { BRACKET_KOLONNER, BRONSE_SLOT, byggMatchOppslag } from '../../data/bracket'
+import { BRACKET_KOLONNER, BRONSE_SLOT, byggMatchOppslag, effektiveLag } from '../../data/bracket'
 import { BracketNode, NODE_BREDDE, NODE_HOYDE } from './BracketNode'
 import { useLanguage } from '../../i18n/LanguageContext'
 
@@ -58,7 +58,10 @@ export function Bracket({ matches }: { matches: Match[] }) {
     const bronseCy = finaleCy + BRONSE_GAP + NODE_HOYDE // under finale-noden
 
     const totalWidth = finaleX + NODE_BREDDE + 8
-    const totalHeight = bronseCy + NODE_HOYDE + 24
+    // R32-kolonnen er den høyeste (H_TOTAL). Høyden må dekke den (og bronsen
+    // under finalen), ellers blir nodene liggende utenfor containeren — som da
+    // fanger vertikal scroll og hindrer at man får scrollet helt ned.
+    const totalHeight = Math.max(H_TOTAL, bronseCy + NODE_HOYDE / 2) + 16
 
     // Forbindelseslinjer: for hver slot med feedere, tegn en albue fra hver
     // feeder (til venstre) inn til slot-noden.
@@ -106,7 +109,7 @@ export function Bracket({ matches }: { matches: Match[] }) {
     })
 
     return (
-        <div className="-mx-4 overflow-x-auto px-4 pb-6">
+        <div className="-mx-4 overflow-x-auto overscroll-x-contain px-4 pb-6">
             <div style={{ width: totalWidth }} className="relative">
                 {/* Kolonne-overskrifter */}
                 <div className="relative" style={{ height: HEADER_H }}>
@@ -137,13 +140,20 @@ export function Bracket({ matches }: { matches: Match[] }) {
                     {BRACKET_KOLONNER.map((kol) =>
                         kol.slots.map((slot) => {
                             const p = pos.get(slot.matchNum)!
+                            const lag = effektiveLag(slot, oppslag)
                             return (
                                 <div
                                     key={slot.matchNum}
                                     className="absolute"
                                     style={{ left: p.x, top: p.cy, transform: 'translateY(-50%)' }}
                                 >
-                                    <BracketNode slot={slot} match={oppslag.get(slot.matchNum)} locale={locale} />
+                                    <BracketNode
+                                        slot={slot}
+                                        match={oppslag.get(slot.matchNum)}
+                                        homeTla={lag.home}
+                                        awayTla={lag.away}
+                                        locale={locale}
+                                    />
                                 </div>
                             )
                         }),
@@ -154,7 +164,18 @@ export function Bracket({ matches }: { matches: Match[] }) {
                         <div className="bp-overline mb-1 flex items-center gap-1">
                             <span aria-hidden>🥉</span> {bronseTekst}
                         </div>
-                        <BracketNode slot={BRONSE_SLOT} match={oppslag.get(BRONSE_SLOT.matchNum)} locale={locale} />
+                        {(() => {
+                            const lag = effektiveLag(BRONSE_SLOT, oppslag)
+                            return (
+                                <BracketNode
+                                    slot={BRONSE_SLOT}
+                                    match={oppslag.get(BRONSE_SLOT.matchNum)}
+                                    homeTla={lag.home}
+                                    awayTla={lag.away}
+                                    locale={locale}
+                                />
+                            )
+                        })()}
                     </div>
                 </div>
             </div>

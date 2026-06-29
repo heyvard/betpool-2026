@@ -60,9 +60,22 @@ function TeamRad({
  * uthever laget som gikk videre (høyest score; uavgjort etter 90' → ingen utheving).
  * Status vises som en venstre-stripe (grønn = ferdig, gul = pågår) + puls-prikk live.
  */
-export function BracketNode({ slot, match, locale }: { slot: BracketSlot; match: Match | undefined; locale: Locale }) {
-    const home = match?.home_team ?? ''
-    const away = match?.away_team ?? ''
+export function BracketNode({
+    slot,
+    match,
+    homeTla,
+    awayTla,
+    locale,
+}: {
+    slot: BracketSlot
+    match: Match | undefined
+    // Lagene som skal vises — kan være avledet fra feeder-vinnere (se effektiveLag).
+    homeTla: string
+    awayTla: string
+    locale: Locale
+}) {
+    const home = homeTla
+    const away = awayTla
     const homeScore = match?.home_score ?? null
     const awayScore = match?.away_score ?? null
     const status: MatchStatus = match?.status ?? 'TIMED'

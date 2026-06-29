@@ -1,6 +1,12 @@
 import { test, expect } from '@playwright/test'
 
-import { seedUser, truncateAll, seedSyncedScore, setMatchStatus } from '../support/db'
+import { seedUser, truncateAll, seedSyncedScore, setMatchStatus, withDb } from '../support/db'
+
+async function settLag(matchNum: number, home: string, away: string): Promise<void> {
+    await withDb((c) =>
+        c.query(`UPDATE matches SET home_team = $1, away_team = $2 WHERE match_num = $3`, [home, away, matchNum]),
+    )
+}
 
 // /bracket viser sluttspill-treet. Kampoppsettet (inkl. utslagskampene) ligger
 // allerede i `matches`-tabellen fra migreringen, så vi trenger bare en innlogget
@@ -45,4 +51,22 @@ test('ferdigspilt kamp viser resultat i bracketen', async ({ page }) => {
     await expect(node).toContainText('1')
     // Ferdigspilt → grønn status-stripe til venstre i noden.
     await expect(node.locator('span.bg-green-500')).toBeVisible()
+})
+
+test('avleder vinneren inn i neste node når feeder-kampene er ferdige', async ({ page }) => {
+    // To R32-kamper (537415, 537416) som mater R16-kamp 537375. R16-kampen har
+    // ingen lag satt ennå, men begge R32-kampene er ferdigspilt og avgjort.
+    await settLag(537415, 'GER', 'PAR')
+    await seedSyncedScore(537415, 2, 0)
+    await setMatchStatus(537415, 'FINISHED')
+    await settLag(537416, 'FRA', 'SWE')
+    await seedSyncedScore(537416, 1, 3)
+    await setMatchStatus(537416, 'FINISHED')
+
+    await page.goto('/bracket')
+
+    // R16-noden skal nå vise vinnerne: Tyskland (GER) og Sverige (SWE).
+    const r16 = page.locator(`a[href="/match/537375"]`)
+    await expect(r16).toContainText('Tyskland')
+    await expect(r16).toContainText('Sverige')
 })

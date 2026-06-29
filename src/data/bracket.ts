@@ -132,3 +132,56 @@ export const ALLE_BRACKET_SLOTS: BracketSlot[] = [...BRACKET_KOLONNER.flatMap((k
 export function byggMatchOppslag(matches: Match[]): Map<number, Match> {
     return new Map(matches.map((m) => [m.match_num, m]))
 }
+
+function erFerdigKamp(m: Match | undefined): m is Match {
+    return !!m && (m.status === 'FINISHED' || m.status === 'AWARDED')
+}
+
+/**
+ * Vinnerens tre-bokstavskode i en ferdigspilt kamp, ut fra lagret resultat.
+ * Returnerer null hvis kampen ikke er ferdig, mangler score, eller endte uavgjort
+ * (etter 90' — straffer avgjør da, og det vet vi ikke fra den offentlige scoren).
+ */
+export function vinnerTla(m: Match | undefined): string | null {
+    if (!erFerdigKamp(m) || m.home_score == null || m.away_score == null) return null
+    if (m.home_score > m.away_score) return m.home_team || null
+    if (m.away_score > m.home_score) return m.away_team || null
+    return null
+}
+
+/** Taperens tre-bokstavskode i en ferdigspilt kamp (motsatt av {@link vinnerTla}). */
+export function taperTla(m: Match | undefined): string | null {
+    if (!erFerdigKamp(m) || m.home_score == null || m.away_score == null) return null
+    if (m.home_score > m.away_score) return m.away_team || null
+    if (m.away_score > m.home_score) return m.home_team || null
+    return null
+}
+
+export interface EffektiveLag {
+    home: string
+    away: string
+}
+
+/**
+ * De lagene som skal vises i en node. Bruker kampens egne lag når de er satt
+ * (av football-data eller scoreadmin-override). Er de tomme, men feeder-kampen er
+ * ferdigspilt med et avgjort resultat, fylles noden ut med vinneren (eller taperen,
+ * for bronsefinalen) fra den lagrede match-dataen. Uavgjorte feeder-kamper (straffer)
+ * forblir TBA til kilden fyller dem inn.
+ */
+export function effektiveLag(slot: BracketSlot, oppslag: Map<number, Match>): EffektiveLag {
+    const m = oppslag.get(slot.matchNum)
+    let home = m?.home_team ?? ''
+    let away = m?.away_team ?? ''
+
+    if (slot.feeders) {
+        const utled = (feederNum: number): string | null => {
+            const fm = oppslag.get(feederNum)
+            return slot.feedersErTapere ? taperTla(fm) : vinnerTla(fm)
+        }
+        if (!home) home = utled(slot.feeders[0]) ?? ''
+        if (!away) away = utled(slot.feeders[1]) ?? ''
+    }
+
+    return { home, away }
+}
