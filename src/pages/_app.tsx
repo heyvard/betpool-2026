@@ -80,7 +80,11 @@ function Layout({ children }: { children: React.ReactNode }) {
                 {!loading && !user && erTestAuth() && (
                     <p className="mt-8 text-center text-stone-600">{t.testBruker.velg}</p>
                 )}
-                {user && <PullToRefresh>{children}</PullToRefresh>}
+                {user &&
+                    // Sluttspill-bracketen ruller både vannrett og loddrett. «Dra ned for å
+                    // oppdatere» kapret de gestene (man fikk ikke scrollet helt ned, og draget
+                    // trigget en uønsket refresh), så den er slått av her.
+                    (router.pathname === '/bracket' ? children : <PullToRefresh>{children}</PullToRefresh>)}
                 {user && <VarslerPrompt />}
             </div>
             {user && trengerOnboarding && (
