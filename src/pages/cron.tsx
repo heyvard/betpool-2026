@@ -88,6 +88,9 @@ function DryRunScoreKampRad({ kamp }: { kamp: DryRunScoreKamp }) {
             : '(ingen)'
 
     const ekstraInfo: string[] = []
+    if (kamp.api.regularTime && kamp.api.regularTime.home !== null && kamp.api.regularTime.away !== null) {
+        ekstraInfo.push(`ord.tid: ${kamp.api.regularTime.home}–${kamp.api.regularTime.away}`)
+    }
     if (kamp.api.extraTime?.home !== null && kamp.api.extraTime?.away !== null) {
         ekstraInfo.push(`ET: ${kamp.api.extraTime?.home}–${kamp.api.extraTime?.away}`)
     }
@@ -96,6 +99,9 @@ function DryRunScoreKampRad({ kamp }: { kamp: DryRunScoreKamp }) {
     }
     if (kamp.api.duration && kamp.api.duration !== 'REGULAR') {
         ekstraInfo.push(kamp.api.duration)
+    }
+    if (kamp.api.winner && kamp.api.winner !== 'DRAW') {
+        ekstraInfo.push(`vant: ${kamp.api.winner === 'HOME_TEAM' ? 'hjemme' : 'borte'}`)
     }
 
     return (

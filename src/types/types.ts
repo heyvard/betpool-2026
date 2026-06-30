@@ -44,11 +44,14 @@ export interface MatchAdminData {
     manual_away_score: number | null
     synced_home_ft: number | null
     synced_away_ft: number | null
+    synced_home_rt: number | null
+    synced_away_rt: number | null
     synced_home_et: number | null
     synced_away_et: number | null
     synced_home_pen: number | null
     synced_away_pen: number | null
     synced_duration: string | null
+    synced_winner: string | null
     score_synced_at: string | null
     use_manual: boolean
 }

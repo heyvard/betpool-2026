@@ -57,8 +57,18 @@ export const MatchView = ({ match }: { match: Match }) => {
     const selectAllFocus = (e: React.FocusEvent<HTMLInputElement>) => e.target.select()
 
     const harSynketScore = ad?.synced_home_ft !== null && ad?.synced_home_ft !== undefined
-    const erEkstraTid = ad?.synced_duration && ad.synced_duration !== 'REGULAR' && ad.synced_home_et !== null
-    const erStraffer = ad?.synced_duration === 'PENALTY_SHOOTOUT' && ad.synced_home_pen !== null
+    // Sluttspillkamp som gikk forbi 90 min: football-data sender ordinær tid separat.
+    // Da er ordinær tid (rt) tippe-resultatet — det aktive resultatet resten av appen
+    // bruker — mens fulltid (ft) er totalen inkl. ekstraomganger/straffer.
+    const harRegulærTid = ad?.synced_home_rt !== null && ad?.synced_home_rt !== undefined
+    const duration = (ad?.synced_duration ?? '').toUpperCase()
+    const erEkstraTid = (duration.includes('EXTRA') || duration.includes('PENALT')) && ad?.synced_home_et != null
+    const erStraffer = duration.includes('PENALT') && ad?.synced_home_pen != null
+    // Stillingen etter ekstraomganger = ordinær tid + det som ble scoret i ekstraomgangene.
+    const ekstraHome = harRegulærTid && ad?.synced_home_et != null ? ad.synced_home_rt! + ad.synced_home_et : null
+    const ekstraAway = harRegulærTid && ad?.synced_away_et != null ? ad.synced_away_rt! + ad.synced_away_et : null
+    const vinnerTla =
+        ad?.synced_winner === 'HOME_TEAM' ? match.home_team : ad?.synced_winner === 'AWAY_TEAM' ? match.away_team : null
 
     const status = statusVisning(match.status)
 
@@ -90,26 +100,42 @@ export const MatchView = ({ match }: { match: Match }) => {
                         </div>
                         {harSynketScore ? (
                             <div className="space-y-1">
-                                <div className="flex items-center gap-2">
-                                    <span className="text-xs text-stone-500 w-16">Fulltid</span>
-                                    <span className="bp-tabular font-semibold">
-                                        {ad.synced_home_ft} – {ad.synced_away_ft}
-                                    </span>
-                                </div>
-                                {erEkstraTid && (
+                                {harRegulærTid ? (
                                     <div className="flex items-center gap-2">
-                                        <span className="text-xs text-stone-500 w-16">Ekstra tid</span>
+                                        <span className="text-xs text-stone-500 w-20">Ordinær tid</span>
                                         <span className="bp-tabular font-semibold">
-                                            {ad.synced_home_et} – {ad.synced_away_et}
+                                            {ad.synced_home_rt} – {ad.synced_away_rt}
+                                        </span>
+                                        <span className="bp-chip-gold text-[10px]">Tippes</span>
+                                    </div>
+                                ) : (
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-xs text-stone-500 w-20">Fulltid</span>
+                                        <span className="bp-tabular font-semibold">
+                                            {ad.synced_home_ft} – {ad.synced_away_ft}
+                                        </span>
+                                    </div>
+                                )}
+                                {erEkstraTid && ekstraHome !== null && ekstraAway !== null && (
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-xs text-stone-500 w-20">Etter e.o.</span>
+                                        <span className="bp-tabular font-semibold">
+                                            {ekstraHome} – {ekstraAway}
                                         </span>
                                     </div>
                                 )}
                                 {erStraffer && (
                                     <div className="flex items-center gap-2">
-                                        <span className="text-xs text-stone-500 w-16">Straffer</span>
+                                        <span className="text-xs text-stone-500 w-20">Straffer</span>
                                         <span className="bp-tabular font-semibold">
                                             {ad.synced_home_pen} – {ad.synced_away_pen}
                                         </span>
+                                    </div>
+                                )}
+                                {vinnerTla && (
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-xs text-stone-500 w-20">Videre</span>
+                                        <span className="font-semibold">{fixLand(vinnerTla)}</span>
                                     </div>
                                 )}
                             </div>

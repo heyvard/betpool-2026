@@ -70,17 +70,31 @@ export function erGyldigModell(id: string): id is AiModellId {
     return id in AI_MODELLER
 }
 
+// Hvordan en sluttspillkamp til slutt ble avgjort, når den gikk forbi ordinær tid.
+// `resultat` på kampen er alltid stillingen etter ordinær tid (det vi tipper på);
+// dette feltet forteller Claude at det gikk til ekstraomganger/straffer og hvem som
+// faktisk gikk videre — slik at rapporten kan nevne dramaet uten å rote til
+// tippe-resultatet.
+export interface AiKampAvgjoring {
+    type: 'ekstraomganger' | 'straffer'
+    ekstraomganger: string | null // stilling etter ekstraomganger («2–1»), når satt
+    straffer: string | null // straffekonkurranse («4–3»), når kampen gikk til straffer
+    vant: string // navnet på laget som gikk videre, f.eks. «Brasil»
+    vantTla: string
+}
+
 export interface AiKampKontekst {
     matchNum: number
     hjemme: { tla: string; navn: string; flagg: string }
     borte: { tla: string; navn: string; flagg: string }
-    resultat: string | null // «2–1», eller null om resultatet ikke er satt
+    resultat: string | null // «2–1» etter ordinær tid, eller null om resultatet ikke er satt
     runde: number
     rundeTekst: string
     erNorgeKamp: boolean
     antallTippet: number // antall hovedliga-tips på kampen
     antallRiktigUtfall: number // hvor mange traff H/U/B
     antallRiktigResultat: number // hvor mange traff eksakt resultat
+    avgjoring?: AiKampAvgjoring // satt kun for sluttspillkamper avgjort i ekstraomganger/straffer
 }
 
 // En kamp som kommer senere i dag (etter morgenrapportens vindu) — grunnlag for en
@@ -182,6 +196,65 @@ function kampNavn(k: AiKampKontekst): string {
     return `${k.hjemme.flagg} ${k.hjemme.navn} – ${k.borte.navn} ${k.borte.flagg}`.trim()
 }
 
+// Felter fra match_scores som trengs for å beskrive en sluttspill-avgjøring.
+interface AvgjoringScore {
+    synced_home_rt: number | null
+    synced_away_rt: number | null
+    synced_home_et: number | null
+    synced_away_et: number | null
+    synced_home_pen: number | null
+    synced_away_pen: number | null
+    synced_duration: string | null
+    synced_winner: string | null
+}
+
+// Finner tla-en til laget som gikk videre. Bruker football-datas winner-felt når
+// det finnes; ellers avgjør vi på straffer, så på (ordinær tid + ekstraomganger).
+function finnVinnerTla(score: AvgjoringScore, homeTla: string, awayTla: string): string | null {
+    if (score.synced_winner === 'HOME_TEAM') return homeTla
+    if (score.synced_winner === 'AWAY_TEAM') return awayTla
+    if (score.synced_home_pen !== null && score.synced_away_pen !== null) {
+        if (score.synced_home_pen > score.synced_away_pen) return homeTla
+        if (score.synced_away_pen > score.synced_home_pen) return awayTla
+    }
+    const h = (score.synced_home_rt ?? 0) + (score.synced_home_et ?? 0)
+    const a = (score.synced_away_rt ?? 0) + (score.synced_away_et ?? 0)
+    if (h > a) return homeTla
+    if (a > h) return awayTla
+    return null
+}
+
+// Bygger avgjøringen for en sluttspillkamp som gikk forbi ordinær tid. Returnerer
+// undefined for kamper avgjort innen 90 min (gruppespill og vanlige sluttspillkamper).
+function byggAvgjoring(score: AvgjoringScore, homeTla: string, awayTla: string): AiKampAvgjoring | undefined {
+    const d = (score.synced_duration ?? '').toUpperCase()
+    const harStraffer = d.includes('PENALT') || (score.synced_home_pen !== null && score.synced_away_pen !== null)
+    const harEkstraomganger = d.includes('EXTRA') || (score.synced_home_et !== null && score.synced_away_et !== null)
+    if (!harStraffer && !harEkstraomganger) return undefined
+
+    // Stilling etter ekstraomganger = ordinær tid + det som ble scoret i ekstraomgangene.
+    const ekstraomganger =
+        score.synced_home_rt !== null &&
+        score.synced_away_rt !== null &&
+        score.synced_home_et !== null &&
+        score.synced_away_et !== null
+            ? `${score.synced_home_rt + score.synced_home_et}–${score.synced_away_rt + score.synced_away_et}`
+            : null
+    const straffer =
+        harStraffer && score.synced_home_pen !== null && score.synced_away_pen !== null
+            ? `${score.synced_home_pen}–${score.synced_away_pen}`
+            : null
+
+    const vantTla = finnVinnerTla(score, homeTla, awayTla)
+    return {
+        type: harStraffer ? 'straffer' : 'ekstraomganger',
+        ekstraomganger,
+        straffer,
+        vant: vantTla ? hentNorsk(vantTla) : 'uavgjort',
+        vantTla: vantTla ?? '',
+    }
+}
+
 // Bygger hele konteksten Claude trenger om natten. Ren lesing — gjenbruker
 // hovedliga-data, scoring-laget og morgenrapportens beregninger. Speiler vinduet
 // til genererMorgenrapport: siste RAPPORT_VINDU_TIMER t fram til 08:00 Oslo på
@@ -228,13 +301,24 @@ async function byggKontekstMedTabell(
             match_num: number
             home_score: number | null
             away_score: number | null
+            synced_home_rt: number | null
+            synced_away_rt: number | null
             synced_home_ft: number | null
             synced_away_ft: number | null
+            synced_home_et: number | null
+            synced_away_et: number | null
+            synced_home_pen: number | null
+            synced_away_pen: number | null
+            synced_duration: string | null
+            synced_winner: string | null
             use_manual: boolean
             home_team_override: string | null
             away_team_override: string | null
         }>(
-            `SELECT match_num, home_score, away_score, synced_home_ft, synced_away_ft, use_manual,
+            `SELECT match_num, home_score, away_score,
+                    synced_home_rt, synced_away_rt, synced_home_ft, synced_away_ft,
+                    synced_home_et, synced_away_et, synced_home_pen, synced_away_pen,
+                    synced_duration, synced_winner, use_manual,
                     home_team_override, away_team_override
              FROM match_scores WHERE match_num = ANY($1)`,
             [ferdigeKampnumre],
@@ -251,6 +335,7 @@ async function byggKontekstMedTabell(
             const homeTla = score?.home_team_override ?? kamp.home_team
             const awayTla = score?.away_team_override ?? kamp.away_team
             const mp = scoreForKamp.get(String(num))
+            const avgjoring = score ? byggAvgjoring(score, homeTla, awayTla) : undefined
             return {
                 matchNum: num,
                 hjemme: { tla: homeTla, navn: hentNorsk(homeTla), flagg: hentFlag(homeTla) },
@@ -263,6 +348,7 @@ async function byggKontekstMedTabell(
                 antallTippet: mp ? mp.hjemme + mp.uavgjort + mp.borte : 0,
                 antallRiktigUtfall: mp?.antallRiktigeUtfall ?? 0,
                 antallRiktigResultat: mp?.antallRiktigeSvar ?? 0,
+                ...(avgjoring ? { avgjoring } : {}),
             }
         })
         .filter((k): k is AiKampKontekst => k !== null)
@@ -469,6 +555,7 @@ Vokabular (følg dette nøyaktig):
 - VM-vinner-tipset heter «vinner», toppscorer-tipset «toppscorer».
 
 Innhold:
+- Sluttspill-drama: en kamp kan ha et «avgjoring»-felt. Da endte den uavgjort etter ordinær tid (det «resultat» og tippingen gjelder), men ble avgjort i ekstraomganger eller straffer. Løft fram dramaet: nevn at det gikk til ekstraomganger/straffer, straffe-stillingen («straffer») og hvem som gikk videre («vant»). Husk at tippe-poengene baseres på stillingen etter ordinær tid, ikke hvem som til slutt vant — det kan være en egen vinkel («tippet uavgjort og fikk uttelling selv om laget røyk ut på straffer»).
 - Løft fram nattens poengkonge, endringene på toppen av tabellen, og tipsene som ga mest poeng.
 - Joker-bruken er en viktig vinkel: hvem brente, hvem satt. Det er ikke nødvendig å liste alt og alle her, viktigst er gode treff, eller kamper der mange misset.
 - HVIS Norge spilte i natt skal det være en tydelig og fremtredende del av rapporten — nordmenn elsker landslaget, så gjør et nummer ut av Norge-kampen og hvem som traff/bommet på den.

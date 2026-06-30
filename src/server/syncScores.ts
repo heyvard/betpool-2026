@@ -24,19 +24,24 @@ export interface DryRunScoreKamp {
     relevant: boolean
     api: {
         fullTime: { home: number | null; away: number | null }
+        regularTime: { home: number | null; away: number | null } | null
         extraTime: { home: number | null; away: number | null } | null
         penalties: { home: number | null; away: number | null } | null
         duration: string | null
+        winner: string | null
     }
     db: {
         use_manual: boolean
         synced_home_ft: number | null
         synced_away_ft: number | null
+        synced_home_rt: number | null
+        synced_away_rt: number | null
         synced_home_et: number | null
         synced_away_et: number | null
         synced_home_pen: number | null
         synced_away_pen: number | null
         synced_duration: string | null
+        synced_winner: string | null
         score_synced_at: string | null
     } | null
     villeBlittOppdatert: boolean
@@ -104,11 +109,14 @@ export async function syncScores(
         use_manual: boolean
         synced_home_ft: number | null
         synced_away_ft: number | null
+        synced_home_rt: number | null
+        synced_away_rt: number | null
         synced_home_et: number | null
         synced_away_et: number | null
         synced_home_pen: number | null
         synced_away_pen: number | null
         synced_duration: string | null
+        synced_winner: string | null
         score_synced_at: string | null
         home_team: string | null
         away_team: string | null
@@ -116,9 +124,11 @@ export async function syncScores(
         `SELECT ms.match_num,
                 ms.use_manual,
                 ms.synced_home_ft, ms.synced_away_ft,
+                ms.synced_home_rt, ms.synced_away_rt,
                 ms.synced_home_et, ms.synced_away_et,
                 ms.synced_home_pen, ms.synced_away_pen,
                 ms.synced_duration,
+                ms.synced_winner,
                 ms.score_synced_at::text,
                 m.home_team, m.away_team
          FROM matches m
@@ -170,11 +180,14 @@ export async function syncScores(
                 (!dbRad ||
                     dbRad.synced_home_ft !== score.fullTime.home ||
                     dbRad.synced_away_ft !== score.fullTime.away ||
+                    (dbRad.synced_home_rt ?? null) !== (score.regularTime?.home ?? null) ||
+                    (dbRad.synced_away_rt ?? null) !== (score.regularTime?.away ?? null) ||
                     (dbRad.synced_home_et ?? null) !== (score.extraTime?.home ?? null) ||
                     (dbRad.synced_away_et ?? null) !== (score.extraTime?.away ?? null) ||
                     (dbRad.synced_home_pen ?? null) !== (score.penalties?.home ?? null) ||
                     (dbRad.synced_away_pen ?? null) !== (score.penalties?.away ?? null) ||
-                    (dbRad.synced_duration ?? null) !== (score.duration ?? null))
+                    (dbRad.synced_duration ?? null) !== (score.duration ?? null) ||
+                    (dbRad.synced_winner ?? null) !== (score.winner ?? null))
 
             if (villeBlittOppdatert) oppdatertDry++
 
@@ -186,20 +199,25 @@ export async function syncScores(
                 relevant,
                 api: {
                     fullTime: score?.fullTime ?? { home: null, away: null },
+                    regularTime: score?.regularTime ?? null,
                     extraTime: score?.extraTime ?? null,
                     penalties: score?.penalties ?? null,
                     duration: score?.duration ?? null,
+                    winner: score?.winner ?? null,
                 },
                 db: dbRad
                     ? {
                           use_manual: dbRad.use_manual,
                           synced_home_ft: dbRad.synced_home_ft,
                           synced_away_ft: dbRad.synced_away_ft,
+                          synced_home_rt: dbRad.synced_home_rt,
+                          synced_away_rt: dbRad.synced_away_rt,
                           synced_home_et: dbRad.synced_home_et,
                           synced_away_et: dbRad.synced_away_et,
                           synced_home_pen: dbRad.synced_home_pen,
                           synced_away_pen: dbRad.synced_away_pen,
                           synced_duration: dbRad.synced_duration,
+                          synced_winner: dbRad.synced_winner,
                           score_synced_at: dbRad.score_synced_at,
                       }
                     : null,
@@ -234,38 +252,48 @@ export async function syncScores(
             `INSERT INTO match_scores
                (match_num,
                 synced_home_ft, synced_away_ft,
+                synced_home_rt, synced_away_rt,
                 synced_home_et, synced_away_et,
                 synced_home_pen, synced_away_pen,
-                synced_duration, score_synced_at,
+                synced_duration, synced_winner, score_synced_at,
                 created_at, updated_at)
-             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,now(),now(),now())
+             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,now(),now(),now())
              ON CONFLICT (match_num) DO UPDATE SET
                synced_home_ft  = EXCLUDED.synced_home_ft,
                synced_away_ft  = EXCLUDED.synced_away_ft,
+               synced_home_rt  = EXCLUDED.synced_home_rt,
+               synced_away_rt  = EXCLUDED.synced_away_rt,
                synced_home_et  = EXCLUDED.synced_home_et,
                synced_away_et  = EXCLUDED.synced_away_et,
                synced_home_pen = EXCLUDED.synced_home_pen,
                synced_away_pen = EXCLUDED.synced_away_pen,
                synced_duration = EXCLUDED.synced_duration,
+               synced_winner   = EXCLUDED.synced_winner,
                score_synced_at = now(),
                updated_at      = now()
              WHERE
                match_scores.synced_home_ft  IS DISTINCT FROM EXCLUDED.synced_home_ft
                OR match_scores.synced_away_ft  IS DISTINCT FROM EXCLUDED.synced_away_ft
+               OR match_scores.synced_home_rt  IS DISTINCT FROM EXCLUDED.synced_home_rt
+               OR match_scores.synced_away_rt  IS DISTINCT FROM EXCLUDED.synced_away_rt
                OR match_scores.synced_home_et  IS DISTINCT FROM EXCLUDED.synced_home_et
                OR match_scores.synced_away_et  IS DISTINCT FROM EXCLUDED.synced_away_et
                OR match_scores.synced_home_pen IS DISTINCT FROM EXCLUDED.synced_home_pen
                OR match_scores.synced_away_pen IS DISTINCT FROM EXCLUDED.synced_away_pen
-               OR match_scores.synced_duration IS DISTINCT FROM EXCLUDED.synced_duration`,
+               OR match_scores.synced_duration IS DISTINCT FROM EXCLUDED.synced_duration
+               OR match_scores.synced_winner   IS DISTINCT FROM EXCLUDED.synced_winner`,
             [
                 m.id,
                 score.fullTime.home,
                 score.fullTime.away,
+                score.regularTime?.home ?? null,
+                score.regularTime?.away ?? null,
                 score.extraTime?.home ?? null,
                 score.extraTime?.away ?? null,
                 score.penalties?.home ?? null,
                 score.penalties?.away ?? null,
                 score.duration ?? null,
+                score.winner ?? null,
             ],
         )
         if (result.rowCount && result.rowCount > 0) {

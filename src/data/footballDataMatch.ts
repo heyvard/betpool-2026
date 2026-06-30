@@ -10,6 +10,12 @@ export interface FootballDataScore {
     duration: string | null
     fullTime: ScoreValue
     halfTime: ScoreValue
+    // Stillingen etter ordinær tid (90 min). football-data setter denne kun for
+    // sluttspillkamper som gikk til ekstraomganger/straffer; da er `fullTime`
+    // totalsummen (inkl. ekstraomganger og straffer), mens `regularTime` er
+    // 90-minutters-resultatet vi tipper på. For kamper avgjort innen 90 min er
+    // den null, og `fullTime` er da selve 90-minutters-resultatet.
+    regularTime: ScoreValue | null
     extraTime: ScoreValue | null
     penalties: ScoreValue | null
 }

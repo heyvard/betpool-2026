@@ -99,6 +99,61 @@ export async function seedSyncedScore(matchNum: number, home: number, away: numb
     )
 }
 
+// Legger inn et synket sluttspill-resultat som gikk forbi ordinær tid — som om
+// football-data meldte ordinær tid (rt), ekstraomganger (et), straffer (pen) og
+// hvem som gikk videre (winner). `ft` er totalen (inkl. straffer), men det er rt
+// som er tippe-resultatet.
+export async function seedSyncedKnockoutScore(args: {
+    matchNum: number
+    ftHome: number
+    ftAway: number
+    rtHome: number
+    rtAway: number
+    etHome?: number | null
+    etAway?: number | null
+    penHome?: number | null
+    penAway?: number | null
+    duration: string
+    winner: string
+}): Promise<void> {
+    await withDb((c) =>
+        c.query(
+            `INSERT INTO match_scores
+               (match_num, synced_home_ft, synced_away_ft, synced_home_rt, synced_away_rt,
+                synced_home_et, synced_away_et, synced_home_pen, synced_away_pen,
+                synced_duration, synced_winner, use_manual, score_synced_at, created_at, updated_at)
+             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,false,now(),now(),now())
+             ON CONFLICT (match_num) DO UPDATE SET
+               synced_home_ft = EXCLUDED.synced_home_ft,
+               synced_away_ft = EXCLUDED.synced_away_ft,
+               synced_home_rt = EXCLUDED.synced_home_rt,
+               synced_away_rt = EXCLUDED.synced_away_rt,
+               synced_home_et = EXCLUDED.synced_home_et,
+               synced_away_et = EXCLUDED.synced_away_et,
+               synced_home_pen = EXCLUDED.synced_home_pen,
+               synced_away_pen = EXCLUDED.synced_away_pen,
+               synced_duration = EXCLUDED.synced_duration,
+               synced_winner = EXCLUDED.synced_winner,
+               use_manual = false,
+               score_synced_at = now(),
+               updated_at = now()`,
+            [
+                args.matchNum,
+                args.ftHome,
+                args.ftAway,
+                args.rtHome,
+                args.rtAway,
+                args.etHome ?? null,
+                args.etAway ?? null,
+                args.penHome ?? null,
+                args.penAway ?? null,
+                args.duration,
+                args.winner,
+            ],
+        ),
+    )
+}
+
 // Legger inn en manuelt satt score i match_scores — som om en scoreadmin satte
 // resultatet for hånd. use_manual blir true. På en pågående kamp skal poengene
 // fortsatt regnes som foreløpige (live).

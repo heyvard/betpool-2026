@@ -29,18 +29,23 @@ export interface DryRunScoreKamp {
     relevant: boolean
     api: {
         fullTime: { home: number | null; away: number | null }
+        regularTime: { home: number | null; away: number | null } | null
         extraTime: { home: number | null; away: number | null } | null
         penalties: { home: number | null; away: number | null } | null
         duration: string | null
+        winner: string | null
     }
     db: {
         synced_home_ft: number | null
         synced_away_ft: number | null
+        synced_home_rt: number | null
+        synced_away_rt: number | null
         synced_home_et: number | null
         synced_away_et: number | null
         synced_home_pen: number | null
         synced_away_pen: number | null
         synced_duration: string | null
+        synced_winner: string | null
         score_synced_at: string | null
     } | null
     villeBlittOppdatert: boolean

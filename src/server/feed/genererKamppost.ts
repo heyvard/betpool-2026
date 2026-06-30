@@ -44,6 +44,8 @@ export interface FerdigKampRow {
     away_score: number | null
     home_team_override: string | null
     away_team_override: string | null
+    synced_home_rt: number | null
+    synced_away_rt: number | null
     synced_home_ft: number | null
     synced_away_ft: number | null
     use_manual: boolean
@@ -68,6 +70,7 @@ async function hentFerdigeUtenPost(client: PoolClient, matchNums: number[]): Pro
         SELECT m.match_num, m.round, m.home_team, m.away_team,
                ms.home_score, ms.away_score,
                ms.home_team_override, ms.away_team_override,
+               ms.synced_home_rt, ms.synced_away_rt,
                ms.synced_home_ft, ms.synced_away_ft, ms.use_manual
         FROM matches m
         JOIN match_scores ms ON ms.match_num = m.match_num

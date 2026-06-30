@@ -20,6 +20,8 @@ interface ScoreRow {
     away_score: number | null
     home_team_override: string | null
     away_team_override: string | null
+    synced_home_rt: number | null
+    synced_away_rt: number | null
     synced_home_ft: number | null
     synced_away_ft: number | null
     use_manual: boolean
@@ -87,7 +89,7 @@ export async function byggAlleBets(
             WHERE u.active = true`),
         client.query<ScoreRow>(`
             SELECT match_num, home_score, away_score, home_team_override, away_team_override,
-                   synced_home_ft, synced_away_ft, use_manual
+                   synced_home_rt, synced_away_rt, synced_home_ft, synced_away_ft, use_manual
             FROM match_scores`),
         client.query<BetsUser>(`
             SELECT u.id, COALESCE(NULLIF(u.kallenavn, ''), u.name) AS name, u.paid, u.picture, u.winner, u.topscorer,
