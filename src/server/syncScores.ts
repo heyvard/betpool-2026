@@ -145,14 +145,32 @@ export async function syncScores(
         return !r || r.synced_home_ft === null || r.synced_away_ft === null
     }
 
+    // Catch-up for sluttspilldata: kamper som ble synket FØR vi begynte å lagre
+    // ordinær tid / vinner har fulltid, men mangler `synced_home_rt`/`synced_winner`.
+    // Hvis API-et sier kampen gikk forbi ordinær tid (ekstraomganger/straffer) og
+    // DB-raden mangler de feltene, gjør vi den relevant slik at den re-synkes én gang.
+    // Etter at feltene er fylt slår dette ikke til igjen. Gruppespill (REGULAR) røres
+    // aldri.
+    const manglerSluttspilldata = (m: FootballDataMatch) => {
+        const r = dbMap.get(m.id)
+        if (!r) return false // dekkes av manglerSynketScore
+        const apiHarSluttspill =
+            (!!m.score?.duration && m.score.duration.toUpperCase() !== 'REGULAR') ||
+            m.score?.regularTime?.home != null ||
+            m.score?.penalties?.home != null
+        if (!apiHarSluttspill) return false
+        return r.synced_home_rt === null || r.synced_winner === null
+    }
+
     const erRelevant = (m: FootballDataMatch) => {
         if (m.status === 'IN_PLAY' || m.status === 'PAUSED') return true
         if (m.status === 'FINISHED') {
             // Fersk: synk på nytt en stund i tilfelle korreksjoner. Eldre: catch-up
-            // bare hvis scoren ennå ikke er synket — da mister vi aldri en kamp
-            // selv om synken ikke kjørte mens den var live / innen 6 t.
+            // hvis scoren ennå ikke er synket, eller sluttspilldataene (ordinær tid /
+            // vinner) mangler — da mister vi aldri en kamp selv om synken ikke kjørte
+            // mens den var live / innen 6 t.
             if (now - new Date(m.utcDate).getTime() < SEKS_TIMER_MS) return true
-            return manglerSynketScore(m)
+            return manglerSynketScore(m) || manglerSluttspilldata(m)
         }
         // Kampstart har passert i klokketid, men API-status er ennå ikke oppdatert
         if (m.status === 'TIMED' || m.status === 'SCHEDULED') {

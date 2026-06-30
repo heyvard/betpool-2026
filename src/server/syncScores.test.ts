@@ -136,6 +136,95 @@ it('ekskluderer FINISHED-kamper eldre enn 6 timer som allerede er synket', async
     expect(mockClient.query).toHaveBeenCalledTimes(1)
 })
 
+it('catch-up: re-synker en gammel ferdig sluttspillkamp som mangler ordinær tid / vinner', async () => {
+    const gammel = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
+    jest.spyOn(global, 'fetch').mockResolvedValue(
+        mockOkResponse([
+            lagKamp({
+                id: 1,
+                status: 'FINISHED',
+                utcDate: gammel,
+                score: {
+                    winner: 'AWAY_TEAM',
+                    duration: 'PENALTY_SHOOTOUT',
+                    fullTime: { home: 4, away: 6 },
+                    halfTime: { home: 0, away: 1 },
+                    regularTime: { home: 1, away: 1 },
+                    extraTime: { home: 0, away: 0 },
+                    penalties: { home: 3, away: 5 },
+                },
+            }),
+        ]),
+    )
+    // DB har fulltid fra en tidligere synk, men mangler ordinær tid og vinner.
+    mockClient.query.mockImplementation((sql: string) =>
+        Promise.resolve(
+            sql.trim().startsWith('SELECT')
+                ? {
+                      rows: [
+                          {
+                              match_num: 1,
+                              synced_home_ft: 4,
+                              synced_away_ft: 6,
+                              synced_home_rt: null,
+                              synced_winner: null,
+                          },
+                      ],
+                  }
+                : { rowCount: 1 },
+        ),
+    )
+
+    const resultat = await syncScores(mockClient as any)
+    expect(resultat.hentet).toBe(1)
+    expect(resultat.oppdatert).toBe(1)
+})
+
+it('catch-up rører ikke en gammel ferdig sluttspillkamp som allerede har ordinær tid', async () => {
+    const gammel = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
+    jest.spyOn(global, 'fetch').mockResolvedValue(
+        mockOkResponse([
+            lagKamp({
+                id: 1,
+                status: 'FINISHED',
+                utcDate: gammel,
+                score: {
+                    winner: 'AWAY_TEAM',
+                    duration: 'PENALTY_SHOOTOUT',
+                    fullTime: { home: 4, away: 6 },
+                    halfTime: { home: 0, away: 1 },
+                    regularTime: { home: 1, away: 1 },
+                    extraTime: { home: 0, away: 0 },
+                    penalties: { home: 3, away: 5 },
+                },
+            }),
+        ]),
+    )
+    // Ordinær tid og vinner er allerede fylt → ikke relevant.
+    mockClient.query.mockImplementation((sql: string) =>
+        Promise.resolve(
+            sql.trim().startsWith('SELECT')
+                ? {
+                      rows: [
+                          {
+                              match_num: 1,
+                              synced_home_ft: 4,
+                              synced_away_ft: 6,
+                              synced_home_rt: 1,
+                              synced_winner: 'AWAY_TEAM',
+                          },
+                      ],
+                  }
+                : { rowCount: 0 },
+        ),
+    )
+
+    const resultat = await syncScores(mockClient as any)
+    expect(resultat.hentet).toBe(0)
+    // bare SELECT (DB-tilstand) skal ha blitt kjørt, ingen INSERT
+    expect(mockClient.query).toHaveBeenCalledTimes(1)
+})
+
 it('inkluderer TIMED-kamper der kampstart har passert', async () => {
     const passert = new Date(Date.now() - 5 * 60 * 1000).toISOString() // 5 min siden
     jest.spyOn(global, 'fetch').mockResolvedValue(
