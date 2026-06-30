@@ -6,6 +6,16 @@
 // EMOJI_KATEGORIER inneholder hele utvalget som er tilgjengelig i popup-en.
 // `erTillattEmoji` godtar alle emoji i begge listene (union-en under).
 
+import { landFlagg } from '../data/landFlagg'
+import { landNorsk } from '../data/landNorsk'
+
+// Flagg for alle lagene som er med (VM 2026-deltakerne, kilde: landFlagg),
+// sortert på norsk landnavn så de er enkle å bla i.
+const LAGFLAGG: readonly string[] = Object.keys(landFlagg)
+    .sort((a, b) => (landNorsk[a] ?? a).localeCompare(landNorsk[b] ?? b, 'no'))
+    .map((tla) => landFlagg[tla])
+    .filter(Boolean)
+
 // Hurtigvalg — radien som vises før man åpner hele utvalget. Hold den kort.
 export const STANDARD_EMOJI = ['🔥', '😂', '😡', '💀', '😱', '👏', '🎯', '👍', '❤️'] as const
 
@@ -196,6 +206,10 @@ export const EMOJI_KATEGORIER: { navn: string; emoji: readonly string[] }[] = [
             '🙉',
             '🙊',
         ],
+    },
+    {
+        navn: 'Lagflagg',
+        emoji: LAGFLAGG,
     },
 ]
 
