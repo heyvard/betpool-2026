@@ -26,9 +26,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     try {
         client = await getPool().connect()
         const resultat = await syncScores(client)
-        // Generer feed-poster (kampposter + ev. morgenrapport når nattens siste
-        // kamp ble ferdig) KUN for kamper som akkurat ble ferdige denne synken.
-        // genererFeedTrygt svelger egne feil — aldri en blokkering for synken.
+        // Fyr ev. morgenrapport når nattens siste kamp ble ferdig — basert KUN på
+        // kamper som akkurat ble ferdige denne synken. genererFeedTrygt svelger egne
+        // feil — aldri en blokkering for synken.
         await genererFeedTrygt(client, resultat.nyligFerdige)
         res.status(200).json(resultat)
     } catch (e) {

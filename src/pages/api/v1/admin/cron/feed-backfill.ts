@@ -2,10 +2,9 @@ import { ApiHandlerOpts } from '../../../../../types/apiHandlerOpts'
 import { auth } from '../../../../../auth/authHandler'
 import { backfillFeed } from '../../../../../server/feed/backfill'
 
-// Full backfill av feeden: fyller kamp-poster og morgenrapporter for hele
-// turneringen (fra første ferdige kamp til i dag) i én kjøring. Admin-trigget fra
-// /cron. Idempotent — dedup på kamp (match_num) og dato, så allerede backfilte
-// dager/kamper hoppes over.
+// Full backfill av feeden: fyller morgenrapporter for hele turneringen (fra første
+// ferdige kamp til i dag) i én kjøring. Admin-trigget fra /cron. Idempotent — dedup
+// på dato, så allerede backfilte dager hoppes over.
 const handler = async function ({ user, res, client }: ApiHandlerOpts): Promise<void> {
     if (!user?.superadmin) {
         res.status(403).end()

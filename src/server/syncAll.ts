@@ -3,18 +3,15 @@ import { PoolClient } from 'pg'
 import { FootballDataMatch } from '../data/footballDataMatch'
 import { syncMatches, SyncResultat } from './syncMatches'
 import { syncScores, SyncScoresResultat } from './syncScores'
-import { genererKampposter } from './feed/genererKamppost'
 import { fyrAiMorgenrapportVedNattslutt } from './feed/morgenrapportAi'
 
-// Etter en score-synk: generer feed-kampposter for kampene som akkurat ble ferdige,
-// og fyr morgenrapporten dersom nattens siste kamp dermed ble ferdig (rapporten
-// legges rett over kampposten, så den havner øverst). Aldri en blokkering for
-// synken — feilet feed-generering skal ikke velte score-oppdateringen.
+// Etter en score-synk: fyr morgenrapporten dersom nattens siste kamp dermed ble
+// ferdig. Vi poster ikke lenger en feed-post per kamp — morgenrapporten dekker
+// kampene samlet. Aldri en blokkering for synken — feilet feed-generering skal
+// ikke velte score-oppdateringen.
 export async function genererFeedTrygt(client: PoolClient, nyligFerdige: number[]): Promise<void> {
     if (nyligFerdige.length === 0) return
     try {
-        const res = await genererKampposter(client, nyligFerdige)
-        if (res.postet > 0) console.log(`[feed] postet ${res.postet} kamppost(er)`)
         const rapporter = await fyrAiMorgenrapportVedNattslutt(client, nyligFerdige)
         if (rapporter.length > 0) console.log(`[feed] postet morgenrapport for ${rapporter.join(', ')}`)
     } catch (e) {

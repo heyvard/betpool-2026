@@ -509,9 +509,9 @@ function FeedBackfillKnapp() {
                 <div className="min-w-0">
                     <p className="text-sm font-medium text-stone-900">Backfill feed</p>
                     <p className="text-xs text-stone-500">
-                        Full backfill: fyller feeden med hele turneringens hendelser — kamp-oppsummeringer og
-                        morgenrapporter fra første ferdige kamp til i dag. Historisk korrekte tidspunkter og stillinger.
-                        Idempotent — dedup på kamp og dato, så allerede backfilte dager hoppes over.
+                        Full backfill: fyller feeden med morgenrapporter fra første ferdige kamp til i dag. Historisk
+                        korrekte tidspunkter og stillinger. Idempotent — dedup på dato, så allerede backfilte dager
+                        hoppes over.
                     </p>
                 </div>
                 <div className="flex shrink-0 gap-2">
@@ -529,7 +529,7 @@ function FeedBackfillKnapp() {
             {isSuccess && data && (
                 <p className="rounded-lg bg-green-50 px-3 py-1.5 text-xs text-green-700">
                     {data.fraDato
-                        ? `${data.fraDato} → ${data.tilDato} (${data.dager} dager) · kamp-poster: ${data.kampposter} · morgenrapporter: ${data.morgenrapporter}`
+                        ? `${data.fraDato} → ${data.tilDato} (${data.dager} dager) · morgenrapporter: ${data.morgenrapporter}`
                         : 'Ingen ferdige kamper å backfille ennå.'}
                 </p>
             )}
