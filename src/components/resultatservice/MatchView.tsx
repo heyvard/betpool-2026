@@ -100,20 +100,13 @@ export const MatchView = ({ match }: { match: Match }) => {
                         </div>
                         {harSynketScore ? (
                             <div className="space-y-1">
-                                {harRegulærTid ? (
+                                {harRegulærTid && (
                                     <div className="flex items-center gap-2">
                                         <span className="text-xs text-stone-500 w-20">Ordinær tid</span>
                                         <span className="bp-tabular font-semibold">
                                             {ad.synced_home_rt} – {ad.synced_away_rt}
                                         </span>
                                         <span className="bp-chip-gold text-[10px]">Tippes</span>
-                                    </div>
-                                ) : (
-                                    <div className="flex items-center gap-2">
-                                        <span className="text-xs text-stone-500 w-20">Fulltid</span>
-                                        <span className="bp-tabular font-semibold">
-                                            {ad.synced_home_ft} – {ad.synced_away_ft}
-                                        </span>
                                     </div>
                                 )}
                                 {erEkstraTid && ekstraHome !== null && ekstraAway !== null && (
@@ -132,6 +125,16 @@ export const MatchView = ({ match }: { match: Match }) => {
                                         </span>
                                     </div>
                                 )}
+                                <div className="flex items-center gap-2">
+                                    <span className="text-xs text-stone-500 w-20">
+                                        {harRegulærTid ? 'Fulltid (tot.)' : 'Fulltid'}
+                                    </span>
+                                    <span
+                                        className={`bp-tabular font-semibold ${harRegulærTid ? 'text-stone-500' : ''}`}
+                                    >
+                                        {ad.synced_home_ft} – {ad.synced_away_ft}
+                                    </span>
+                                </div>
                                 {vinnerTla && (
                                     <div className="flex items-center gap-2">
                                         <span className="text-xs text-stone-500 w-20">Videre</span>
