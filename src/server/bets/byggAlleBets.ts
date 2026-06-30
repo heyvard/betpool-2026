@@ -24,6 +24,12 @@ interface ScoreRow {
     synced_away_rt: number | null
     synced_home_ft: number | null
     synced_away_ft: number | null
+    synced_home_et: number | null
+    synced_away_et: number | null
+    synced_home_pen: number | null
+    synced_away_pen: number | null
+    synced_duration: string | null
+    synced_winner: string | null
     use_manual: boolean
 }
 
@@ -44,6 +50,13 @@ export interface BetsUser {
     i_hovedliga: boolean
 }
 
+export interface SluttspillResultat {
+    avgjortPa: 'ekstraomganger' | 'straffer'
+    vinner: 'home' | 'away'
+    etter120: [number, number] // rt + et per lag (stillingen etter 120 min)
+    straffer: [number, number] | null // kun ved straffesparkkonkurranse
+}
+
 export interface BetsRad {
     user_id: string
     match_num: number
@@ -57,6 +70,28 @@ export interface BetsRad {
     away_result: number | null
     joker: boolean
     foreløpig: boolean
+    sluttspill: SluttspillResultat | null
+}
+
+// Bygger sluttspill-info (ekstraomganger/straffer + hvem som gikk videre) for
+// visning. Returnerer null for gruppespill og kamper avgjort innen 90' — kun
+// rent presentasjon, ordinær tid er fortsatt det eneste som scores.
+function byggSluttspill(score: ScoreRow | undefined): SluttspillResultat | null {
+    if (!score) return null
+    const d = score.synced_duration
+    if (d !== 'EXTRA_TIME' && d !== 'PENALTY_SHOOTOUT') return null
+    if (score.synced_home_rt == null || score.synced_away_rt == null) return null
+    const vinner = score.synced_winner === 'HOME_TEAM' ? 'home' : score.synced_winner === 'AWAY_TEAM' ? 'away' : null
+    if (!vinner) return null // uavgjort skal ikke skje i sluttspill; vær trygg
+    const etter120: [number, number] = [
+        score.synced_home_rt + (score.synced_home_et ?? 0),
+        score.synced_away_rt + (score.synced_away_et ?? 0),
+    ]
+    const straffer: [number, number] | null =
+        d === 'PENALTY_SHOOTOUT' && score.synced_home_pen != null && score.synced_away_pen != null
+            ? [score.synced_home_pen, score.synced_away_pen]
+            : null
+    return { avgjortPa: d === 'PENALTY_SHOOTOUT' ? 'straffer' : 'ekstraomganger', vinner, etter120, straffer }
 }
 
 export interface AlleBets {
@@ -89,7 +124,10 @@ export async function byggAlleBets(
             WHERE u.active = true`),
         client.query<ScoreRow>(`
             SELECT match_num, home_score, away_score, home_team_override, away_team_override,
-                   synced_home_rt, synced_away_rt, synced_home_ft, synced_away_ft, use_manual
+                   synced_home_rt, synced_away_rt, synced_home_ft, synced_away_ft,
+                   synced_home_et, synced_away_et, synced_home_pen, synced_away_pen,
+                   synced_duration, synced_winner,
+                   use_manual
             FROM match_scores`),
         client.query<BetsUser>(`
             SELECT u.id, COALESCE(NULLIF(u.kallenavn, ''), u.name) AS name, u.paid, u.picture, u.winner, u.topscorer,
@@ -132,6 +170,7 @@ export async function byggAlleBets(
                 away_result: awayResult,
                 joker: b.joker,
                 foreløpig,
+                sluttspill: byggSluttspill(score),
             }
         })
         .filter((b): b is BetsRad => b !== null)

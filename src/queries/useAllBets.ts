@@ -25,6 +25,13 @@ export interface OtherUser {
     topscorerPoints?: number
 }
 
+export interface SluttspillResultat {
+    avgjortPa: 'ekstraomganger' | 'straffer'
+    vinner: 'home' | 'away'
+    etter120: [number, number] // rt + et per lag (stillingen etter 120 min)
+    straffer: [number, number] | null // kun ved straffesparkkonkurranse
+}
+
 export interface MatchBet {
     user_id: string
     match_num: number
@@ -40,6 +47,9 @@ export interface MatchBet {
     // Settes av /api/v1/bets: kampen pågår fortsatt og resultatet er et live
     // synket delresultat — poengene er dermed foreløpige.
     foreløpig?: boolean
+    // Sluttspill-info (e.omg./straffer + hvem som gikk videre). Rent presentasjon
+    // — ordinær tid er fortsatt det eneste som scores.
+    sluttspill?: SluttspillResultat | null
 }
 
 export interface MatchBetMedScore {
@@ -59,6 +69,7 @@ export interface MatchBetMedScore {
     joker: boolean
     matchpoeng: MatchPoeng
     foreløpig?: boolean
+    sluttspill?: SluttspillResultat | null
 }
 
 export interface AllBets {
