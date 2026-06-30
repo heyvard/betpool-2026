@@ -22,6 +22,13 @@ oppgave senere: sjekk om branchen er merget til `main` først (f.eks.
 Er den merget, lag en **ny branch fra oppdatert `main`** i stedet for å bygge
 videre på den merge-de branchen.
 
+**Sjekk alltid om PR-en er merget før du pusher til en eksisterende branch du
+har laget PR på tidligere.** En merget PR er ferdig — den kan ikke spore nytt
+arbeid. Er den merget, start branchen på nytt fra oppdatert `main`
+(`git fetch origin main && git checkout -B <branch> origin/main`), push
+oppfølgingen dit og opprett en **ny** PR. Ikke stable nye commits oppå den
+allerede mergede historikken.
+
 ## Before every commit
 
 Always run `pnpm format` (prettier write + lint fix) before committing. This prevents CI failures on formatting and lint.
