@@ -400,9 +400,21 @@ function AiSeksjoner({ data }: { data: Record<string, unknown> }) {
     )
 }
 
-function KommentarRad({ post, kommentar }: { post: FeedPost; kommentar: FeedKommentar }) {
+function KommentarRad({
+    post,
+    kommentar,
+    onVelgerToggle,
+}: {
+    post: FeedPost
+    kommentar: FeedKommentar
+    onVelgerToggle: (åpen: boolean) => void
+}) {
     const [pickerOpen, setPickerOpen] = useState(false)
     const reaksjon = UseMutateFeedKommentarReaksjon()
+    const settÅpen = (åpen: boolean) => {
+        setPickerOpen(åpen)
+        onVelgerToggle(åpen)
+    }
     return (
         <div className="flex gap-2.5">
             <FeedAvatar src={kommentar.picture} navn={kommentar.navn} size={30} />
@@ -429,7 +441,7 @@ function KommentarRad({ post, kommentar }: { post: FeedPost; kommentar: FeedKomm
                     ))}
                     <button
                         type="button"
-                        onClick={() => setPickerOpen((v) => !v)}
+                        onClick={() => settÅpen(!pickerOpen)}
                         className="flex items-center justify-center rounded-full text-stone-500"
                         style={{ width: 22, height: 20, background: '#f5f5f4' }}
                         aria-label="Legg til reaksjon"
@@ -440,7 +452,7 @@ function KommentarRad({ post, kommentar }: { post: FeedPost; kommentar: FeedKomm
                         <div className="absolute top-full left-0 z-20 mt-1">
                             <EmojiVelger
                                 onVelg={(emoji) => {
-                                    setPickerOpen(false)
+                                    settÅpen(false)
                                     reaksjon.mutate({ postId: post.id, commentId: kommentar.id, emoji })
                                 }}
                             />
@@ -456,10 +468,15 @@ export function FeedKort({ post, meNavn, mePicture, erSuperadmin }: Props) {
     const { t, locale } = useLanguage()
     const farger = ACCENT[post.accent] ?? ACCENT.stone
     const [pickerOpen, setPickerOpen] = useState(false)
+    const [åpneKommentarVelgere, setÅpneKommentarVelgere] = useState(0)
     const [tekst, setTekst] = useState('')
     const reaksjon = UseMutateFeedReaksjon()
     const kommentar = UseMutateFeedKommentar()
     const slettPost = UseMutateFeedSlettPost()
+
+    // Når en emoji-velger er åpen må kortet løftes over kortene under, ellers
+    // havner popup-en bak dem (senere søsken-kort males oppå).
+    const velgerÅpen = pickerOpen || åpneKommentarVelgere > 0
 
     const sendKommentar = () => {
         const ren = tekst.trim()
@@ -477,14 +494,15 @@ export function FeedKort({ post, meNavn, mePicture, erSuperadmin }: Props) {
     return (
         <article
             style={{
+                position: 'relative',
+                zIndex: velgerÅpen ? 30 : undefined,
                 background: '#fff',
                 borderRadius: 18,
                 margin: '0 12px 12px',
-                overflow: 'hidden',
                 boxShadow: '0 1px 3px rgba(0,0,0,.05), 0 0 0 1px #e7e5e4',
             }}
         >
-            <div style={{ height: 4, background: farger.acc }} />
+            <div style={{ height: 4, background: farger.acc, borderTopLeftRadius: 18, borderTopRightRadius: 18 }} />
             <div style={{ padding: '14px 15px 16px' }}>
                 {/* Avsender-rad */}
                 <div className="flex items-center gap-2.5">
@@ -607,7 +625,14 @@ export function FeedKort({ post, meNavn, mePicture, erSuperadmin }: Props) {
                 <div style={{ marginTop: 14, paddingTop: 14, borderTop: '1px solid #f5f5f4' }}>
                     <div className="flex flex-col gap-3">
                         {post.kommentarer.map((k) => (
-                            <KommentarRad key={k.id} post={post} kommentar={k} />
+                            <KommentarRad
+                                key={k.id}
+                                post={post}
+                                kommentar={k}
+                                onVelgerToggle={(åpen) =>
+                                    setÅpneKommentarVelgere((n) => Math.max(0, n + (åpen ? 1 : -1)))
+                                }
+                            />
                         ))}
                     </div>
 
