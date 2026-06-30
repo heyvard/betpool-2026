@@ -2,7 +2,7 @@ import type { NextPage } from 'next'
 import { Spinner } from '../../components/loading/Spinner'
 import { useRouter } from 'next/router'
 import NextLink from 'next/link'
-import { UseAllBets, MatchBetMedScore, OtherUser } from '../../queries/useAllBets'
+import { UseAllBets, MatchBetMedScore, OtherUser, SluttspillResultat } from '../../queries/useAllBets'
 import { calculateAllBetsExtended, filtrerAllBets } from '../../components/results/calculateAllBetsExtended'
 import React, { useMemo, useState } from 'react'
 import { hentFlag, hentNavn } from '../../utils/lag'
@@ -11,7 +11,7 @@ import { useLanguage } from '../../i18n/LanguageContext'
 import { tx } from '../../i18n/interpolate'
 import { rundeTilTekst } from '../../utils/rundeTilTekst'
 import { cn } from '@/lib/utils'
-import { CheckCheck, Flag, Target, X, Zap } from 'lucide-react'
+import { CheckCheck, Flag, Target, Trophy, X, Zap } from 'lucide-react'
 import { finnUtfall, Utfall } from '../../components/results/matchScoreCalculator'
 import { fixLand } from '../../components/bet/BetView'
 import { erNorgeKamp } from '../../data/matches'
@@ -48,6 +48,90 @@ function initials(name: string): string {
         .slice(0, 2)
 }
 
+// ---------- MatchHero-hjelpere ----------
+
+// Lagkolonne i hero-en. Markerer vinneren (fet hvit + gull «Videre»-pille med
+// trofé) og demper taperen lett. `vant`/`tapte` er begge false for vanlige
+// kamper — da ser kolonnen ut som før.
+function TeamColumn({
+    team,
+    locale,
+    vant,
+    tapte,
+    t,
+}: {
+    team: string
+    locale: 'no' | 'fr'
+    vant: boolean
+    tapte: boolean
+    t: Translations
+}) {
+    return (
+        <div className="flex flex-col items-center gap-1.5">
+            <span className={cn('text-[38px] leading-none', tapte && 'opacity-90')}>{hentFlag(team)}</span>
+            <span
+                className={cn(
+                    'text-xs text-center leading-tight',
+                    vant
+                        ? 'font-bold text-white'
+                        : tapte
+                          ? 'font-semibold text-white/75'
+                          : 'font-semibold text-white/90',
+                )}
+            >
+                {hentNavn(team, locale)}
+            </span>
+            {vant && (
+                <span
+                    className="inline-flex items-center gap-1 rounded-full bg-amber-500 px-2 py-0.5
+                               text-[9.5px] font-bold uppercase tracking-[0.08em] text-amber-950"
+                >
+                    <Trophy className="w-2.5 h-2.5" /> {t.spilteKamper.videre}
+                </span>
+            )}
+        </div>
+    )
+}
+
+// Kompakt fase-stack under lag-gridet: 120-minutters-stilling og evt. straffer.
+// Avgjørende fase markeres sterkt, mellomtrinnet dempet.
+function FaseStack({ s, t }: { s: SluttspillResultat; t: Translations }) {
+    const monoFont = "'SF Mono', ui-monospace, Menlo, monospace"
+    const rad = (label: string, skår: string, sterk: boolean) => (
+        <div className="flex items-center justify-between py-1">
+            <span
+                className={cn(
+                    'text-[11px] font-bold uppercase tracking-[0.06em]',
+                    sterk ? 'text-white/85' : 'text-white/50',
+                )}
+            >
+                {label}
+            </span>
+            <span
+                className={cn('bp-tabular text-sm font-bold', sterk ? 'text-white' : 'text-white/70')}
+                style={{ fontFamily: monoFont, fontVariantNumeric: 'tabular-nums' }}
+            >
+                {skår}
+            </span>
+        </div>
+    )
+
+    const etter120 = `${s.etter120[0]}–${s.etter120[1]}`
+
+    return (
+        <div className="border-t border-white/10 mt-3 pt-1">
+            {s.avgjortPa === 'straffer' ? (
+                <>
+                    {rad(t.spilteKamper.faseEkstraomganger, etter120, false)}
+                    {rad(t.spilteKamper.faseStraffer, `${s.straffer![0]}–${s.straffer![1]}`, true)}
+                </>
+            ) : (
+                rad(t.spilteKamper.faseEkstraomganger, etter120, true)
+            )}
+        </div>
+    )
+}
+
 // ---------- MatchHero ----------
 
 function MatchHero({
@@ -66,6 +150,9 @@ function MatchHero({
     t: Translations
 }) {
     const hasScore = match.home_result !== '' && match.away_result !== ''
+    // Sluttspill-info vises kun for ferdige kamper som faktisk gikk til
+    // ekstraomganger/straffer. Live og gruppespill ser ut som før.
+    const s = isFinished ? (match.sluttspill ?? null) : null
     return (
         <div
             className="relative rounded-[18px] overflow-hidden"
@@ -100,14 +187,15 @@ function MatchHero({
                 </div>
 
                 {/* Teams + score grid */}
-                <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3 pb-5">
+                <div className={cn('grid grid-cols-[1fr_auto_1fr] items-center gap-3', s ? 'pb-2' : 'pb-5')}>
                     {/* Home team */}
-                    <div className="flex flex-col items-center gap-1.5">
-                        <span className="text-[38px] leading-none">{hentFlag(match.home_team)}</span>
-                        <span className="text-xs font-semibold text-white/90 text-center leading-tight">
-                            {hentNavn(match.home_team, locale)}
-                        </span>
-                    </div>
+                    <TeamColumn
+                        team={match.home_team}
+                        locale={locale}
+                        vant={s?.vinner === 'home'}
+                        tapte={s != null && s.vinner !== 'home'}
+                        t={t}
+                    />
 
                     {/* Score */}
                     <div className="flex flex-col items-center gap-1.5">
@@ -117,24 +205,37 @@ function MatchHero({
                         >
                             {hasScore ? `${match.home_result}–${match.away_result}` : '?–?'}
                         </span>
-                        <span
-                            className={cn(
-                                'text-[10px] font-semibold uppercase tracking-wider',
-                                isLive ? 'text-red-300' : 'text-white/50',
-                            )}
-                        >
-                            {isLive ? t.spilteKamper.liveResultat : isFinished ? t.spilteKamper.sluttresultat : ''}
-                        </span>
+                        {s ? (
+                            <span
+                                className="bp-tabular inline-flex items-center rounded-full bg-amber-500 px-2 py-0.5
+                                           text-[9.5px] font-bold uppercase tracking-[0.08em] text-amber-950"
+                            >
+                                {t.spilteKamper.ordinaerTidTippes}
+                            </span>
+                        ) : (
+                            <span
+                                className={cn(
+                                    'text-[10px] font-semibold uppercase tracking-wider',
+                                    isLive ? 'text-red-300' : 'text-white/50',
+                                )}
+                            >
+                                {isLive ? t.spilteKamper.liveResultat : isFinished ? t.spilteKamper.sluttresultat : ''}
+                            </span>
+                        )}
                     </div>
 
                     {/* Away team */}
-                    <div className="flex flex-col items-center gap-1.5">
-                        <span className="text-[38px] leading-none">{hentFlag(match.away_team)}</span>
-                        <span className="text-xs font-semibold text-white/90 text-center leading-tight">
-                            {hentNavn(match.away_team, locale)}
-                        </span>
-                    </div>
+                    <TeamColumn
+                        team={match.away_team}
+                        locale={locale}
+                        vant={s?.vinner === 'away'}
+                        tapte={s != null && s.vinner !== 'away'}
+                        t={t}
+                    />
                 </div>
+
+                {/* Fase-stack: ekstraomganger / straffer */}
+                {s && <FaseStack s={s} t={t} />}
             </div>
 
             {/* Bottom accent stripe */}
@@ -144,6 +245,53 @@ function MatchHero({
                     isPågår ? 'bg-red-600' : isFinished ? 'bg-amber-500' : 'bg-transparent',
                 )}
             />
+        </div>
+    )
+}
+
+// ---------- FasitForTipping ----------
+
+// Gjør tippe-regelen eksplisitt for sluttspillkamper: poeng regnes på ordinær
+// tid uavhengig av hvem som gikk videre. Vises kun for ferdige kamper med
+// sluttspill (e.omg./straffer).
+function FasitForTipping({
+    match,
+    s,
+    locale,
+    t,
+}: {
+    match: MatchBetMedScore
+    s: SluttspillResultat
+    locale: 'no' | 'fr'
+    t: Translations
+}) {
+    const utfallLabels: Record<Utfall, string> = {
+        H: t.spilteKamper.utfallHjemmeseier,
+        U: t.spilteKamper.utfallUavgjort,
+        B: t.spilteKamper.utfallBorteseier,
+    }
+    const utfall = match.matchpoeng.utfall
+    const vinnerLag = s.vinner === 'home' ? match.home_team : match.away_team
+    const hvordan = s.avgjortPa === 'straffer' ? t.spilteKamper.avgjortStraffer : t.spilteKamper.avgjortEkstraomg
+
+    return (
+        <div className="bp-card flex items-start gap-2.5">
+            <span className="flex h-[30px] w-[30px] flex-shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
+                <CheckCheck className="w-4 h-4" />
+            </span>
+            <div className="min-w-0">
+                <p className="text-sm font-semibold text-stone-900">
+                    {t.spilteKamper.fasitForTipping}:{' '}
+                    <span className="bp-tabular" style={{ fontVariantNumeric: 'tabular-nums' }}>
+                        {match.home_result}–{match.away_result}
+                    </span>
+                    {utfall && <> · {utfallLabels[utfall]}</>}
+                </p>
+                <p className="text-xs text-stone-500 mt-0.5">
+                    {t.spilteKamper.poengRegnesOrdinaerTid}{' '}
+                    {tx(t.spilteKamper.gikkVidereNote, { lag: hentNavn(vinnerLag, locale), hvordan })}
+                </p>
+            </div>
         </div>
     )
 }
@@ -661,6 +809,9 @@ const MatchPage: NextPage = () => {
     return (
         <div className="flex flex-col gap-3 pb-8">
             <MatchHero match={match} isLive={isLive} isPågår={isPågår} isFinished={isFinished} locale={locale} t={t} />
+            {isFinished && match.sluttspill != null && (
+                <FasitForTipping match={match} s={match.sluttspill} locale={locale} t={t} />
+            )}
             <BetDistribution match={match} myBet={myBet} isPågår={isPågår} isFinished={isFinished} t={t} />
             {myBet && <MyBetCard bet={myBet} isLive={isLive} isFinished={isFinished} locale={locale} t={t} />}
             <AllBetsList
