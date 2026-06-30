@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test'
 
-import { seedUser, truncateAll, seedSyncedScore, setMatchStatus, withDb } from '../support/db'
+import { seedUser, truncateAll, seedSyncedScore, seedSyncedKnockoutScore, setMatchStatus, withDb } from '../support/db'
 
 async function settLag(matchNum: number, home: string, away: string): Promise<void> {
     await withDb((c) =>
@@ -51,6 +51,51 @@ test('ferdigspilt kamp viser resultat i bracketen', async ({ page }) => {
     await expect(node).toContainText('1')
     // Ferdigspilt → grønn status-stripe til venstre i noden.
     await expect(node.locator('span.bg-green-500')).toBeVisible()
+})
+
+test('kamp avgjort på straffer viser STR-resultatlinje med totalen', async ({ page }) => {
+    await seedSyncedKnockoutScore({
+        matchNum: R32_MED_LAG,
+        ftHome: 1,
+        ftAway: 1,
+        rtHome: 1,
+        rtAway: 1,
+        etHome: 0,
+        etAway: 0,
+        penHome: 2,
+        penAway: 4,
+        duration: 'PENALTY_SHOOTOUT',
+        winner: 'AWAY_TEAM',
+    })
+    await setMatchStatus(R32_MED_LAG, 'FINISHED')
+
+    await page.goto('/bracket')
+
+    const node = page.locator(`a[href="/match/${R32_MED_LAG}"]`)
+    // Footer navngir straffene (str 2–4), ikke 90-min-stillingen (som står i radene).
+    await expect(node).toContainText('str')
+    await expect(node).toContainText('2–4')
+})
+
+test('kamp avgjort i ekstraomganger viser E.O.-resultatlinje med 120-min-totalen', async ({ page }) => {
+    await seedSyncedKnockoutScore({
+        matchNum: R32_MED_LAG,
+        ftHome: 2,
+        ftAway: 1,
+        rtHome: 1,
+        rtAway: 1,
+        etHome: 1,
+        etAway: 0,
+        duration: 'EXTRA_TIME',
+        winner: 'HOME_TEAM',
+    })
+    await setMatchStatus(R32_MED_LAG, 'FINISHED')
+
+    await page.goto('/bracket')
+
+    const node = page.locator(`a[href="/match/${R32_MED_LAG}"]`)
+    await expect(node).toContainText('e.o.')
+    await expect(node).toContainText('2–1')
 })
 
 test('avleder vinneren inn i neste node når feeder-kampene er ferdige', async ({ page }) => {
