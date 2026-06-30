@@ -1,10 +1,212 @@
-// Tillatte emoji-reaksjoner i feeden. Valideres server-side (API avviser resten)
-// og brukes av emoji-velgeren på klienten. Delt konstant — ren data, trygt å
+// Emoji-reaksjoner i feeden. Valideres server-side (API avviser resten) og
+// brukes av emoji-velgeren på klienten. Delt konstant — ren data, trygt å
 // importere fra både server og klient.
-export const TILLATTE_EMOJI = ['🔥', '😂', '😡', '💀', '😱', '👏', '🎯'] as const
+//
+// To nivåer: STANDARD_EMOJI vises som hurtigvalg i den lille velgeren, mens
+// EMOJI_KATEGORIER inneholder hele utvalget som er tilgjengelig i popup-en.
+// `erTillattEmoji` godtar alle emoji i begge listene (union-en under).
 
-export type FeedEmoji = (typeof TILLATTE_EMOJI)[number]
+// Hurtigvalg — radien som vises før man åpner hele utvalget. Hold den kort.
+export const STANDARD_EMOJI = ['🔥', '😂', '😡', '💀', '😱', '👏', '🎯', '👍', '❤️'] as const
+
+// Hele utvalget, gruppert i kategorier for popup-en. Rekkefølgen styrer
+// visningen. Nye emoji legges til her — da blir de automatisk tillatt i API-et.
+export const EMOJI_KATEGORIER: { navn: string; emoji: readonly string[] }[] = [
+    {
+        navn: 'Smilefjes',
+        emoji: [
+            '😀',
+            '😃',
+            '😄',
+            '😁',
+            '😆',
+            '😅',
+            '😂',
+            '🤣',
+            '🙂',
+            '😉',
+            '😊',
+            '😇',
+            '😍',
+            '🥰',
+            '😘',
+            '😋',
+            '😜',
+            '🤪',
+            '😎',
+            '🥳',
+            '🤩',
+            '🤔',
+            '🤨',
+            '😏',
+            '😒',
+            '🙄',
+            '😬',
+            '😴',
+            '🤤',
+            '😪',
+            '😵',
+            '🤐',
+            '🥴',
+            '🤢',
+            '🤮',
+            '🤧',
+            '😷',
+            '🤒',
+            '😭',
+            '😢',
+            '😩',
+            '😫',
+            '🥺',
+            '😤',
+            '😠',
+            '😡',
+            '🤬',
+            '🤯',
+            '😳',
+            '🥵',
+            '🥶',
+            '😱',
+            '😨',
+            '😰',
+            '😥',
+            '😓',
+            '🤗',
+            '🤭',
+            '🤫',
+            '🫣',
+            '😈',
+            '👿',
+            '💀',
+            '☠️',
+            '🤡',
+            '👻',
+            '👽',
+            '🤖',
+        ],
+    },
+    {
+        navn: 'Hender',
+        emoji: [
+            '👍',
+            '👎',
+            '👏',
+            '🙌',
+            '🙏',
+            '👌',
+            '🤌',
+            '🤏',
+            '✌️',
+            '🤞',
+            '🤟',
+            '🤘',
+            '🤙',
+            '👈',
+            '👉',
+            '👆',
+            '👇',
+            '☝️',
+            '✋',
+            '🤚',
+            '🖐️',
+            '🖖',
+            '👋',
+            '🤝',
+            '💪',
+            '🫡',
+            '👀',
+            '🧠',
+        ],
+    },
+    {
+        navn: 'Hjerter',
+        emoji: [
+            '❤️',
+            '🧡',
+            '💛',
+            '💚',
+            '💙',
+            '💜',
+            '🖤',
+            '🤍',
+            '🤎',
+            '💔',
+            '❤️‍🔥',
+            '💕',
+            '💞',
+            '💓',
+            '💗',
+            '💖',
+            '💘',
+            '💝',
+            '💯',
+        ],
+    },
+    {
+        navn: 'Fotball',
+        emoji: [
+            '⚽',
+            '🏆',
+            '🥇',
+            '🥈',
+            '🥉',
+            '🏅',
+            '🎯',
+            '🥅',
+            '🧤',
+            '👟',
+            '📣',
+            '🚩',
+            '🟥',
+            '🟨',
+            '🤾',
+            '🏃',
+            '📈',
+            '📉',
+            '🔝',
+            '🐐',
+            '🦁',
+            '🦅',
+        ],
+    },
+    {
+        navn: 'Symboler',
+        emoji: [
+            '🔥',
+            '⭐',
+            '🌟',
+            '✨',
+            '⚡',
+            '💥',
+            '💫',
+            '🎉',
+            '🎊',
+            '👑',
+            '🃏',
+            '💰',
+            '🤑',
+            '🍺',
+            '🍻',
+            '🥂',
+            '🪦',
+            '⚓',
+            '🆘',
+            '💩',
+            '🙈',
+            '🙉',
+            '🙊',
+        ],
+    },
+]
+
+// Union-en av alt — hurtigvalg + alle kategorier, uten duplikater. Server-siden
+// validerer mot dette settet.
+const ALLE_EMOJI = Array.from(new Set<string>([...STANDARD_EMOJI, ...EMOJI_KATEGORIER.flatMap((k) => k.emoji)]))
+
+const ALLE_EMOJI_SET = new Set<string>(ALLE_EMOJI)
+
+export type FeedEmoji = string
 
 export function erTillattEmoji(emoji: unknown): emoji is FeedEmoji {
-    return typeof emoji === 'string' && (TILLATTE_EMOJI as readonly string[]).includes(emoji)
+    return typeof emoji === 'string' && ALLE_EMOJI_SET.has(emoji)
 }
