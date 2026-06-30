@@ -21,6 +21,7 @@ const baseKamp: FootballDataMatch = {
         duration: null,
         fullTime: { home: null, away: null },
         halfTime: { home: null, away: null },
+        regularTime: null,
         extraTime: null,
         penalties: null,
     },

@@ -1,4 +1,4 @@
-import { api, førsteMatchNum, seedUser, truncateAll, withDb } from './helpers'
+import { api, førsteMatchNum, seedSyncedKnockoutScore, seedUser, setMatchStatus, truncateAll, withDb } from './helpers'
 
 beforeEach(truncateAll)
 
@@ -52,5 +52,39 @@ describe('/api/v1/matches', () => {
         const matches = await (await api('/api/v1/matches', { user: 'admin' })).json()
         const kamp1 = matches.find((m: { match_num: number }) => m.match_num === matchNum)
         expect(kamp1.home_team).toBe('NOR')
+    })
+
+    it('sluttspillkamp avgjort på straffer: aktivt resultat er ordinær tid, ikke totalen', async () => {
+        await seedUser({ firebase_user_id: 'admin', scoreadmin: true })
+        const matchNum = await førsteMatchNum()
+        await setMatchStatus(matchNum, 'FINISHED')
+        // 1–1 etter ordinær tid, borte vant 5–3 på straffer (fullTime-totalen blir 4–6)
+        await seedSyncedKnockoutScore({
+            matchNum,
+            ftHome: 4,
+            ftAway: 6,
+            rtHome: 1,
+            rtAway: 1,
+            etHome: 0,
+            etAway: 0,
+            penHome: 3,
+            penAway: 5,
+            duration: 'PENALTY_SHOOTOUT',
+            winner: 'AWAY_TEAM',
+        })
+
+        const matches = await (await api('/api/v1/matches', { user: 'admin' })).json()
+        const kamp = matches.find((m: { match_num: number }) => m.match_num === matchNum)
+        // Tippe-resultatet er ordinær tid (1–1), ikke fulltids-totalen (4–6)
+        expect(kamp).toMatchObject({ home_score: 1, away_score: 1 })
+        // scoreadmin får detaljene for å vise straffe-/videre-info
+        expect(kamp.adminData).toMatchObject({
+            synced_home_rt: 1,
+            synced_away_rt: 1,
+            synced_home_pen: 3,
+            synced_away_pen: 5,
+            synced_duration: 'PENALTY_SHOOTOUT',
+            synced_winner: 'AWAY_TEAM',
+        })
     })
 })
