@@ -4,7 +4,7 @@ import { hentKamper } from '../../../data/matches'
 import { resolveActiveScore } from '../../../data/matchScore'
 import { LIVE_SYNC_INTERVAL_SEKUNDER } from '../../../utils/liveSync'
 import { syncLive } from '../../../server/syncAll'
-import { MatchAdminData } from '../../../types/types'
+import { MatchAdminData, SluttspillResultat } from '../../../types/types'
 
 // Live-synken (kun forespørselen som claimer 15s-slotet) kan via genererFeedTrygt fyre
 // den AI-genererte morgenrapporten (Claude) i det nattens siste kamp blir ferdig — det
@@ -33,6 +33,28 @@ interface ScoreRow {
     synced_winner: string | null
     score_synced_at: string | null
     use_manual: boolean
+}
+
+// Bygger sluttspill-info (ekstraomganger/straffer + hvem som gikk videre) for
+// visning i bracketen. Eksponeres for ALLE brukere (uavhengig av scoreadmin) —
+// rent presentasjon. Ordinær tid (home_score/away_score) er fortsatt det eneste
+// som tippes og scores. Returnerer null for gruppespill og kamper avgjort innen 90'.
+function byggSluttspill(score: ScoreRow | undefined): SluttspillResultat | null {
+    if (!score) return null
+    const d = score.synced_duration
+    if (d !== 'EXTRA_TIME' && d !== 'PENALTY_SHOOTOUT') return null
+    if (score.synced_home_rt == null || score.synced_away_rt == null) return null
+    const vinner = score.synced_winner === 'HOME_TEAM' ? 'home' : score.synced_winner === 'AWAY_TEAM' ? 'away' : null
+    if (!vinner) return null
+    const etter120: [number, number] = [
+        score.synced_home_rt + (score.synced_home_et ?? 0),
+        score.synced_away_rt + (score.synced_away_et ?? 0),
+    ]
+    const straffer: [number, number] | null =
+        d === 'PENALTY_SHOOTOUT' && score.synced_home_pen != null && score.synced_away_pen != null
+            ? [score.synced_home_pen, score.synced_away_pen]
+            : null
+    return { avgjortPa: d === 'PENALTY_SHOOTOUT' ? 'straffer' : 'ekstraomganger', vinner, etter120, straffer }
 }
 
 const handler = async function handler(opts: ApiHandlerOpts): Promise<void> {
@@ -89,6 +111,7 @@ const handler = async function handler(opts: ApiHandlerOpts): Promise<void> {
             away_team: score?.away_team_override ?? m.away_team,
             home_score: resolved.home_score,
             away_score: resolved.away_score,
+            sluttspill: byggSluttspill(score),
         }
 
         if (!user.scoreadmin || !score) return base

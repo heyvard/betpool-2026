@@ -39,6 +39,13 @@ export type MatchStatus =
     | 'CANCELLED'
     | 'AWARDED'
 
+export interface SluttspillResultat {
+    avgjortPa: 'ekstraomganger' | 'straffer'
+    vinner: 'home' | 'away'
+    etter120: [number, number] // rt + et per lag (stillingen etter 120 min)
+    straffer: [number, number] | null // kun ved straffesparkkonkurranse
+}
+
 export interface MatchAdminData {
     manual_home_score: number | null
     manual_away_score: number | null
@@ -67,6 +74,7 @@ export interface Match {
     group?: string
     status: MatchStatus
     adminData?: MatchAdminData
+    sluttspill?: SluttspillResultat | null
 }
 
 export interface Spiller {
