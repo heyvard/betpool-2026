@@ -1,13 +1,13 @@
 import React, { useState } from 'react'
 import NextLink from 'next/link'
-import { Plus, Send, Trash2 } from 'lucide-react'
+import { Plus, Send, SmilePlus, Trash2, X } from 'lucide-react'
 
 import { FeedKommentar, FeedPost, FeedReaksjon } from '../../queries/useFeed'
 import { UseMutateFeedReaksjon } from '../../queries/mutateFeedReaksjon'
 import { UseMutateFeedKommentar } from '../../queries/mutateFeedKommentar'
 import { UseMutateFeedKommentarReaksjon } from '../../queries/mutateFeedKommentarReaksjon'
 import { UseMutateFeedSlettPost } from '../../queries/mutateFeedSlettPost'
-import { TILLATTE_EMOJI } from '../../utils/feedEmoji'
+import { EMOJI_KATEGORIER, STANDARD_EMOJI } from '../../utils/feedEmoji'
 import { useLanguage } from '../../i18n/LanguageContext'
 import { hentFlag, hentNavn } from '../../utils/lag'
 import { ACCENT, relativKort, tidEtikett, visningsnavn } from './feedUtils'
@@ -20,10 +20,67 @@ interface Props {
     erSuperadmin?: boolean
 }
 
+// Full emoji-popup: alle tillatte emoji gruppert i kategorier, i en scrollbar
+// rute. Åpnes fra hurtigvelgeren via «flere»-knappen.
+function EmojiPopup({ onVelg, onLukk }: { onVelg: (emoji: string) => void; onLukk: () => void }) {
+    return (
+        <div
+            className="flex flex-col overflow-hidden rounded-2xl bg-white shadow-lg ring-1 ring-stone-200"
+            style={{ width: 272 }}
+            role="menu"
+        >
+            <div className="flex items-center justify-between border-b border-stone-100 px-3 py-2">
+                <span className="bp-overline" style={{ color: '#78716c' }}>
+                    Velg reaksjon
+                </span>
+                <button
+                    type="button"
+                    onClick={onLukk}
+                    className="flex items-center justify-center rounded-full text-stone-400 hover:bg-stone-100 hover:text-stone-600"
+                    style={{ width: 24, height: 24 }}
+                    aria-label="Lukk"
+                >
+                    <X size={14} />
+                </button>
+            </div>
+            <div className="overflow-y-auto p-2" style={{ maxHeight: 260 }}>
+                {EMOJI_KATEGORIER.map((kat) => (
+                    <div key={kat.navn} className="mb-1.5 last:mb-0">
+                        <div className="bp-overline px-1 pb-1" style={{ color: '#a8a29e' }}>
+                            {kat.navn}
+                        </div>
+                        <div className="grid grid-cols-7 gap-0.5">
+                            {kat.emoji.map((e) => (
+                                <button
+                                    key={e}
+                                    type="button"
+                                    onClick={() => onVelg(e)}
+                                    className="flex items-center justify-center rounded-lg text-[20px] hover:bg-stone-100"
+                                    style={{ width: 34, height: 34 }}
+                                >
+                                    {e}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                ))}
+            </div>
+        </div>
+    )
+}
+
+// Hurtigvelger: en rad med standard-emoji + en «flere»-knapp som åpner hele
+// EmojiPopup-en med alle tilgjengelige emoji.
 function EmojiVelger({ onVelg }: { onVelg: (emoji: string) => void }) {
+    const [visAlle, setVisAlle] = useState(false)
+
+    if (visAlle) {
+        return <EmojiPopup onVelg={onVelg} onLukk={() => setVisAlle(false)} />
+    }
+
     return (
         <div className="flex items-center gap-1 rounded-full bg-white p-1 shadow-md ring-1 ring-stone-200" role="menu">
-            {TILLATTE_EMOJI.map((e) => (
+            {STANDARD_EMOJI.map((e) => (
                 <button
                     key={e}
                     type="button"
@@ -34,6 +91,15 @@ function EmojiVelger({ onVelg }: { onVelg: (emoji: string) => void }) {
                     {e}
                 </button>
             ))}
+            <button
+                type="button"
+                onClick={() => setVisAlle(true)}
+                className="flex items-center justify-center rounded-full text-stone-500 hover:bg-stone-100"
+                style={{ width: 32, height: 32 }}
+                aria-label="Flere emoji"
+            >
+                <SmilePlus size={17} />
+            </button>
         </div>
     )
 }
@@ -350,7 +416,7 @@ function KommentarRad({ post, kommentar }: { post: FeedPost; kommentar: FeedKomm
                     </span>
                 </div>
                 <div style={{ fontSize: 13, color: '#44403c', lineHeight: 1.4 }}>{kommentar.body}</div>
-                <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                <div className="relative mt-1 flex flex-wrap items-center gap-1.5">
                     {kommentar.reactions.map((r) => (
                         <ReaksjonsPille
                             key={r.emoji}
@@ -361,27 +427,25 @@ function KommentarRad({ post, kommentar }: { post: FeedPost; kommentar: FeedKomm
                             }
                         />
                     ))}
-                    <div className="relative">
-                        <button
-                            type="button"
-                            onClick={() => setPickerOpen((v) => !v)}
-                            className="flex items-center justify-center rounded-full text-stone-500"
-                            style={{ width: 22, height: 20, background: '#f5f5f4' }}
-                            aria-label="Legg til reaksjon"
-                        >
-                            <Plus size={12} />
-                        </button>
-                        {pickerOpen && (
-                            <div className="absolute left-0 z-10 mt-1">
-                                <EmojiVelger
-                                    onVelg={(emoji) => {
-                                        setPickerOpen(false)
-                                        reaksjon.mutate({ postId: post.id, commentId: kommentar.id, emoji })
-                                    }}
-                                />
-                            </div>
-                        )}
-                    </div>
+                    <button
+                        type="button"
+                        onClick={() => setPickerOpen((v) => !v)}
+                        className="flex items-center justify-center rounded-full text-stone-500"
+                        style={{ width: 22, height: 20, background: '#f5f5f4' }}
+                        aria-label="Legg til reaksjon"
+                    >
+                        <Plus size={12} />
+                    </button>
+                    {pickerOpen && (
+                        <div className="absolute top-full left-0 z-20 mt-1">
+                            <EmojiVelger
+                                onVelg={(emoji) => {
+                                    setPickerOpen(false)
+                                    reaksjon.mutate({ postId: post.id, commentId: kommentar.id, emoji })
+                                }}
+                            />
+                        </div>
+                    )}
                 </div>
             </div>
         </div>
@@ -528,7 +592,7 @@ export function FeedKort({ post, meNavn, mePicture, erSuperadmin }: Props) {
                         <Plus size={14} />
                     </button>
                     {pickerOpen && (
-                        <div className="absolute bottom-8 left-0 z-10">
+                        <div className="absolute top-full left-0 z-20 mt-1">
                             <EmojiVelger
                                 onVelg={(emoji) => {
                                     setPickerOpen(false)
