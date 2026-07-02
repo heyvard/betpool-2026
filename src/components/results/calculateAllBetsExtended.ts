@@ -95,8 +95,14 @@ export function calculateAllBetsExtended(allBets: AllBets): AllBetsExtended {
             }
         }
     })
+    // Vinner-treff: brukerens winner må matche turneringens winner. Fasiten er tom
+    // («») til VM er avgjort — da skal ingen få poeng. Uten denne vakten ville alle
+    // ukoblede brukere (u.winner == «» eller null == «») matchet den tomme fasiten.
+    function riktigWinner(userWinner: string | null | undefined) {
+        return winner !== '' && userWinner === winner
+    }
     const winnerPointsFun = () => {
-        const antallOk = allBets.users.filter((u) => u.winner == winner).length
+        const antallOk = allBets.users.filter((u) => riktigWinner(u.winner)).length
         return regnUtBonuspoeng(antallOk, allBets.users.length)
     }
     const poengPerVinner = winnerPointsFun()
@@ -115,7 +121,7 @@ export function calculateAllBetsExtended(allBets: AllBets): AllBetsExtended {
         users: allBets.users.map((u) => {
             let winnerPoints = 0
             let topscorerPoints = 0
-            if (u.winner == winner) {
+            if (riktigWinner(u.winner)) {
                 winnerPoints = u.winner_endret ? Math.floor(poengPerVinner / 2) : poengPerVinner
             }
             if (riktigTopscorer(u.topscorer_player_id)) {
