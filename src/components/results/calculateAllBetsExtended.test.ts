@@ -196,6 +196,90 @@ describe('Strukturert toppscorer-bonus (topscorer_player_id)', () => {
     })
 })
 
+describe('Winner-bonus — ingen poeng når fasiten er tom', () => {
+    function brukerMedWinner(id: string, winner: string | null): OtherUser {
+        return { id, name: id, picture: null, paid: true, winner: winner ?? undefined }
+    }
+
+    it('gir 0 winner-poeng til alle når turneringens winner ikke er avgjort (tom fasit)', () => {
+        // winner.ts eksporterer «» til VM er avgjort. Ukoblede brukere har winner == «»
+        // eller null — de skal IKKE matche den tomme fasiten og få poeng.
+        const allBets: AllBets = {
+            users: [
+                brukerMedWinner('A', ''), // ikke tippet
+                brukerMedWinner('B', null), // ikke tippet
+                brukerMedWinner('C', 'Brasil'), // tippet, men fasit ikke satt
+            ],
+            bets: [],
+        }
+
+        const res = calculateAllBetsExtended(allBets)
+        const points = (id: string) => res.users.find((u) => u.id === id)!.winnerPoints
+
+        expect(points('A')).toEqual(0)
+        expect(points('B')).toEqual(0)
+        expect(points('C')).toEqual(0)
+    })
+})
+
+describe('Winner-bonus — treff mot satt fasit', () => {
+    function brukerMedWinner(id: string, winner: string | null, endret = false): OtherUser {
+        return { id, name: id, picture: null, paid: true, winner: winner ?? undefined, winner_endret: endret }
+    }
+
+    beforeEach(() => {
+        jest.resetModules()
+        jest.doMock('./winner', () => ({ winner: 'Brasil' }))
+    })
+
+    afterEach(() => {
+        jest.dontMock('./winner')
+        jest.resetModules()
+    })
+
+    it('gir bonus til brukeren som traff vinneren, 0 til de andre', () => {
+        const { calculateAllBetsExtended: calc } = require('./calculateAllBetsExtended')
+        const allBets: AllBets = {
+            users: [
+                brukerMedWinner('A', 'Brasil'), // riktig
+                brukerMedWinner('B', 'Argentina'), // feil
+                brukerMedWinner('C', ''), // ikke tippet
+                brukerMedWinner('D', null), // ikke tippet
+            ],
+            bets: [],
+        }
+
+        const res = calc(allBets)
+        const points = (id: string) => res.users.find((u: OtherUser) => u.id === id)!.winnerPoints
+
+        // 1 av 4 traff → alene → 25 poeng.
+        expect(points('A')).toEqual(25)
+        expect(points('B')).toEqual(0)
+        expect(points('C')).toEqual(0)
+        expect(points('D')).toEqual(0)
+    })
+
+    it('halverer bonusen når tipset er endret i endrevinduet', () => {
+        const { calculateAllBetsExtended: calc } = require('./calculateAllBetsExtended')
+        const allBets: AllBets = {
+            users: [
+                brukerMedWinner('A', 'Brasil', true), // riktig, endret → halvert
+                brukerMedWinner('B', 'Brasil'), // riktig, ikke endret
+                brukerMedWinner('C', 'Argentina'),
+            ],
+            bets: [],
+        }
+
+        const res = calc(allBets)
+        const points = (id: string) => res.users.find((u: OtherUser) => u.id === id)!.winnerPoints
+
+        // 2 av 3 traff = 67 % → 3 poeng hver; A halveres til floor(3/2) = 1.
+        expect(points('B')).toEqual(3)
+        expect(points('A')).toEqual(1)
+        expect(points('C')).toEqual(0)
+    })
+})
+
 describe('riktigResultat er false for uspilte kamper', () => {
     it('et 0-0-tips på en kamp uten resultat skal ikke markeres som riktig', () => {
         const allBets: AllBets = {
