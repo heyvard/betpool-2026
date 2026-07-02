@@ -196,6 +196,28 @@ describe('Strukturert toppscorer-bonus (topscorer_player_id)', () => {
     })
 })
 
+describe('Vinner-bonus når fasiten ikke er satt', () => {
+    it('brukere uten vinnertips (tom streng) skal ikke treffe den tomme fasiten', () => {
+        // Fasiten i winner.ts er tom streng til VM er avgjort. Brukere som aldri
+        // har valgt vinner har også tom streng — de skal ha 0, ikke fantompoeng.
+        const allBets: AllBets = {
+            users: [
+                { ...bruker('A'), winner: '' },
+                { ...bruker('B'), winner: '' },
+                { ...bruker('C'), winner: 'FRA' },
+                bruker('D'), // winner undefined
+            ],
+            bets: [],
+        }
+
+        const res = calculateAllBetsExtended(allBets)
+
+        res.users.forEach((u) => {
+            expect(u.winnerPoints).toEqual(0)
+        })
+    })
+})
+
 describe('riktigResultat er false for uspilte kamper', () => {
     it('et 0-0-tips på en kamp uten resultat skal ikke markeres som riktig', () => {
         const allBets: AllBets = {

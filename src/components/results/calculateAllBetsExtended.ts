@@ -95,8 +95,14 @@ export function calculateAllBetsExtended(allBets: AllBets): AllBetsExtended {
             }
         }
     })
+    // Vinner-fasiten er tom streng til VM er avgjort — og brukere uten vinnertips
+    // har også tom streng i databasen. Uten guarden «treffer» de den tomme fasiten
+    // og får fantom-bonuspoeng.
+    function riktigWinner(tips: string | undefined) {
+        return winner !== '' && tips === winner
+    }
     const winnerPointsFun = () => {
-        const antallOk = allBets.users.filter((u) => u.winner == winner).length
+        const antallOk = allBets.users.filter((u) => riktigWinner(u.winner)).length
         return regnUtBonuspoeng(antallOk, allBets.users.length)
     }
     const poengPerVinner = winnerPointsFun()
@@ -115,7 +121,7 @@ export function calculateAllBetsExtended(allBets: AllBets): AllBetsExtended {
         users: allBets.users.map((u) => {
             let winnerPoints = 0
             let topscorerPoints = 0
-            if (u.winner == winner) {
+            if (riktigWinner(u.winner)) {
                 winnerPoints = u.winner_endret ? Math.floor(poengPerVinner / 2) : poengPerVinner
             }
             if (riktigTopscorer(u.topscorer_player_id)) {
