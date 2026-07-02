@@ -32,6 +32,11 @@ test.beforeEach(async ({ context }) => {
         { name: 'betpool_test_user', value: 'alice', url: URL_BASE },
         { name: 'betpool_test_clock', value: FØR_TURNERING, url: URL_BASE },
     ])
+    // Varsler-prompten åpner en modal 1,2 s etter første lagrede tipp og
+    // blokkerer videre klikk — demp den ved å late som brukeren har takket nei.
+    await context.addInitScript(() => {
+        localStorage.setItem('betpool:varsler-prompt', 'declined')
+    })
 })
 
 test('stepper: + fra tom gir 0, og − er deaktivert når feltet er tomt eller på 0', async ({ page }) => {

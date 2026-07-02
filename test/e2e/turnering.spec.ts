@@ -192,8 +192,13 @@ async function lesLeaderboard(page: Page): Promise<{ navn: string; poeng: string
     return ut
 }
 
-test.beforeEach(async () => {
+test.beforeEach(async ({ context }) => {
     await truncateAll()
+    // Varsler-prompten åpner en modal 1,2 s etter første lagrede tipp og
+    // blokkerer videre klikk — demp den ved å late som brukeren har takket nei.
+    await context.addInitScript(() => {
+        localStorage.setItem('betpool:varsler-prompt', 'declined')
+    })
 })
 
 test('full gjennomspilling: tipping, tid fremover, resultater og leaderboard', async ({ context, page }) => {
