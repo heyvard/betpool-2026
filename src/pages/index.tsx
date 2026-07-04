@@ -44,6 +44,7 @@ import type { Translations } from '../i18n/no'
 import { tx } from '../i18n/interpolate'
 import type { Bet } from '../types/types'
 import { NedtellingBanner } from '../components/NedtellingBanner'
+import { PlasseringKort } from '../components/PlasseringKort'
 
 const Home: NextPage = () => {
     const { data: megselv } = UseUser()
@@ -93,6 +94,8 @@ const Home: NextPage = () => {
                     </span>
                 </LinkPanel>
             </NextLink>
+
+            {megselv.i_hovedliga && <PlasseringKort />}
 
             <NesteKampSeksjon />
 
