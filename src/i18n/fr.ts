@@ -45,6 +45,9 @@ const fr: Translations = {
         tilbakemeldinger: 'Retours',
         sprak: 'Langue',
         jokerbruk: 'Jokers',
+        statistikk: 'Statistiques',
+        besteTips: 'Meilleur pari',
+        verdifulleKamper: 'Matchs les plus précieux',
         admin: 'Admin',
     },
     feed: {
@@ -570,6 +573,18 @@ const fr: Translations = {
         ubehandlet: 'Nouveau',
         markerBehandlet: 'Marquer comme traité',
         angreBehandlet: 'Marquer comme nouveau',
+    },
+    statistikk: {
+        besteTipsTittel: 'Meilleur pari',
+        besteTipsUndertittel: 'Les 20 paris individuels ayant rapporté le plus de points',
+        verdifulleKamperTittel: 'Matchs les plus précieux',
+        verdifulleKamperUndertittel: 'Les 20 matchs ayant rapporté le plus de points au total',
+        plass: 'Place',
+        tipp: 'Pari',
+        kamp: 'Match',
+        poeng: 'Points',
+        ingenTipsEnna: "Aucun pari n'a encore été noté.",
+        ingenKamperEnna: "Aucun match n'est encore terminé.",
     },
 }
 
