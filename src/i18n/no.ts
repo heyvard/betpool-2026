@@ -43,6 +43,9 @@ const no = {
         tilbakemeldinger: 'Tilbakemeldinger',
         sprak: 'Språk',
         jokerbruk: 'Jokerbruk',
+        statistikk: 'Statistikk',
+        besteTips: 'Beste tipp',
+        verdifulleKamper: 'Verdifulle kamper',
         admin: 'Admin',
     },
     feed: {
@@ -560,6 +563,18 @@ const no = {
         ubehandlet: 'Ny',
         markerBehandlet: 'Marker som behandlet',
         angreBehandlet: 'Marker som ny',
+    },
+    statistikk: {
+        besteTipsTittel: 'Beste tipp',
+        besteTipsUndertittel: 'De 20 enkelttipsene som har gitt flest poeng',
+        verdifulleKamperTittel: 'Verdifulle kamper',
+        verdifulleKamperUndertittel: 'De 20 kampene hvor mest poeng er utdelt',
+        plass: 'Plass',
+        tipp: 'Tipp',
+        kamp: 'Kamp',
+        poeng: 'Poeng',
+        ingenTipsEnna: 'Ingen tips er poengsatt ennå.',
+        ingenKamperEnna: 'Ingen kamper er ferdigspilt ennå.',
     },
 }
 
