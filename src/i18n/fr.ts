@@ -576,9 +576,9 @@ const fr: Translations = {
     },
     statistikk: {
         besteTipsTittel: 'Meilleur pari',
-        besteTipsUndertittel: 'Les 20 paris individuels ayant rapporté le plus de points',
+        besteTipsUndertittel: 'Les 50 paris individuels ayant rapporté le plus de points',
         verdifulleKamperTittel: 'Matchs les plus précieux',
-        verdifulleKamperUndertittel: 'Les 20 matchs ayant rapporté le plus de points au total',
+        verdifulleKamperUndertittel: 'Les 50 matchs ayant rapporté le plus de points au total',
         plass: 'Place',
         tipp: 'Pari',
         kamp: 'Match',

@@ -18,7 +18,7 @@ export interface VerdifullKampRad {
 }
 
 /** Topp N enkelttips etter poeng, med bruker slått opp for visning. Kun ferdigspilte kamper. */
-export function beregnBesteTips(bets: MatchBetMedScore[], users: OtherUser[], antall = 20): BesteTippRad[] {
+export function beregnBesteTips(bets: MatchBetMedScore[], users: OtherUser[], antall = 50): BesteTippRad[] {
     const brukerMap = new Map(users.map((u) => [u.id, u]))
     return bets
         .filter((b) => !b.foreløpig)
@@ -35,7 +35,7 @@ export function beregnBesteTips(bets: MatchBetMedScore[], users: OtherUser[], an
 }
 
 /** Topp N kamper etter total poengsum utdelt over alle brukeres tips på kampen. Kun ferdigspilte kamper. */
-export function beregnVerdifulleKamper(bets: MatchBetMedScore[], antall = 20): VerdifullKampRad[] {
+export function beregnVerdifulleKamper(bets: MatchBetMedScore[], antall = 50): VerdifullKampRad[] {
     const perKamp = new Map<number, VerdifullKampRad>()
     for (const bet of bets) {
         if (bet.foreløpig) continue
