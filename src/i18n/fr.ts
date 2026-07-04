@@ -118,6 +118,10 @@ const fr: Translations = {
         tippLenkeTittel: 'Pronostiquer les matchs',
         tippLenkeUndertekst: 'Voir et modifier vos pronostics',
         avsparkOm: "Coup d'envoi dans",
+        dinPlass: 'Votre place',
+        oppSisteKampdag: 'En hausse de {{n}} depuis la dernière journée',
+        nedSisteKampdag: 'En baisse de {{n}} depuis la dernière journée',
+        uendretSisteKampdag: 'Inchangé depuis la dernière journée',
     },
     allesTips: {
         tilbake: 'Accueil',

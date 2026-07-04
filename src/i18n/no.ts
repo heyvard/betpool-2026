@@ -113,6 +113,10 @@ const no = {
         tippLenkeTittel: 'Tipp kampene',
         tippLenkeUndertekst: 'Se og endre tipsene dine',
         avsparkOm: 'Avspark om',
+        dinPlass: 'Din plass',
+        oppSisteKampdag: 'Opp {{n}} siste kampdag',
+        nedSisteKampdag: 'Ned {{n}} siste kampdag',
+        uendretSisteKampdag: 'Uendret siste kampdag',
     },
     allesTips: {
         tilbake: 'Hjem',
