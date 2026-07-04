@@ -7,6 +7,7 @@ import { UseAllBets } from '../queries/useAllBets'
 import { calculateAllBetsExtended, filtrerAllBets } from '../components/results/calculateAllBetsExtended'
 import { beregnBesteTips, BesteTippRad } from '../components/results/statistikkTopplister'
 import { hentFlag, hentNavn } from '../utils/lag'
+import { rundeTilTekst } from '../utils/rundeTilTekst'
 import { useLanguage } from '../i18n/LanguageContext'
 
 function visningsnavn(navn: string): string {
@@ -47,8 +48,9 @@ function BesteTippRadVisning({ rad, plass, locale }: { rad: BesteTippRad; plass:
                         {visningsnavn(rad.userName)}
                     </div>
                     <div className="truncate text-xs text-stone-500">
-                        {hentFlag(rad.bet.home_team)} {hentNavn(rad.bet.home_team, locale)} {rad.bet.home_score}–
-                        {rad.bet.away_score} {hentNavn(rad.bet.away_team, locale)} {hentFlag(rad.bet.away_team)}
+                        {rundeTilTekst(rad.bet.round, locale)} · {hentFlag(rad.bet.home_team)}{' '}
+                        {hentNavn(rad.bet.home_team, locale)} {rad.bet.home_score}–{rad.bet.away_score}{' '}
+                        {hentNavn(rad.bet.away_team, locale)} {hentFlag(rad.bet.away_team)}
                     </div>
                 </div>
             </div>

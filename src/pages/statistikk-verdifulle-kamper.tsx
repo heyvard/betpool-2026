@@ -7,6 +7,7 @@ import { UseAllBets } from '../queries/useAllBets'
 import { calculateAllBetsExtended, filtrerAllBets } from '../components/results/calculateAllBetsExtended'
 import { beregnVerdifulleKamper, VerdifullKampRad } from '../components/results/statistikkTopplister'
 import { hentFlag, hentNavn } from '../utils/lag'
+import { rundeTilTekst } from '../utils/rundeTilTekst'
 import { useLanguage } from '../i18n/LanguageContext'
 
 function VerdifullKampRadVisning({
@@ -26,9 +27,12 @@ function VerdifullKampRadVisning({
         >
             <span className="bp-tabular w-full text-center text-[15px] font-bold text-stone-400">{plass}</span>
 
-            <div className="min-w-0 text-[14.5px] font-semibold text-stone-900">
-                {hentFlag(rad.home_team)} {hentNavn(rad.home_team, locale)} {rad.home_score}–{rad.away_score}{' '}
-                {hentNavn(rad.away_team, locale)} {hentFlag(rad.away_team)}
+            <div className="min-w-0">
+                <div className="truncate text-xs text-stone-500">{rundeTilTekst(rad.round, locale)}</div>
+                <div className="truncate text-[14.5px] font-semibold text-stone-900">
+                    {hentFlag(rad.home_team)} {hentNavn(rad.home_team, locale)} {rad.home_score}–{rad.away_score}{' '}
+                    {hentNavn(rad.away_team, locale)} {hentFlag(rad.away_team)}
+                </div>
             </div>
 
             <span className="bp-tabular text-right text-[19px] font-extrabold text-stone-900">{rad.totalPoeng}</span>

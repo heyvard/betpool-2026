@@ -62,14 +62,14 @@ describe('beregnBesteTips', () => {
         expect(rader[0].userPicture).toEqual('bo.png')
     })
 
-    it('kapper på ønsket antall (standard 20)', () => {
-        const bets = Array.from({ length: 30 }, (_, i) => bet({ user: `U${i}`, match_num: i, poeng: i }))
+    it('kapper på ønsket antall (standard 50)', () => {
+        const bets = Array.from({ length: 60 }, (_, i) => bet({ user: `U${i}`, match_num: i, poeng: i }))
         const users = bets.map((b) => bruker(b.user_id))
 
         const rader = beregnBesteTips(bets, users)
 
-        expect(rader.length).toEqual(20)
-        expect(rader[0].bet.poeng).toEqual(29)
+        expect(rader.length).toEqual(50)
+        expect(rader[0].bet.poeng).toEqual(59)
     })
 
     it('respekterer et eksplisitt antall-argument', () => {
@@ -137,13 +137,13 @@ describe('beregnVerdifulleKamper', () => {
         ])
     })
 
-    it('kapper på ønsket antall (standard 20)', () => {
-        const bets = Array.from({ length: 30 }, (_, i) => bet({ user: 'A', match_num: i, poeng: i }))
+    it('kapper på ønsket antall (standard 50)', () => {
+        const bets = Array.from({ length: 60 }, (_, i) => bet({ user: 'A', match_num: i, poeng: i }))
 
         const rader = beregnVerdifulleKamper(bets)
 
-        expect(rader.length).toEqual(20)
-        expect(rader[0].totalPoeng).toEqual(29)
+        expect(rader.length).toEqual(50)
+        expect(rader[0].totalPoeng).toEqual(59)
     })
 
     it('bryter uavgjort på match_num', () => {

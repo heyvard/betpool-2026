@@ -566,9 +566,9 @@ const no = {
     },
     statistikk: {
         besteTipsTittel: 'Beste tipp',
-        besteTipsUndertittel: 'De 20 enkelttipsene som har gitt flest poeng',
+        besteTipsUndertittel: 'De 50 enkelttipsene som har gitt flest poeng',
         verdifulleKamperTittel: 'Verdifulle kamper',
-        verdifulleKamperUndertittel: 'De 20 kampene hvor mest poeng er utdelt',
+        verdifulleKamperUndertittel: 'De 50 kampene hvor mest poeng er utdelt',
         plass: 'Plass',
         tipp: 'Tipp',
         kamp: 'Kamp',
