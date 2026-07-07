@@ -151,4 +151,53 @@ describe('/api/v1/me', () => {
         )
         expect(feedPoster.rows).toEqual([{ bytte_type: 'toppscorer' }, { bytte_type: 'vinner' }])
     })
+
+    it('byttevindu: å sende inn samme verdi som allerede står bruker ikke opp byttet', async () => {
+        await seedUser({ firebase_user_id: 'alice', name: 'Alice', winner: 'ARG' })
+        await seedPlayer({ id: 20, name: 'Erling Haaland', team_tla: 'NOR' })
+        await withDb((c) => c.query(`UPDATE users SET topscorer_player_id = 20 WHERE firebase_user_id = 'alice'`))
+
+        // Sender inn nøyaktig samme verdi som allerede er satt — skal IKKE bruke opp
+        // byttet (winner_endret/topscorer_endret skal forbli false), selv i byttevinduet.
+        const putSammeVerdi = await api('/api/v1/me', {
+            user: 'alice',
+            method: 'PUT',
+            body: { winner: 'ARG', topscorerPlayerId: 20 },
+            clock: I_BYTTEVINDUET,
+        })
+        expect(putSammeVerdi.status).toBe(200)
+
+        const etterSammeVerdi = await withDb((c) =>
+            c.query(
+                `SELECT winner, winner_endret, winner_forrige, topscorer_player_id, topscorer_endret, topscorer_forrige_player_id
+                 FROM users WHERE firebase_user_id = 'alice'`,
+            ),
+        )
+        expect(etterSammeVerdi.rows[0]).toMatchObject({
+            winner: 'ARG',
+            winner_endret: false,
+            winner_forrige: null,
+            topscorer_player_id: 20,
+            topscorer_endret: false,
+            topscorer_forrige_player_id: null,
+        })
+
+        // Ingen bytte-post skal være opprettet — det var aldri noe reelt bytte.
+        const feedPoster = await withDb((c) => c.query(`SELECT bytte_type FROM feed_posts WHERE kind = 'bytte'`))
+        expect(feedPoster.rows).toEqual([])
+
+        // Det ekte byttet skal fortsatt være tilgjengelig etterpå.
+        const ekteBytte = await api('/api/v1/me', {
+            user: 'alice',
+            method: 'PUT',
+            body: { winner: 'BRA', topscorerPlayerId: null },
+            clock: I_BYTTEVINDUET,
+        })
+        expect(ekteBytte.status).toBe(200)
+
+        const etterEkteBytte = await withDb((c) =>
+            c.query(`SELECT winner, winner_endret FROM users WHERE firebase_user_id = 'alice'`),
+        )
+        expect(etterEkteBytte.rows[0]).toMatchObject({ winner: 'BRA', winner_endret: true })
+    })
 })

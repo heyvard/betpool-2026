@@ -538,7 +538,8 @@ function VinnerKort({ megselv, laast, endrevindu }: { megselv: User; laast: bool
     // Utenfor byttevinduet lagres valget direkte; i byttevinduet må brukeren
     // først bekrefte i BekreftBytteModal — ingen window.confirm.
     const velgNy = (ny: string) => {
-        if (kanEndreMedHalvering && ny !== winner) {
+        if (ny === winner) return
+        if (kanEndreMedHalvering) {
             setPendingWinner(ny)
             return
         }
@@ -666,7 +667,8 @@ function ToppscorerKort({ megselv, laast, endrevindu }: { megselv: User; laast: 
     // Utenfor byttevinduet lagres valget direkte; i byttevinduet må brukeren
     // først bekrefte i BekreftBytteModal — ingen window.confirm.
     const velgNy = (playerId: number | null) => {
-        if (kanEndreMedHalvering && playerId !== valgtId) {
+        if (playerId === valgtId) return
+        if (kanEndreMedHalvering) {
             setPendingPlayerId(playerId)
             return
         }
