@@ -231,6 +231,11 @@
         @apply bg-amber-100 text-amber-700 px-1.5 text-[10px];
     }
 
+    /* Byttevindu — «½»/«Byttet · ½»-merke, brukt på forsiden, alle-tips og profil */
+    .chip-halved {
+        @apply inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-800;
+    }
+
     /* Tabulære tall — bruk på score, poeng, leaderboard */
     .bp-tabular {
         font-variant-numeric: tabular-nums;

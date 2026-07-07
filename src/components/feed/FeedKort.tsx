@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import NextLink from 'next/link'
-import { Plus, Send, SmilePlus, Trash2, X } from 'lucide-react'
+import { ArrowRight, Plus, Send, SmilePlus, Trash2, X } from 'lucide-react'
 
 import { FeedKommentar, FeedPost, FeedReaksjon } from '../../queries/useFeed'
 import { UseMutateFeedReaksjon } from '../../queries/mutateFeedReaksjon'
@@ -11,7 +11,7 @@ import { EMOJI_KATEGORIER, STANDARD_EMOJI } from '../../utils/feedEmoji'
 import { useLanguage } from '../../i18n/LanguageContext'
 import { hentFlag, hentNavn } from '../../utils/lag'
 import { ACCENT, relativKort, tidEtikett, visningsnavn } from './feedUtils'
-import { FeedAvatar, Flagg, KampAvsenderIkon, MorgenrapportIkon } from './FeedBits'
+import { BytteAvsenderIkon, FeedAvatar, Flagg, KampAvsenderIkon, MorgenrapportIkon } from './FeedBits'
 
 interface Props {
     post: FeedPost
@@ -185,6 +185,35 @@ function ScoreBlokk({ data, matchNum }: { data: Record<string, unknown>; matchNu
     return (
         <div style={stil} className="bg-stone-50">
             {innhold}
+        </div>
+    )
+}
+
+// Bytte-blokk (kind='bytte'): fra-verdi → til-verdi, sentrert. Flagg for vinner,
+// et enkelt ⚽️-symbol for toppscorer (spillere har ikke flagg i UI-et).
+function SwapBlokk({ data }: { data: Record<string, unknown> }) {
+    const fraFlagg = String(data.fraFlagg ?? '')
+    const fraLabel = String(data.fraLabel ?? '')
+    const tilFlagg = String(data.tilFlagg ?? '')
+    const tilLabel = String(data.tilLabel ?? '')
+    return (
+        <div
+            className="flex items-center justify-center gap-3"
+            style={{ margin: '13px 0', padding: 14, borderRadius: 12, boxShadow: 'inset 0 0 0 1px #e7e5e4' }}
+        >
+            <div className="flex min-w-0 items-center gap-1.5">
+                <span style={{ fontSize: 20, lineHeight: 1 }}>{fraFlagg}</span>
+                <span className="truncate font-semibold" style={{ fontSize: 13, color: '#a8a29e' }}>
+                    {fraLabel}
+                </span>
+            </div>
+            <ArrowRight className="h-4 w-4 shrink-0 text-amber-500" />
+            <div className="flex min-w-0 items-center gap-1.5">
+                <span style={{ fontSize: 20, lineHeight: 1 }}>{tilFlagg}</span>
+                <span className="truncate font-bold" style={{ fontSize: 13, color: '#1c1917' }}>
+                    {tilLabel}
+                </span>
+            </div>
         </div>
     )
 }
@@ -512,6 +541,8 @@ export function FeedKort({ post, meNavn, mePicture, erSuperadmin }: Props) {
                             away={String(post.data.awayTeam ?? '')}
                             size={34}
                         />
+                    ) : post.kind === 'bytte' ? (
+                        <BytteAvsenderIkon size={34} />
                     ) : (
                         <MorgenrapportIkon size={34} farger={farger} />
                     )}
@@ -522,7 +553,9 @@ export function FeedKort({ post, meNavn, mePicture, erSuperadmin }: Props) {
                                       String(post.data.awayTeam ?? ''),
                                       locale,
                                   )}`
-                                : t.feed.avsenderMorgenrapport}
+                                : post.kind === 'bytte'
+                                  ? t.feed.avsenderBytte
+                                  : t.feed.avsenderMorgenrapport}
                         </div>
                         <div style={{ fontSize: 11, fontWeight: 600, color: farger.acctx }}>
                             {post.kind === 'kamp' && post.data.rundeTekst ? `${String(post.data.rundeTekst)} · ` : ''}
@@ -563,6 +596,7 @@ export function FeedKort({ post, meNavn, mePicture, erSuperadmin }: Props) {
 
                 {/* Strukturert tillegg */}
                 {post.kind === 'kamp' && <ScoreBlokk data={post.data} matchNum={post.match_num} />}
+                {post.kind === 'bytte' && <SwapBlokk data={post.data} />}
                 {(post.scenario === 'lederbytte' ||
                     post.scenario === 'leder_holder' ||
                     post.scenario === 'delt_ledelse') && <MiniTopp3 data={post.data} />}

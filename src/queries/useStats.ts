@@ -12,6 +12,8 @@ export interface TipsValg {
     antall: number
     /** Navn på deltakerne som valgte det (for «se hvem»). */
     deltakere: string[]
+    /** Delmengde av `deltakere` som har brukt byttet sitt for denne kategorien. */
+    byttere: string[]
 }
 
 export interface StatsResponse {

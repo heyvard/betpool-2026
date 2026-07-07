@@ -6,28 +6,36 @@ import { UseAllBets } from '../../queries/useAllBets'
 import React from 'react'
 import { fixLand } from '../../components/bet/BetView'
 import NextLink from 'next/link'
-import { CheckCheck, ChevronRight, Goal, Target, Trophy } from 'lucide-react'
+import { ArrowRight, CheckCheck, ChevronRight, Goal, Target, Trophy } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useLanguage } from '../../i18n/LanguageContext'
+import { tx } from '../../i18n/interpolate'
 import { RundeSeksjon, Legende } from '../../components/bet/PastBetView'
 import { UseUser } from '../../queries/useUser'
 import { calculateAllBetsExtended, filtrerAllBets } from '../../components/results/calculateAllBetsExtended'
 
 // Én rad i vinner/toppscorer-kortet — samme rad-språk som ResultatRad:
 // ikon-medaljong, overline-label, tippet verdi og en gull-poeng-pill med chevron.
+// Er tipset byttet i byttevinduet, vises forrige→nåværende i stedet for bare
+// nåværende, og poeng-pillen erstattes av et «Byttet · ½»-merke.
 function BonusRad({
     icon,
     label,
     verdi,
     poengTekst,
+    forrige,
+    endret,
     borderTop,
 }: {
     icon: React.ReactNode
     label: string
     verdi: string
     poengTekst: string
+    forrige?: string | null
+    endret?: boolean
     borderTop?: boolean
 }) {
+    const { t } = useLanguage()
     return (
         <NextLink
             href="/alle-tips"
@@ -39,9 +47,21 @@ function BonusRad({
             <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gold-100">{icon}</div>
             <div className="min-w-0 flex-1">
                 <div className="bp-overline text-[10px] tracking-[0.14em]">{label}</div>
-                <div className="truncate text-[14px] font-bold text-stone-900">{verdi}</div>
+                {endret && forrige ? (
+                    <div className="flex min-w-0 items-center gap-1.5">
+                        <span className="truncate text-[11.5px] text-stone-400 line-through">{forrige}</span>
+                        <ArrowRight className="h-[11px] w-[11px] shrink-0 text-amber-500" />
+                        <span className="truncate text-[14px] font-bold text-stone-900">{verdi}</span>
+                    </div>
+                ) : (
+                    <div className="truncate text-[14px] font-bold text-stone-900">{verdi}</div>
+                )}
             </div>
-            <span className="bp-chip-gold bp-tabular shrink-0">{poengTekst}</span>
+            {endret ? (
+                <span className="chip-halved shrink-0">{t.spilteKamper.byttetMerke}</span>
+            ) : (
+                <span className="bp-chip-gold bp-tabular shrink-0">{poengTekst}</span>
+            )}
             <ChevronRight className="h-[14px] w-[14px] shrink-0 text-[#cbc9c4]" />
         </NextLink>
     )
@@ -68,6 +88,22 @@ const Home: NextPage = () => {
     const { users, bets } = calculateAllBetsExtended(filtrerAllBets(data.raw, populasjon))
 
     const user = users.find((a) => a.id == id)!
+
+    // Forklarende linje(r) under bonus-kortet — én per byttet kategori (vinner
+    // og/eller toppscorer), med forrige/nytt-verdi for den kategorien.
+    const byttetForklaringer: { forrige: string; nytt: string }[] = []
+    if (user.winner_endret && user.winner_forrige) {
+        byttetForklaringer.push({
+            forrige: fixLand(user.winner_forrige, locale),
+            nytt: fixLand(user.winner || '', locale),
+        })
+    }
+    if (user.topscorer_endret && user.topscorer_forrige_player_name) {
+        byttetForklaringer.push({
+            forrige: user.topscorer_forrige_player_name,
+            nytt: user.topscorer_player_name || '–',
+        })
+    }
 
     const userBets = bets
         .filter((a) => a.user_id == id)
@@ -156,21 +192,40 @@ const Home: NextPage = () => {
 
             {/* Vinner / Toppscorer */}
             {user.winner && (
-                <div className="mx-4 mt-4 overflow-hidden rounded-xl bg-white shadow-xs ring-1 ring-stone-200/70">
-                    <BonusRad
-                        icon={<Trophy className="h-[18px] w-[18px] text-gold-700" />}
-                        label={t.allesTips.toggleVinner}
-                        verdi={fixLand(user.winner || '', locale)}
-                        poengTekst={poengChip(user.winnerPoints ?? 0)}
-                    />
-                    <BonusRad
-                        icon={<Goal className="h-[18px] w-[18px] text-gold-700" />}
-                        label={t.allesTips.toggleToppscorer}
-                        verdi={user.topscorer_player_name || '–'}
-                        poengTekst={poengChip(user.topscorerPoints ?? 0)}
-                        borderTop
-                    />
-                </div>
+                <>
+                    <div className="mx-4 mt-4 overflow-hidden rounded-xl bg-white shadow-xs ring-1 ring-stone-200/70">
+                        <BonusRad
+                            icon={<Trophy className="h-[18px] w-[18px] text-gold-700" />}
+                            label={t.allesTips.toggleVinner}
+                            verdi={fixLand(user.winner || '', locale)}
+                            poengTekst={poengChip(user.winnerPoints ?? 0)}
+                            forrige={user.winner_forrige ? fixLand(user.winner_forrige, locale) : null}
+                            endret={!!user.winner_endret}
+                        />
+                        <BonusRad
+                            icon={<Goal className="h-[18px] w-[18px] text-gold-700" />}
+                            label={t.allesTips.toggleToppscorer}
+                            verdi={user.topscorer_player_name || '–'}
+                            poengTekst={poengChip(user.topscorerPoints ?? 0)}
+                            forrige={user.topscorer_forrige_player_name}
+                            endret={!!user.topscorer_endret}
+                            borderTop
+                        />
+                    </div>
+                    {byttetForklaringer.length > 0 && (
+                        <div className="mx-4 mt-2 space-y-1">
+                            {byttetForklaringer.map((f, i) => (
+                                <p key={i} className="text-xs text-stone-500">
+                                    {tx(t.spilteKamper.byttetForklaring, {
+                                        navn: user.name,
+                                        forrige: f.forrige,
+                                        nytt: f.nytt,
+                                    })}
+                                </p>
+                            ))}
+                        </div>
+                    )}
+                </>
             )}
 
             {/* Ingen resultater */}
