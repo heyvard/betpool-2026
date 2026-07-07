@@ -40,7 +40,7 @@ export function EndrevinduPopup({
     }
 
     return (
-        <div className="fixed inset-0 z-50 flex items-end bg-stone-900/55 backdrop-blur-[1px]">
+        <div className="fixed inset-0 z-60 flex items-end bg-stone-900/55 backdrop-blur-[1px]">
             <div className="motion-safe:animate-in motion-safe:slide-in-from-bottom motion-safe:fade-in relative w-full rounded-t-3xl bg-white p-6 shadow-pop motion-safe:duration-300">
                 <button
                     type="button"

@@ -548,6 +548,11 @@ function VinnerKort({ megselv, laast, endrevindu }: { megselv: User; laast: bool
 
     return (
         <div className="space-y-1">
+            {kanEndreMedHalvering && (
+                <p className="rounded-lg bg-amber-50 px-3 py-1.5 text-[11px] font-semibold text-amber-800 ring-1 ring-amber-200">
+                    {t.hjem.endrevinduInfo}
+                </p>
+            )}
             <RadKort
                 ikon={<Trophy className="h-5 w-5" />}
                 tittel={t.hjem.verdensmester}
@@ -566,47 +571,40 @@ function VinnerKort({ megselv, laast, endrevindu }: { megselv: User; laast: bool
                         }
                     />
                 ) : (
-                    <>
-                        {kanEndreMedHalvering && (
-                            <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-800 ring-1 ring-amber-200">
-                                {t.hjem.endrevinduInfo}
+                    <label className="relative -mr-2 flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1 hover:bg-stone-50">
+                        <span className="sr-only">{t.hjem.velgVerdensmester}</span>
+                        {winner ? (
+                            <>
+                                <span className="text-xl leading-none" aria-hidden>
+                                    {hentFlag(winner)}
+                                </span>
+                                <span className="max-w-[8rem] truncate text-sm font-bold text-stone-900">
+                                    {hentNavn(winner, locale)}
+                                </span>
+                            </>
+                        ) : (
+                            <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-bold text-amber-800">
+                                {t.hjem.velgLag}
                             </span>
                         )}
-                        <label className="relative -mr-2 flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1 hover:bg-stone-50">
-                            <span className="sr-only">{t.hjem.velgVerdensmester}</span>
-                            {winner ? (
-                                <>
-                                    <span className="text-xl leading-none" aria-hidden>
-                                        {hentFlag(winner)}
-                                    </span>
-                                    <span className="max-w-[8rem] truncate text-sm font-bold text-stone-900">
-                                        {hentNavn(winner, locale)}
-                                    </span>
-                                </>
-                            ) : (
-                                <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-bold text-amber-800">
-                                    {t.hjem.velgLag}
-                                </span>
-                            )}
-                            <ChevronRight className="h-4 w-4 text-stone-400" />
-                            <select
-                                value={winner}
-                                disabled={lagrer}
-                                onChange={(e) => velgNy(e.target.value)}
-                                aria-label={t.hjem.velgVerdensmester}
-                                className="absolute inset-0 cursor-pointer opacity-0 disabled:cursor-not-allowed"
-                            >
-                                <option value="" disabled>
-                                    {t.hjem.velgLagPlaceholder}
+                        <ChevronRight className="h-4 w-4 text-stone-400" />
+                        <select
+                            value={winner}
+                            disabled={lagrer}
+                            onChange={(e) => velgNy(e.target.value)}
+                            aria-label={t.hjem.velgVerdensmester}
+                            className="absolute inset-0 cursor-pointer opacity-0 disabled:cursor-not-allowed"
+                        >
+                            <option value="" disabled>
+                                {t.hjem.velgLagPlaceholder}
+                            </option>
+                            {lagSortert.map((l) => (
+                                <option key={l.tla} value={l.tla}>
+                                    {l.flagg + ' ' + l.visningsnavn}
                                 </option>
-                                {lagSortert.map((l) => (
-                                    <option key={l.tla} value={l.tla}>
-                                        {l.flagg + ' ' + l.visningsnavn}
-                                    </option>
-                                ))}
-                            </select>
-                        </label>
-                    </>
+                            ))}
+                        </select>
+                    </label>
                 )}
             </RadKort>
             <StatusLinjeKompakt lagrer={lagrer} nyligLagret={nyligLagret} feil={feil} />
@@ -681,6 +679,11 @@ function ToppscorerKort({ megselv, laast, endrevindu }: { megselv: User; laast: 
 
     return (
         <div className="space-y-1">
+            {kanEndreMedHalvering && (
+                <p className="rounded-lg bg-amber-50 px-3 py-1.5 text-[11px] font-semibold text-amber-800 ring-1 ring-amber-200">
+                    {t.hjem.endrevinduInfo}
+                </p>
+            )}
             <RadKort
                 ikon={<Goal className="h-5 w-5" />}
                 tittel={t.hjem.toppscorer}
@@ -704,11 +707,6 @@ function ToppscorerKort({ megselv, laast, endrevindu }: { megselv: User; laast: 
                     />
                 ) : (
                     <div className="flex w-56 min-w-0 flex-col items-stretch gap-1">
-                        {kanEndreMedHalvering && (
-                            <span className="self-end rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-800 ring-1 ring-amber-200">
-                                {t.hjem.endrevinduInfo}
-                            </span>
-                        )}
                         <SpillerVelger
                             valgtId={valgtId}
                             spillere={spillere ?? []}
