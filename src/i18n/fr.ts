@@ -14,6 +14,7 @@ const fr: Translations = {
         poeng: 'points',
         kr: 'kr',
         plass: (n: number) => `${n}${n === 1 ? 'ère' : 'ème'} place`,
+        avbryt: 'Annuler',
     },
     nav: {
         hjem: 'Accueil',
@@ -59,8 +60,13 @@ const fr: Translations = {
         typeSjeldent: 'Pari rare',
         typeMorgenrapport: 'Rapport du matin',
         avsenderMorgenrapport: 'Le rapport du matin',
+        avsenderBytte: 'Changement enregistré',
         slettPost: 'Supprimer la publication',
         slettBekreft: 'Supprimer cette publication ? Les réactions et commentaires disparaîtront aussi.',
+        feedByttetTittelVinner: '{{navn}} change son pronostic de vainqueur',
+        feedByttetTittelTopps: '{{navn}} change son pronostic de meilleur buteur',
+        feedByttetBody:
+            '{{navn}} a utilisé son changement — les points de ce pronostic seront désormais divisés par deux en cas de réussite.',
     },
     grupper: {
         tittel: 'Groupes',
@@ -106,11 +112,24 @@ const fr: Translations = {
         endrevinduInfo: 'Vous pouvez modifier une fois — les points seront divisés par deux.',
         endrevinduFrist: "Modifiable jusqu'au début des quarts de finale ({{dato}}).",
         endrevinduLaastMedHalv: 'Modifié — points divisés par deux',
-        bekreftEndringVinner:
-            "Êtes-vous sûr(e) ? Vous ne pouvez modifier qu'une seule fois, et les points pour le pronostic champion seront divisés par deux.",
-        bekreftEndringTopps:
-            "Êtes-vous sûr(e) ? Vous ne pouvez modifier qu'une seule fois, et les points pour le pronostic meilleur buteur seront divisés par deux.",
         lagreEndring: 'Enregistrer la modification',
+        endrevinduPopupTittel: 'La fenêtre de changement est ouverte',
+        endrevinduPopupTekst:
+            "À partir de maintenant et jusqu'au début des quarts de finale ({{dato}}), vous pouvez changer votre champion du monde et votre meilleur buteur une fois chacun.",
+        endrevinduPopupHalvering:
+            'Si vous changez, les points de ce pronostic seront divisés par deux en cas de réussite.',
+        endrevinduPopupSynlig:
+            'Qui a changé est visible pour tous — dans la vue des pronostics, les profils des joueurs et la fil.',
+        endrevinduPopupKnapp: 'Compris',
+        endrevinduPopupLesMer: 'En savoir plus dans les règles →',
+        bekreftByttetTittel: 'Verrouiller ce changement ?',
+        bekreftByttetTekstVinner: 'Vous changez votre pronostic de champion du monde de {{fra}} à {{til}}.',
+        bekreftByttetTekstTopps: 'Vous changez votre pronostic de meilleur buteur de {{fra}} à {{til}}.',
+        bekreftByttetPunkt1: "C'est votre unique changement — il ne peut pas être annulé.",
+        bekreftByttetPunkt2: 'Les points de ce pronostic seront divisés par deux en cas de réussite.',
+        bekreftByttetPunkt3:
+            'Le fait que vous ayez changé sera visible pour tous dans la vue des pronostics, votre profil et la fil.',
+        bekreftByttetKnapp: 'Changer et verrouiller',
         tippet: 'Parié',
         kickoff: "Coup d'envoi",
         slutt: 'Terminé',
@@ -148,6 +167,10 @@ const fr: Translations = {
         bunntekst:
             'Le bonus affiché est le gain maximal possible — il dépend du nombre de personnes qui visent juste au final.',
         seAlleTips: 'Voir tous les pronostics →',
+        byttereAntall: '{{n}} ont changé de pronostic depuis l’ouverture de la fenêtre de changement.',
+        byttetMerkeForklaring:
+            'Le badge orange de changement indique qui a modifié son pronostic de champion ou de meilleur buteur pendant la fenêtre de changement.',
+        byttetMerkeKort: '½ Changé',
     },
     mineTips: {
         spilteKamper: 'Matchs joués',
@@ -229,6 +252,9 @@ const fr: Translations = {
         utfallHjemmeseier: 'Victoire à domicile',
         utfallUavgjort: 'Match nul',
         utfallBorteseier: 'Victoire à l’extérieur',
+        byttetMerke: 'Changé · ½',
+        byttetForklaring:
+            '« Changé · ½ » indique que {{navn}} a utilisé son unique changement pendant la fenêtre de changement — {{navn}} avait initialement parié {{forrige}}. Les points seront divisés par deux si {{nytt}} se réalise.',
     },
     ledertavle: {
         plass: 'Rang',

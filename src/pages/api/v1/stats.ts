@@ -19,6 +19,8 @@ const handler = async function handler(opts: ApiHandlerOpts): Promise<void> {
         navn: string
         antall: number
         deltakere: string[]
+        /** Delmengde av `deltakere` som har brukt byttet sitt for denne kategorien. */
+        byttere: string[]
     }
 
     if (await erIFørsteRunde(client, req)) {
@@ -30,34 +32,54 @@ const handler = async function handler(opts: ApiHandlerOpts): Promise<void> {
         name: string
         winner: string | null
         topscorer_name: string | null
+        winner_endret: boolean
+        topscorer_endret: boolean
     }
 
     const { rows } = await client.query<Rad>(`
-        SELECT COALESCE(NULLIF(u.kallenavn, ''), u.name) AS name, u.winner, p.name AS topscorer_name
+        SELECT COALESCE(NULLIF(u.kallenavn, ''), u.name) AS name, u.winner, p.name AS topscorer_name,
+               u.winner_endret, u.topscorer_endret
         FROM users u
         LEFT JOIN players p ON p.id = u.topscorer_player_id
         WHERE u.active = true`)
 
     // Grupperer på valg → deltakerlisten bak hvert valg. Bevarer
     // innsettingsrekkefølgen (Map); UI sorterer selv på antall.
-    const grupper = (velg: (r: Rad) => string | null | undefined): TipsValg[] => {
+    const grupper = (velg: (r: Rad) => string | null | undefined, harByttet: (r: Rad) => boolean): TipsValg[] => {
         const map = new Map<string, string[]>()
+        const bytteMap = new Map<string, string[]>()
         for (const r of rows) {
             const valg = velg(r)
             if (!valg) continue
             const liste = map.get(valg)
             if (liste) liste.push(r.name)
             else map.set(valg, [r.name])
+            if (harByttet(r)) {
+                const bytteListe = bytteMap.get(valg)
+                if (bytteListe) bytteListe.push(r.name)
+                else bytteMap.set(valg, [r.name])
+            }
         }
-        return [...map.entries()].map(([navn, deltakere]) => ({ navn, antall: deltakere.length, deltakere }))
+        return [...map.entries()].map(([navn, deltakere]) => ({
+            navn,
+            antall: deltakere.length,
+            deltakere,
+            byttere: bytteMap.get(navn) ?? [],
+        }))
     }
 
     const totaltAntall = rows.filter((r) => r.winner || r.topscorer_name).length
 
     res.json({
         totaltAntall,
-        vinner: grupper((r) => r.winner),
-        toppscorer: grupper((r) => r.topscorer_name),
+        vinner: grupper(
+            (r) => r.winner,
+            (r) => r.winner_endret,
+        ),
+        toppscorer: grupper(
+            (r) => r.topscorer_name,
+            (r) => r.topscorer_endret,
+        ),
     })
 }
 

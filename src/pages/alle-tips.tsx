@@ -1,7 +1,7 @@
 import type { NextPage } from 'next'
 import React, { useState } from 'react'
 import NextLink from 'next/link'
-import { ArrowLeft, ChevronRight, Goal, Lock, Trophy, Users } from 'lucide-react'
+import { ArrowLeft, ChevronRight, Goal, Lock, Repeat, Trophy, Users } from 'lucide-react'
 
 import { cn } from '@/lib/utils'
 import { UseUser } from '../queries/useUser'
@@ -47,6 +47,8 @@ interface RadData {
     visningsnavn: string
     antall: number
     deltakere: string[]
+    /** Delmengde av `deltakere` som har brukt byttet sitt for denne kategorien. */
+    byttere: string[]
     erMitt: boolean
 }
 
@@ -151,6 +153,7 @@ function ModusVisning({ modus, stats, megselv }: { modus: Modus; stats: StatsRes
             visningsnavn: modus === 'vinner' ? hentNavn(v.navn, locale) : v.navn,
             antall: v.antall,
             deltakere: v.deltakere,
+            byttere: v.byttere,
             erMitt: !!mittValg && v.navn === mittValg,
         }))
 
@@ -163,6 +166,8 @@ function ModusVisning({ modus, stats, megselv }: { modus: Modus; stats: StatsRes
     const mestValgt = rader[0]
     const mittRadIndex = rader.findIndex((r) => r.erMitt)
     const mittRad = mittRadIndex >= 0 ? rader[mittRadIndex] : null
+    const totaltByttere = rader.reduce((sum, r) => sum + r.byttere.length, 0)
+    const mittTipsByttet = modus === 'vinner' ? megselv.winner_endret : megselv.topscorer_endret
 
     return (
         <div className="space-y-4">
@@ -179,10 +184,17 @@ function ModusVisning({ modus, stats, megselv }: { modus: Modus; stats: StatsRes
                 <StatBoks verdi={String(rader.length)} label={t.allesTips.statUlikeTips} />
             </div>
 
+            {totaltByttere > 0 && (
+                <div className="rounded-lg bg-amber-50 px-3 py-2 text-center text-xs font-semibold text-amber-800 ring-1 ring-amber-200">
+                    {tx(t.allesTips.byttereAntall, { n: totaltByttere })}
+                </div>
+            )}
+
             <DittTipsKort
                 mittRad={mittRad}
                 rang={mittRadIndex >= 0 ? mittRadIndex + 1 : null}
                 totaltSvar={totaltSvar}
+                byttet={mittTipsByttet}
             />
 
             <ul className="list-none space-y-2">
@@ -198,6 +210,11 @@ function ModusVisning({ modus, stats, megselv }: { modus: Modus; stats: StatsRes
             </ul>
 
             <p className="px-1 pb-2 text-center text-[11px] leading-relaxed text-stone-400">{t.allesTips.bunntekst}</p>
+            {totaltByttere > 0 && (
+                <p className="px-1 pb-2 text-center text-[10.5px] leading-relaxed text-stone-400">
+                    {t.allesTips.byttetMerkeForklaring}
+                </p>
+            )}
         </div>
     )
 }
@@ -223,10 +240,12 @@ function DittTipsKort({
     mittRad,
     rang,
     totaltSvar,
+    byttet,
 }: {
     mittRad: RadData | null
     rang: number | null
     totaltSvar: number
+    byttet: boolean
 }) {
     const { t } = useLanguage()
 
@@ -260,7 +279,10 @@ function DittTipsKort({
             <div className="mt-2 flex items-center gap-3">
                 <Emblem flagg={mittRad.flagg} navn={mittRad.visningsnavn} stor />
                 <div className="min-w-0 flex-1">
-                    <p className="truncate text-base font-extrabold text-stone-900">{mittRad.visningsnavn}</p>
+                    <p className="flex items-center gap-1.5 truncate text-base font-extrabold text-stone-900">
+                        <span className="truncate">{mittRad.visningsnavn}</span>
+                        {byttet && <span className="chip-halved shrink-0">{t.allesTips.byttetMerkeKort}</span>}
+                    </p>
                     <p className="text-xs text-stone-500">
                         {tx(t.allesTips.rangering, { n: rang })} · {delerTekst}
                     </p>
@@ -332,12 +354,21 @@ function FordelingsRad({
                     <div className="mt-2 flex items-center gap-2">
                         <div className="flex">
                             {synlige.map((navn, i) => (
-                                <span
-                                    key={navn + i}
-                                    className="flex h-6 w-6 items-center justify-center rounded-full bg-linear-to-br from-stone-600 to-stone-800 text-[9px] font-semibold text-white ring-2 ring-white first:ml-0 -ml-2"
-                                    title={navn}
-                                >
-                                    {initialer(navn)}
+                                <span key={navn + i} className="relative first:ml-0 -ml-2">
+                                    <span
+                                        className="flex h-6 w-6 items-center justify-center rounded-full bg-linear-to-br from-stone-600 to-stone-800 text-[9px] font-semibold text-white ring-2 ring-white"
+                                        title={navn}
+                                    >
+                                        {initialer(navn)}
+                                    </span>
+                                    {rad.byttere.includes(navn) && (
+                                        <span
+                                            className="absolute -bottom-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-amber-500 text-white ring-2 ring-white"
+                                            title={t.allesTips.byttetMerkeKort}
+                                        >
+                                            <Repeat className="h-2 w-2" />
+                                        </span>
+                                    )}
                                 </span>
                             ))}
                             {resterende > 0 && (

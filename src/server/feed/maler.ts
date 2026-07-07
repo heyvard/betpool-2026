@@ -280,6 +280,23 @@ export function jokerSetning(s: JokerStatistikk, frø: number | string): string 
     return velgVariant(JOKER_ALLE_SATT, frø)(s)
 }
 
+// ── Byttevindu ─────────────────────────────────────────────────────────────
+// Én post per bruker som bruker byttemuligheten sin (endre vinner/toppscorer én
+// gang mot halverte poeng). Ingen varianter — dette er en nøytral, informativ
+// hendelse, ikke en sportskommentar-vinkel.
+
+export interface BytteArgs {
+    navn: string
+    type: 'vinner' | 'toppscorer'
+}
+
+export function malBytte(a: BytteArgs): MalResultat {
+    const navn = visningsnavn(a.navn)
+    const tittel = a.type === 'vinner' ? `${navn} bytter vinner-tips` : `${navn} bytter toppscorer-tips`
+    const body = `${navn} har brukt byttemuligheten sin — poengene for tipset halveres nå hvis det slår til.`
+    return { accent: 'gold', tittel, body }
+}
+
 export interface LederbytteArgs {
     nyLeder: string
     gammelLeder: string

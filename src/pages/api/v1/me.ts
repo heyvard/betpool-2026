@@ -1,7 +1,42 @@
+import { PoolClient } from 'pg'
+
 import { ApiHandlerOpts } from '../../../types/apiHandlerOpts'
 import { erIEndrevinduMed, erIFørsteRundeMed, hentFrister } from '../../../utils/isInFirstRound'
 import { auth } from '../../../auth/authHandler'
 import { sendPushTilBruker } from '../../../server/push'
+import { hentFlag, hentNorsk } from '../../../utils/lag'
+import { malBytte } from '../../../server/feed/maler'
+import { User } from '../../../types/db'
+
+// Publiserer «bruker har byttet»-hendelsen i hovedligaens feed. Idempotent via
+// den delvise unike indeksen `feed_posts_bytte_unik_idx` (subject_user_id,
+// bytte_type) WHERE kind = 'bytte' — dobbel-innsending gir bare ON CONFLICT DO NOTHING.
+async function posterBytteFeed(
+    client: PoolClient,
+    user: User,
+    type: 'vinner' | 'toppscorer',
+    fraLabel: string,
+    fraFlagg: string,
+    tilLabel: string,
+    tilFlagg: string,
+): Promise<void> {
+    const navn = user.kallenavn || user.name || user.email
+    const mal = malBytte({ navn, type })
+    await client.query(
+        `INSERT INTO feed_posts (kind, scenario, accent, tittel, body, data, subject_user_id, bytte_type)
+         VALUES ('bytte', $1, $2, $3, $4, $5, $6, $7)
+         ON CONFLICT (subject_user_id, bytte_type) WHERE kind = 'bytte' DO NOTHING`,
+        [
+            type,
+            mal.accent,
+            mal.tittel,
+            mal.body,
+            JSON.stringify({ fraLabel, fraFlagg, tilLabel, tilFlagg }),
+            user.id,
+            type,
+        ],
+    )
+}
 
 const handler = async function handler(opts: ApiHandlerOpts): Promise<void> {
     const { res, req, user, jwtPayload, client } = opts
@@ -24,10 +59,19 @@ const handler = async function handler(opts: ApiHandlerOpts): Promise<void> {
                 if (reqBody.winner) {
                     if (iFørsteRunde) {
                         await client.query(`UPDATE users SET winner = $1 WHERE id = $2`, [reqBody.winner, user.id])
-                    } else if (iEndrevindu && !user.winner_endret && user.winner) {
+                    } else if (iEndrevindu && !user.winner_endret && user.winner && reqBody.winner !== user.winner) {
                         await client.query(
                             `UPDATE users SET winner = $1, winner_endret = true, winner_forrige = $2 WHERE id = $3`,
                             [reqBody.winner, user.winner, user.id],
+                        )
+                        await posterBytteFeed(
+                            client,
+                            user,
+                            'vinner',
+                            hentNorsk(user.winner),
+                            hentFlag(user.winner),
+                            hentNorsk(reqBody.winner),
+                            hentFlag(reqBody.winner),
                         )
                     }
                 }
@@ -51,10 +95,30 @@ const handler = async function handler(opts: ApiHandlerOpts): Promise<void> {
                             playerId,
                             user.id,
                         ])
-                    } else if (iEndrevindu && !user.topscorer_endret && user.topscorer_player_id != null) {
+                    } else if (
+                        iEndrevindu &&
+                        !user.topscorer_endret &&
+                        user.topscorer_player_id != null &&
+                        playerId !== user.topscorer_player_id
+                    ) {
                         await client.query(
                             `UPDATE users SET topscorer_player_id = $1, topscorer_endret = true, topscorer_forrige_player_id = $2 WHERE id = $3`,
                             [playerId, user.topscorer_player_id, user.id],
+                        )
+                        const spillerNavn = await client.query<{ id: number; name: string }>(
+                            `SELECT id, name FROM players WHERE id = ANY($1::int[])`,
+                            [[user.topscorer_player_id, playerId].filter((id): id is number => id != null)],
+                        )
+                        const navnForId = (id: number | null) => spillerNavn.rows.find((r) => r.id === id)?.name ?? '–'
+                        // Spillere har ikke flagg i UI-et andre steder — bruk et enkelt fotball-symbol.
+                        await posterBytteFeed(
+                            client,
+                            user,
+                            'toppscorer',
+                            navnForId(user.topscorer_player_id),
+                            '⚽️',
+                            navnForId(playerId),
+                            '⚽️',
                         )
                     }
                 }

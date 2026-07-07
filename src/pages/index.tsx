@@ -45,6 +45,9 @@ import { tx } from '../i18n/interpolate'
 import type { Bet } from '../types/types'
 import { NedtellingBanner } from '../components/NedtellingBanner'
 import { PlasseringKort } from '../components/PlasseringKort'
+import { BekreftBytteModal } from '../components/BekreftBytteModal'
+import { EndrevinduPopup } from '../components/EndrevinduPopup'
+import { FEED_QUERY_KEY } from '../queries/useFeed'
 
 const Home: NextPage = () => {
     const { data: megselv } = UseUser()
@@ -67,6 +70,7 @@ const Home: NextPage = () => {
     return (
         <div className="space-y-4">
             <VarslerHint />
+            <EndrevinduPopup endrevindu={endrevindu} endrevinduSlutt={frister.endrevinduSlutt} />
             {lukkerIDag && (
                 <Alert variant="warning">
                     <span className="flex items-start gap-2 font-medium">
@@ -495,6 +499,7 @@ function VinnerKort({ megselv, laast, endrevindu }: { megselv: User; laast: bool
     const [lagrer, setLagrer] = useState(false)
     const [nyligLagret, setNyligLagret] = useState(false)
     const [feil, setFeil] = useState<string | null>(null)
+    const [pendingWinner, setPendingWinner] = useState<string | null>(null)
     const lagSortert = getLagSortert(locale)
 
     if (lagretWinner !== forrigeLagret) {
@@ -506,9 +511,6 @@ function VinnerKort({ megselv, laast, endrevindu }: { megselv: User; laast: bool
     const visLaast = laast && !kanEndreMedHalvering
 
     const lagre = async (ny: string) => {
-        if (kanEndreMedHalvering) {
-            if (!window.confirm(t.hjem.bekreftEndringVinner)) return
-        }
         setFeil(null)
         const forrige = winner
         setWinner(ny)
@@ -525,10 +527,23 @@ function VinnerKort({ megselv, laast, endrevindu }: { megselv: User; laast: bool
             }
             queryClient.invalidateQueries({ queryKey: ['user-me'] }).then()
             queryClient.invalidateQueries({ queryKey: ['stats'] }).then()
+            queryClient.invalidateQueries({ queryKey: FEED_QUERY_KEY }).then()
             blink(setNyligLagret)
         } finally {
             setLagrer(false)
+            setPendingWinner(null)
         }
+    }
+
+    // Utenfor byttevinduet lagres valget direkte; i byttevinduet må brukeren
+    // først bekrefte i BekreftBytteModal — ingen window.confirm.
+    const velgNy = (ny: string) => {
+        if (ny === winner) return
+        if (kanEndreMedHalvering) {
+            setPendingWinner(ny)
+            return
+        }
+        lagre(ny)
     }
 
     return (
@@ -544,9 +559,7 @@ function VinnerKort({ megselv, laast, endrevindu }: { megselv: User; laast: bool
                         tekst={hentNavn(winner, locale)}
                         ikon={
                             megselv.winner_endret ? (
-                                <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-800">
-                                    ½
-                                </span>
+                                <span className="chip-halved">½</span>
                             ) : (
                                 <Lock className="h-4 w-4 text-stone-400" />
                             )
@@ -579,7 +592,7 @@ function VinnerKort({ megselv, laast, endrevindu }: { megselv: User; laast: bool
                             <select
                                 value={winner}
                                 disabled={lagrer}
-                                onChange={(e) => lagre(e.target.value)}
+                                onChange={(e) => velgNy(e.target.value)}
                                 aria-label={t.hjem.velgVerdensmester}
                                 className="absolute inset-0 cursor-pointer opacity-0 disabled:cursor-not-allowed"
                             >
@@ -597,6 +610,15 @@ function VinnerKort({ megselv, laast, endrevindu }: { megselv: User; laast: bool
                 )}
             </RadKort>
             <StatusLinjeKompakt lagrer={lagrer} nyligLagret={nyligLagret} feil={feil} />
+            <BekreftBytteModal
+                apen={pendingWinner != null}
+                type="vinner"
+                fraVerdi={{ label: hentNavn(winner, locale), flagg: hentFlag(winner) }}
+                tilVerdi={{ label: hentNavn(pendingWinner ?? '', locale), flagg: hentFlag(pendingWinner ?? '') }}
+                onBekreft={() => pendingWinner != null && lagre(pendingWinner)}
+                onAvbryt={() => setPendingWinner(null)}
+                lagrer={lagrer}
+            />
         </div>
     )
 }
@@ -609,17 +631,18 @@ function ToppscorerKort({ megselv, laast, endrevindu }: { megselv: User; laast: 
     const [lagrer, setLagrer] = useState(false)
     const [nyligLagret, setNyligLagret] = useState(false)
     const [feil, setFeil] = useState<string | null>(null)
+    // `undefined` = ingen ventende endring (modal lukket); `null` er et gyldig
+    // pending-valg («fjern kobling»).
+    const [pendingPlayerId, setPendingPlayerId] = useState<number | null | undefined>(undefined)
 
     const valgtId = megselv.topscorer_player_id ?? null
     const valgtSpiller = spillere?.find((s) => s.id === valgtId) ?? null
+    const pendingSpiller = pendingPlayerId != null ? (spillere?.find((s) => s.id === pendingPlayerId) ?? null) : null
 
     const kanEndreMedHalvering = endrevindu && laast && !megselv.topscorer_endret && megselv.topscorer_player_id != null
     const visLaast = laast && !kanEndreMedHalvering
 
     const lagre = async (playerId: number | null) => {
-        if (kanEndreMedHalvering) {
-            if (!window.confirm(t.hjem.bekreftEndringTopps)) return
-        }
         setFeil(null)
         setLagrer(true)
         try {
@@ -632,10 +655,24 @@ function ToppscorerKort({ megselv, laast, endrevindu }: { megselv: User; laast: 
                 return
             }
             queryClient.invalidateQueries({ queryKey: ['user-me'] }).then()
+            queryClient.invalidateQueries({ queryKey: ['stats'] }).then()
+            queryClient.invalidateQueries({ queryKey: FEED_QUERY_KEY }).then()
             blink(setNyligLagret)
         } finally {
             setLagrer(false)
+            setPendingPlayerId(undefined)
         }
+    }
+
+    // Utenfor byttevinduet lagres valget direkte; i byttevinduet må brukeren
+    // først bekrefte i BekreftBytteModal — ingen window.confirm.
+    const velgNy = (playerId: number | null) => {
+        if (playerId === valgtId) return
+        if (kanEndreMedHalvering) {
+            setPendingPlayerId(playerId)
+            return
+        }
+        lagre(playerId)
     }
 
     // Spilleren er valgt, men spillerlista er ennå ikke lastet → vis en nøytral
@@ -659,9 +696,7 @@ function ToppscorerKort({ megselv, laast, endrevindu }: { megselv: User; laast: 
                         tekst={valgtTekst}
                         ikon={
                             megselv.topscorer_endret ? (
-                                <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-800">
-                                    ½
-                                </span>
+                                <span className="chip-halved">½</span>
                             ) : (
                                 <Lock className="h-4 w-4 text-stone-400" />
                             )
@@ -680,12 +715,27 @@ function ToppscorerKort({ megselv, laast, endrevindu }: { megselv: User; laast: 
                             lagrer={lagrer}
                             disabled={!spillere}
                             placeholder={t.hjem.skrivNavn}
-                            onVelg={(playerId) => lagre(playerId)}
+                            onVelg={(playerId) => velgNy(playerId)}
                         />
                     </div>
                 )}
             </RadKort>
             <StatusLinjeKompakt lagrer={lagrer} nyligLagret={nyligLagret} feil={feil} />
+            <BekreftBytteModal
+                apen={pendingPlayerId !== undefined}
+                type="toppscorer"
+                fraVerdi={{
+                    label: valgtTekst,
+                    flagg: valgtSpiller ? hentFlag(valgtSpiller.team_tla) : undefined,
+                }}
+                tilVerdi={{
+                    label: pendingPlayerId != null ? (pendingSpiller?.name ?? '…') : t.hjem.ikkeValgt,
+                    flagg: pendingSpiller ? hentFlag(pendingSpiller.team_tla) : undefined,
+                }}
+                onBekreft={() => pendingPlayerId !== undefined && lagre(pendingPlayerId)}
+                onAvbryt={() => setPendingPlayerId(undefined)}
+                lagrer={lagrer}
+            />
         </div>
     )
 }

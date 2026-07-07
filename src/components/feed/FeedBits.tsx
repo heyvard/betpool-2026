@@ -1,5 +1,5 @@
 import React from 'react'
-import { Sunrise } from 'lucide-react'
+import { Repeat2, Sunrise } from 'lucide-react'
 import { hentFlag } from '../../utils/lag'
 
 // Avsender-ikon for kamp-poster: squircle delt i to, hjemmeflagg over borteflagg.
@@ -52,6 +52,25 @@ export function MorgenrapportIkon({
             aria-hidden
         >
             <Sunrise size={Math.round(size * 0.52)} strokeWidth={1.9} />
+        </div>
+    )
+}
+
+// Avsender-ikon for bytte-poster: gull-gradient squircle med Repeat2-glyf —
+// samme visuelle språk som BetpoolLogo/MorgenrapportIkon.
+export function BytteAvsenderIkon({ size = 34 }: { size?: number }) {
+    return (
+        <div
+            className="flex shrink-0 items-center justify-center text-amber-900"
+            style={{
+                width: size,
+                height: size,
+                borderRadius: '30%',
+                background: 'linear-gradient(150deg,#fcd34d,#f59e0b)',
+            }}
+            aria-hidden
+        >
+            <Repeat2 size={Math.round(size * 0.5)} strokeWidth={2} />
         </div>
     )
 }
