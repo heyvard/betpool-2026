@@ -35,7 +35,7 @@ export function BekreftBytteModal({
             : tx(t.hjem.bekreftByttetTekstTopps, { fra: fraVerdi.label, til: tilVerdi.label })
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-stone-900/55 p-6 backdrop-blur-[1px]">
+        <div className="fixed inset-0 z-60 flex items-center justify-center bg-stone-900/55 p-6 backdrop-blur-[1px]">
             <div className="w-full max-w-sm rounded-2xl bg-white p-5 shadow-pop">
                 <div className="flex items-start gap-3">
                     <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-100 text-amber-800">
