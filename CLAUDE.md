@@ -73,7 +73,7 @@ Bokmål, ikke dialekt: `tippet` (ikke `tippa`/`tipsa`), `ikke tippet` (ikke `uti
 
 ## Architecture
 
-This is a private betting pool for a football tournament (currently VM 2026; the active tournament-winner team is in `src/components/results/winner.ts` and top scorer in `topscorer.ts`).
+This is a private betting pool for a football tournament (currently VM 2026; the actual tournament-winner team and top scorer(s) are stored in the `tournament_result`/`tournament_topscorers` tables, set by a superadmin via `/vinner-toppscorer`).
 
 ### Stack
 
@@ -99,7 +99,7 @@ The interesting business logic. Per match, `regnUtScoreForKamp` looks at all use
 - Base weighting (`finnVekting`) by tournament round: groups = 1, R16/QF = 2, SF = 3, F = 4 (bronze final = 3).
 - "Riktig utfall" (correct H/U/B outcome) pays `vekting * 2` if fewer than 20% of bettors got it, else `vekting`.
 - "Riktig resultat" (exact score) pays `vekting * 3` if <15% got it, `vekting * 2` if <30%, else `vekting`.
-- `calculateAllBetsExtended` then attaches per-bet point totals AND computes tournament-long bonuses: `winnerPoints` and `topscorerPoints` are awarded by comparing user picks against `winner.ts`/`topscorer.ts`, with a scarcity formula `min(ceil(users*3/correct), 15)`.
+- `calculateAllBetsExtended` then attaches per-bet point totals AND computes tournament-long bonuses: `winnerPoints` and `topscorerPoints` are awarded by comparing user picks against `allBets.tournamentResult` (the DB-backed actual winner/topscorer(s)), with a scarcity step-function (`regnUtBonuspoeng`).
 - `calculateLeaderboard` (`calculateAllScores.ts`) sums per-bet poeng + winner + topscorer bonuses.
 
 `erIFørsteRunde()` (`src/utils/isInFirstRound.ts`) gates whether other users' `winner`/`topscorer` picks are visible — picks are hidden from other users until the cutoff date in that file.

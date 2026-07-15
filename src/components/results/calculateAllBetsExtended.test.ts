@@ -2,10 +2,6 @@ import { expect } from '@jest/globals'
 import { calculateAllBetsExtended, regnUtBonuspoeng } from './calculateAllBetsExtended'
 import { AllBets, MatchBet, OtherUser } from '../../queries/useAllBets'
 
-// Fasiten (turneringens toppscorer) er normalt tom. Lås den til spiller-id 42 her
-// så vi kan teste den strukturerte toppscorer-bonusen og halveringen.
-jest.mock('./topscorer', () => ({ topscorerPlayerIds: [42] }))
-
 function bet(opts: {
     user: string
     home: string
@@ -165,6 +161,7 @@ describe('Strukturert toppscorer-bonus (topscorer_player_id)', () => {
                 brukerMedTopscorer('C', null), // ikke koblet
             ],
             bets: [],
+            tournamentResult: { winnerTeam: '', topscorerPlayerIds: [42] },
         }
 
         const res = calculateAllBetsExtended(allBets)
@@ -184,6 +181,7 @@ describe('Strukturert toppscorer-bonus (topscorer_player_id)', () => {
                 brukerMedTopscorer('C', 7),
             ],
             bets: [],
+            tournamentResult: { winnerTeam: '', topscorerPlayerIds: [42] },
         }
 
         const res = calculateAllBetsExtended(allBets)
@@ -193,6 +191,28 @@ describe('Strukturert toppscorer-bonus (topscorer_player_id)', () => {
         expect(points('B')).toEqual(3)
         expect(points('A')).toEqual(1)
         expect(points('C')).toEqual(0)
+    })
+
+    it('flere toppscorere kan dele tittelen — hver treffer teller uavhengig', () => {
+        const allBets: AllBets = {
+            users: [
+                brukerMedTopscorer('A', 42), // riktig, medvinner 1
+                brukerMedTopscorer('B', 43), // riktig, medvinner 2
+                brukerMedTopscorer('C', 7), // feil spiller
+                brukerMedTopscorer('D', null), // ikke koblet
+            ],
+            bets: [],
+            tournamentResult: { winnerTeam: '', topscorerPlayerIds: [42, 43] },
+        }
+
+        const res = calculateAllBetsExtended(allBets)
+        const points = (id: string) => res.users.find((u) => u.id === id)!.topscorerPoints
+
+        // 2 av 4 traff = 50 % → 3 poeng hver, uavhengig av hvilken av de to de traff.
+        expect(points('A')).toEqual(3)
+        expect(points('B')).toEqual(3)
+        expect(points('C')).toEqual(0)
+        expect(points('D')).toEqual(0)
     })
 })
 
@@ -227,18 +247,7 @@ describe('Winner-bonus — treff mot satt fasit', () => {
         return { id, name: id, picture: null, paid: true, winner: winner ?? undefined, winner_endret: endret }
     }
 
-    beforeEach(() => {
-        jest.resetModules()
-        jest.doMock('./winner', () => ({ winner: 'Brasil' }))
-    })
-
-    afterEach(() => {
-        jest.dontMock('./winner')
-        jest.resetModules()
-    })
-
     it('gir bonus til brukeren som traff vinneren, 0 til de andre', () => {
-        const { calculateAllBetsExtended: calc } = require('./calculateAllBetsExtended')
         const allBets: AllBets = {
             users: [
                 brukerMedWinner('A', 'Brasil'), // riktig
@@ -247,9 +256,10 @@ describe('Winner-bonus — treff mot satt fasit', () => {
                 brukerMedWinner('D', null), // ikke tippet
             ],
             bets: [],
+            tournamentResult: { winnerTeam: 'Brasil', topscorerPlayerIds: [] },
         }
 
-        const res = calc(allBets)
+        const res = calculateAllBetsExtended(allBets)
         const points = (id: string) => res.users.find((u: OtherUser) => u.id === id)!.winnerPoints
 
         // 1 av 4 traff → alene → 25 poeng.
@@ -260,7 +270,6 @@ describe('Winner-bonus — treff mot satt fasit', () => {
     })
 
     it('halverer bonusen når tipset er endret i endrevinduet', () => {
-        const { calculateAllBetsExtended: calc } = require('./calculateAllBetsExtended')
         const allBets: AllBets = {
             users: [
                 brukerMedWinner('A', 'Brasil', true), // riktig, endret → halvert
@@ -268,9 +277,10 @@ describe('Winner-bonus — treff mot satt fasit', () => {
                 brukerMedWinner('C', 'Argentina'),
             ],
             bets: [],
+            tournamentResult: { winnerTeam: 'Brasil', topscorerPlayerIds: [] },
         }
 
-        const res = calc(allBets)
+        const res = calculateAllBetsExtended(allBets)
         const points = (id: string) => res.users.find((u: OtherUser) => u.id === id)!.winnerPoints
 
         // 2 av 3 traff = 67 % → 3 poeng hver; A halveres til floor(3/2) = 1.

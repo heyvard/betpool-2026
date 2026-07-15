@@ -5,6 +5,7 @@ import { erIFørsteRunde } from '../../utils/isInFirstRound'
 import { serverNå } from '../../utils/testClock'
 import { hentKamper, erKampPågående } from '../../data/matches'
 import { resolveActiveScore } from '../../data/matchScore'
+import { hentTurneringsFasit, TurneringsFasit } from '../../data/tournamentResult'
 
 interface BetRow {
     user_id: string
@@ -97,6 +98,7 @@ function byggSluttspill(score: ScoreRow | undefined): SluttspillResultat | null 
 export interface AlleBets {
     bets: BetsRad[]
     users: BetsUser[]
+    tournamentResult: TurneringsFasit
 }
 
 export interface ByggAlleBetsOpts {
@@ -116,7 +118,7 @@ export async function byggAlleBets(
 ): Promise<AlleBets> {
     const { skjulFørsteRundePicks = true } = opts
 
-    const [betRows, scoreRows, userRows] = await Promise.all([
+    const [betRows, scoreRows, userRows, tournamentResult] = await Promise.all([
         client.query<BetRow>(`
             SELECT b.user_id, b.match_num, b.home_score, b.away_score, b.joker
             FROM bets b
@@ -137,6 +139,7 @@ export async function byggAlleBets(
             LEFT JOIN players p ON p.id = u.topscorer_player_id
             LEFT JOIN players pf ON pf.id = u.topscorer_forrige_player_id
             WHERE u.active = true`),
+        hentTurneringsFasit(client),
     ])
 
     const matchList = await hentKamper(client)
@@ -188,5 +191,5 @@ export async function byggAlleBets(
         })
     }
 
-    return { bets, users: userList }
+    return { bets, users: userList, tournamentResult }
 }

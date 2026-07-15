@@ -75,6 +75,7 @@ export interface MatchBetMedScore {
 export interface AllBets {
     users: OtherUser[]
     bets: MatchBet[]
+    tournamentResult?: { winnerTeam: string; topscorerPlayerIds: number[] }
 }
 
 export function UseAllBets() {
