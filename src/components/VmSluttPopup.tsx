@@ -1,11 +1,21 @@
 import { useEffect, useState } from 'react'
 import { MessageSquareHeart, X } from 'lucide-react'
 import NextLink from 'next/link'
+import dayjs from 'dayjs'
 
 import { useLanguage } from '../i18n/LanguageContext'
 import { erTestAuth } from '../utils/erTestAuth'
 
 const STORAGE_KEY = 'bp_vm_slutt_popup_lukket_v1'
+
+// Popupen skal bare vises den siste uka av VM 2026 (finalen er 19. juli).
+const VIS_FRA = dayjs('2026-07-14T00:00:00')
+const VIS_TIL = dayjs('2026-07-21T23:59:59')
+
+function erIVisningsvinduet(): boolean {
+    const nå = dayjs()
+    return !nå.isBefore(VIS_FRA) && !nå.isAfter(VIS_TIL)
+}
 
 export function VmSluttPopup() {
     const { t } = useLanguage()
@@ -17,7 +27,7 @@ export function VmSluttPopup() {
         const sjekk = async () => {
             // Test-auth-modus (integrasjon/e2e) skal være deterministisk — denne
             // popupen har ingenting med testflytene å gjøre.
-            if (erTestAuth() || localStorage.getItem(STORAGE_KEY)) return
+            if (erTestAuth() || !erIVisningsvinduet() || localStorage.getItem(STORAGE_KEY)) return
             await Promise.resolve()
             setVis(true)
         }
