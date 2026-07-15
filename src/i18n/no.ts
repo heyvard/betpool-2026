@@ -467,6 +467,12 @@ const no = {
         slaaPaa: 'Slå på varsler',
         ikkeNaa: 'Ikke nå',
     },
+    vmSluttPopup: {
+        tittel: 'VM nærmer seg slutten!',
+        tekst: 'Har du forslag til hvordan neste betpool — EM — bør være? Vi vil gjerne høre fra deg.',
+        knapp: 'Gi tilbakemelding',
+        ikkeNaa: 'Ikke nå',
+    },
     ligaer: {
         tittel: 'Mine ligaer',
         beskrivelse:

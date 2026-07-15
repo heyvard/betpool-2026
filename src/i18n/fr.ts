@@ -478,6 +478,12 @@ const fr: Translations = {
         slaaPaa: 'Activer les notifications',
         ikkeNaa: 'Pas maintenant',
     },
+    vmSluttPopup: {
+        tittel: 'La Coupe du Monde touche à sa fin !',
+        tekst: 'Une idée pour la prochaine cagnotte — l’Euro ? On aimerait bien avoir votre avis.',
+        knapp: 'Donner mon avis',
+        ikkeNaa: 'Pas maintenant',
+    },
     ligaer: {
         tittel: 'Mes ligues',
         beskrivelse:

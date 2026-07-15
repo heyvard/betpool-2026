@@ -18,6 +18,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { LoadingScreen } from '../components/loading/LoadingScreen'
 import { PullToRefresh } from '../components/PullToRefresh'
 import { VarslerPrompt } from '../components/VarslerPrompt'
+import { VmSluttPopup } from '../components/VmSluttPopup'
 import { Onboarding } from '../components/Onboarding'
 import { useQueryClient } from '@tanstack/react-query'
 import { cn } from '@/lib/utils'
@@ -86,6 +87,7 @@ function Layout({ children }: { children: React.ReactNode }) {
                     // trigget en uønsket refresh), så den er slått av her.
                     (router.pathname === '/bracket' ? children : <PullToRefresh>{children}</PullToRefresh>)}
                 {user && <VarslerPrompt />}
+                {user && !trengerOnboarding && <VmSluttPopup />}
             </div>
             {user && trengerOnboarding && (
                 <Onboarding onFerdig={() => queryClient.invalidateQueries({ queryKey: ['user-me'] })} />
