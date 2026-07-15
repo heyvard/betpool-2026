@@ -288,6 +288,12 @@ function Layout({ children }: { children: React.ReactNode }) {
                                                         </DropdownMenu.Item>
                                                         <DropdownMenu.Item
                                                             className="px-4 py-2 cursor-pointer hover:bg-stone-50 outline-hidden text-stone-700"
+                                                            onSelect={() => router.push('/vinner-toppscorer')}
+                                                        >
+                                                            {t.nav.vinnerToppscorer}
+                                                        </DropdownMenu.Item>
+                                                        <DropdownMenu.Item
+                                                            className="px-4 py-2 cursor-pointer hover:bg-stone-50 outline-hidden text-stone-700"
                                                             onSelect={() => router.push('/manglende-tips')}
                                                         >
                                                             {t.nav.manglendeTips}

@@ -100,6 +100,22 @@ describe('tipping', () => {
         expect(body.users.map((u: { name: string }) => u.name).sort()).toEqual(['Alice', 'Bob'])
     })
 
+    it('GET /api/v1/bets inkluderer tournamentResult satt av superadmin via /api/v1/admin/tournament-result', async () => {
+        await seedUser({ firebase_user_id: 'alice', name: 'Alice' })
+        await seedUser({ firebase_user_id: 'super', superadmin: true })
+
+        await api('/api/v1/admin/tournament-result', {
+            user: 'super',
+            method: 'PUT',
+            body: { winnerTeam: 'NOR', topscorerPlayerIds: [] },
+        })
+
+        const res = await api('/api/v1/bets', { user: 'alice' })
+        expect(res.status).toBe(200)
+        const body = await res.json()
+        expect(body.tournamentResult).toEqual({ winnerTeam: 'NOR', topscorerPlayerIds: [] })
+    })
+
     it('GET /api/v1/bets bruker den synkede (automatiske) scoren når use_manual er av', async () => {
         const alice = await seedUser({ firebase_user_id: 'alice', name: 'Alice' })
         const matchNum = await førsteMatchNum()

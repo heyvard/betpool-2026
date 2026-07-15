@@ -14,11 +14,16 @@ export async function withDb<T>(fn: (client: Client) => Promise<T>): Promise<T> 
 }
 
 export async function truncateAll(): Promise<void> {
-    await withDb((c) =>
-        c.query(
+    await withDb(async (c) => {
+        await c.query(
             'TRUNCATE users, bets, chat, feedback, match_scores, leagues, league_members, players, feed_posts CASCADE',
-        ),
-    )
+        )
+        // tournament_result er et singleton-mønster (rad-id 'current' seedes av
+        // migreringen) — TRUNCATE ville fjernet raden og gjort UPDATE ... WHERE id
+        // = 'current' i tournament-result.ts til en no-op. Nullstill i stedet.
+        // tournament_topscorers tømmes automatisk via players-CASCADE-en over.
+        await c.query(`UPDATE tournament_result SET winner_team_tla = null WHERE id = 'current'`)
+    })
 }
 
 // Et reelt match_num fra `matches`-tabellen (football-data sin id). `match_num`

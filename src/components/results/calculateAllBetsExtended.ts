@@ -1,8 +1,6 @@
 import { finnUtfall, regnUtScoreForKamp } from './matchScoreCalculator'
 import { stringTilNumber } from '../../utils/stringnumber'
 import { AllBets, MatchBetMedScore, OtherUser } from '../../queries/useAllBets'
-import { winner } from './winner'
-import { topscorerPlayerIds } from './topscorer' // "topscorer" er DB-/type-navn (én p); UI bruker "toppscorer"
 import { erNorgeKamp } from '../../data/matches'
 
 export interface AllBetsExtended {
@@ -20,6 +18,7 @@ export function filtrerAllBets(allBets: AllBets, userIds: Set<string>): AllBets 
     return {
         users: allBets.users.filter((u) => userIds.has(u.id)),
         bets: allBets.bets.filter((b) => userIds.has(b.user_id)),
+        tournamentResult: allBets.tournamentResult,
     }
 }
 
@@ -45,6 +44,8 @@ export function regnUtBonuspoeng(antallOk: number, antallUsers: number): number 
 }
 
 export function calculateAllBetsExtended(allBets: AllBets): AllBetsExtended {
+    const winner = allBets.tournamentResult?.winnerTeam ?? ''
+    const topscorerPlayerIds = allBets.tournamentResult?.topscorerPlayerIds ?? []
     let scoreForKamp = regnUtScoreForKamp(allBets.bets)
     const betsMedScore = allBets.bets.map((b): MatchBetMedScore => {
         const norgeKamp = erNorgeKamp(b.home_team, b.away_team)

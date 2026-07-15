@@ -38,6 +38,7 @@ const handler = async function handler(opts: ApiHandlerOpts): Promise<void> {
             home_result: b.home_result ?? 0,
             away_result: b.away_result ?? 0,
         })),
+        tournamentResult: alleBets.tournamentResult,
     } as unknown as AllBets
 
     const extended = calculateAllBetsExtended(allBets)

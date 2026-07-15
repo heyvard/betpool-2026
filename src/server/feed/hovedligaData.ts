@@ -6,6 +6,7 @@ import { calculateLeaderboard, LeaderBoard } from '../../components/results/calc
 import { MatchPoeng, regnUtScoreForKamp } from '../../components/results/matchScoreCalculator'
 import { erKampPågående, hentKamper } from '../../data/matches'
 import { resolveActiveScore } from '../../data/matchScore'
+import { hentTurneringsFasit } from '../../data/tournamentResult'
 
 // Bygger hovedligaens (Æresligaen) AllBets fra DB — kun brukere som er med i
 // hovedligaen (i_hovedliga != false) og deres tips på kamper som har startet.
@@ -57,7 +58,7 @@ export interface HovedligaData {
 }
 
 export async function hentHovedligaAllBets(client: PoolClient, now: Date = new Date()): Promise<AllBets> {
-    const [betRows, scoreRows, userRows] = await Promise.all([
+    const [betRows, scoreRows, userRows, tournamentResult] = await Promise.all([
         client.query<BetRow>(`
             SELECT b.user_id, b.match_num, b.home_score, b.away_score, b.joker
             FROM bets b
@@ -72,6 +73,7 @@ export async function hentHovedligaAllBets(client: PoolClient, now: Date = new D
                    u.winner, u.topscorer_player_id, u.winner_endret, u.topscorer_endret
             FROM users u
             WHERE u.active = true AND u.i_hovedliga = true`),
+        hentTurneringsFasit(client),
     ])
 
     const matchList = await hentKamper(client)
@@ -116,7 +118,7 @@ export async function hentHovedligaAllBets(client: PoolClient, now: Date = new D
         i_hovedliga: true,
     }))
 
-    return { users, bets }
+    return { users, bets, tournamentResult }
 }
 
 // Henter alt feeden trenger om hovedligaens stilling: rå-bets, utvidet beregning

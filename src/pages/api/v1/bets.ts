@@ -9,8 +9,8 @@ const handler = async function handler(opts: ApiHandlerOpts): Promise<void> {
         return
     }
 
-    const { bets, users } = await byggAlleBets(client, req)
-    res.json({ bets, users })
+    const { bets, users, tournamentResult } = await byggAlleBets(client, req)
+    res.json({ bets, users, tournamentResult })
 }
 
 export default auth(handler)
