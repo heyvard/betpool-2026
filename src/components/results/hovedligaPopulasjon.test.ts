@@ -23,8 +23,8 @@ function bet(user: string, home: string, away: string): MatchBet {
     }
 }
 
-function bruker(id: string, iHovedliga: boolean): OtherUser {
-    return { id, name: id, picture: null, paid: true, i_hovedliga: iHovedliga }
+function bruker(id: string, iHovedliga: boolean, winner?: string): OtherUser {
+    return { id, name: id, picture: null, paid: true, i_hovedliga: iHovedliga, winner }
 }
 
 function tavleFor(raw: AllBets, ids: Set<string>) {
@@ -71,5 +71,33 @@ describe('Opt-ut fra hovedligaen påvirker poengberegningen', () => {
         expect(utenBob).toBeGreaterThanOrEqual(medBob)
         // Og hovedligaberegningen ser kun de to hovedliga-tippene.
         expect(filtrerAllBets(raw, hovedligaIds).bets).toHaveLength(2)
+    })
+})
+
+describe('Vinnerbonus-nevneren er hovedliga-populasjonen', () => {
+    // VM 2026-caset: 49 hovedliga-medlemmer der 10 tippet Spania, pluss 4 brukere
+    // utenfor hovedligaen. 10/49 = 20,4 % → 5 poeng. Uten filteret ville nevneren
+    // vært 53 (18,9 % — under 20 %-terskelen) og bonusen feilaktig blitt 8.
+    const hovedligaBrukere = [...Array(49)].map((_, i) => bruker(`h${i}`, true, i < 10 ? 'ESP' : 'FRA'))
+    const utenfor = [...Array(4)].map((_, i) => bruker(`x${i}`, false))
+    const raw: AllBets = {
+        users: [...hovedligaBrukere, ...utenfor],
+        bets: [],
+        tournamentResult: { winnerTeam: 'ESP', topscorerPlayerIds: [] },
+    }
+    const hovedligaIds = new Set(raw.users.filter((u) => u.i_hovedliga !== false).map((u) => u.id))
+
+    it('10 riktige av 49 i hovedligaen gir 5 poeng', () => {
+        const ext = calculateAllBetsExtended(filtrerAllBets(raw, hovedligaIds))
+        expect(ext.users).toHaveLength(49)
+        expect(ext.users.find((u) => u.id === 'h0')!.winnerPoints).toEqual(5)
+        expect(ext.users.find((u) => u.id === 'h10')!.winnerPoints).toEqual(0)
+    })
+
+    it('uten populasjonsfilteret ville opt-ut-brukerne blåst opp nevneren til 8 poeng', () => {
+        // Dokumenterer hvorfor alle beregningsflater MÅ filtrere før
+        // calculateAllBetsExtended (jf. feilen i admin/feed-export).
+        const ufiltrert = calculateAllBetsExtended(raw)
+        expect(ufiltrert.users.find((u) => u.id === 'h0')!.winnerPoints).toEqual(8)
     })
 })
