@@ -2,7 +2,7 @@ import { ApiHandlerOpts } from '../../../../types/apiHandlerOpts'
 import { auth } from '../../../../auth/authHandler'
 import { hentFeed } from '../../../../server/feed/hentFeed'
 import { byggAlleBets } from '../../../../server/bets/byggAlleBets'
-import { calculateAllBetsExtended } from '../../../../components/results/calculateAllBetsExtended'
+import { calculateAllBetsExtended, filtrerAllBets } from '../../../../components/results/calculateAllBetsExtended'
 import { calculateLeaderboard } from '../../../../components/results/calculateAllScores'
 import { AllBets } from '../../../../queries/useAllBets'
 
@@ -41,7 +41,12 @@ const handler = async function handler(opts: ApiHandlerOpts): Promise<void> {
         tournamentResult: alleBets.tournamentResult,
     } as unknown as AllBets
 
-    const extended = calculateAllBetsExtended(allBets)
+    // Æresligaens populasjon — kun hovedliga-medlemmer. byggAlleBets returnerer
+    // alle aktive brukere, og uten dette filteret teller opt-ut-brukere med i
+    // nevneren for vinner-/toppscorerbonus og i kamp-raritetene. Eksporten skal
+    // speile appens ledertavle (samme filter som leaderboard.tsx/hovedligaData).
+    const hovedligaIds = new Set(allBets.users.filter((u) => u.i_hovedliga !== false).map((u) => u.id))
+    const extended = calculateAllBetsExtended(filtrerAllBets(allBets, hovedligaIds))
     const leaderboard = calculateLeaderboard(extended.bets, extended.users)
 
     if (req.query.download === '1') {
