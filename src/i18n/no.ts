@@ -61,6 +61,7 @@ const no = {
         typeMorgenrapport: 'Morgenrapport',
         avsenderMorgenrapport: 'Morgenrapporten',
         avsenderBytte: 'Bytte registrert',
+        avsenderPodium: 'Pallen er satt',
         slettPost: 'Slett post',
         slettBekreft: 'Slette denne posten? Reaksjoner og kommentarer forsvinner også.',
         feedByttetTittelVinner: '{{navn}} bytter vinner-tips',

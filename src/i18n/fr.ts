@@ -63,6 +63,7 @@ const fr: Translations = {
         typeMorgenrapport: 'Rapport du matin',
         avsenderMorgenrapport: 'Le rapport du matin',
         avsenderBytte: 'Changement enregistré',
+        avsenderPodium: 'Le podium est fixé',
         slettPost: 'Supprimer la publication',
         slettBekreft: 'Supprimer cette publication ? Les réactions et commentaires disparaîtront aussi.',
         feedByttetTittelVinner: '{{navn}} change son pronostic de vainqueur',
