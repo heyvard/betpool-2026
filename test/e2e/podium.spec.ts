@@ -3,7 +3,9 @@ import { test, expect, type BrowserContext } from '@playwright/test'
 import { seedManualScore, seedBet, seedPlayer, seedUser, truncateAll, withDb } from '../support/db'
 import { testKamper } from '../support/matches'
 
-// Pallen: superadmin-knappen på /vinner-toppscorer som poster en feed-post med
+// Pallen: /podium-forhandsvisning (dry run) og /podium-post (den faktiske
+// postingen) — to adskilte sider slik at superadmin aldri kan trykke feil og
+// poste for ekte når hensikten kun var å forhåndsvise. Poster en feed-post med
 // topp-3 i hovedligaen + en (mocket) Claude-skrevet oppsummering av reisen
 // deres. ANTHROPIC_MOCK=true (satt som default i testStack.ts) gjør at
 // server/feed/podiumAi.ts returnerer deterministisk innhold uten å kalle det
@@ -47,8 +49,15 @@ test('superadmin kan poste pallen, med topp-3 og AI-oppsummering i feeden', asyn
     await seedBet({ user_id: bronse.id, match_num: kamp.match_num, home_score: 0, away_score: 2 })
 
     await loggInn(context, 'super', ETTER_KAMPSTART)
-    await page.goto('/vinner-toppscorer')
 
+    // Forhåndsvisningen poster ingenting — kun én rad forventes etterpå.
+    await page.goto('/podium-forhandsvisning')
+    await page.getByRole('button', { name: 'Forhåndsvis' }).click()
+    await expect(page.getByText('Gullgutten', { exact: false }).first()).toBeVisible()
+    const radFørPosting = await withDb((c) => c.query(`SELECT id FROM feed_posts WHERE kind = 'podium'`))
+    expect(radFørPosting.rowCount).toBe(0)
+
+    await page.goto('/podium-post')
     await expect(page.getByText('Post pallen i feeden')).toBeVisible()
 
     page.once('dialog', (d) => d.accept())
