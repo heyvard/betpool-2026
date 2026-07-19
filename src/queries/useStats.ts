@@ -17,7 +17,11 @@ export interface TipsValg {
 }
 
 export interface StatsResponse {
-    /** Antall deltakere som har tippet i ligaen. */
+    /**
+     * Hovedligaens (Æresligaens) fulle størrelse — samme populasjon bonusen
+     * faktisk betales ut fra (calculateAllBetsExtended). Brukes som nevner for
+     * «mulig bonus»-trappen i /alle-tips, ikke antall som har svart ennå.
+     */
     totaltAntall: number
     /** Usortert — sorteres i UI. */
     vinner: TipsValg[]

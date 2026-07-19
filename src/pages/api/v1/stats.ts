@@ -2,8 +2,11 @@ import { ApiHandlerOpts } from '../../../types/apiHandlerOpts'
 import { auth } from '../../../auth/authHandler'
 import { erIFørsteRunde } from '../../../utils/isInFirstRound'
 
-// Fordelingen av hele ligaens vinner- og toppscorer-tips: ett innslag per unikt
-// valg, med navnene på deltakerne bak. Brukes av /alle-tips.
+// Fordelingen av hovedligaens (Æresligaens) vinner- og toppscorer-tips: ett
+// innslag per unikt valg, med navnene på deltakerne bak. Brukes av /alle-tips —
+// blant annet til «mulig bonus»-tallet, som MÅ regnes mot samme populasjon som
+// calculateAllBetsExtended faktisk betaler ut bonusen fra (hovedligaen), ikke
+// mot antall som har svart i denne kategorien.
 //
 // Samme synlighetsgaranti som /api/v1/bets: så lenge erIFørsteRunde er sann
 // (frem til starten på runde 2) er andres vinner/toppscorer hemmelig — da
@@ -36,12 +39,16 @@ const handler = async function handler(opts: ApiHandlerOpts): Promise<void> {
         topscorer_endret: boolean
     }
 
+    // Kun hovedliga-medlemmer — samme populasjon som bonusen faktisk betales ut
+    // fra (calculateAllBetsExtended). Uten dette filteret ville opt-ut-brukere
+    // telle med i totaltAntall og i antall-feltene under, og «mulig bonus» i
+    // /alle-tips ville vist et annet tall enn det som faktisk utbetales.
     const { rows } = await client.query<Rad>(`
         SELECT COALESCE(NULLIF(u.kallenavn, ''), u.name) AS name, u.winner, p.name AS topscorer_name,
                u.winner_endret, u.topscorer_endret
         FROM users u
         LEFT JOIN players p ON p.id = u.topscorer_player_id
-        WHERE u.active = true`)
+        WHERE u.active = true AND u.i_hovedliga = true`)
 
     // Grupperer på valg → deltakerlisten bak hvert valg. Bevarer
     // innsettingsrekkefølgen (Map); UI sorterer selv på antall.
@@ -68,7 +75,9 @@ const handler = async function handler(opts: ApiHandlerOpts): Promise<void> {
         }))
     }
 
-    const totaltAntall = rows.filter((r) => r.winner || r.topscorer_name).length
+    // Hovedligaens fulle størrelse — nevneren for «mulig bonus»-trappen i
+    // /alle-tips, uavhengig av hvor mange som faktisk har valgt noe ennå.
+    const totaltAntall = rows.length
 
     res.json({
         totaltAntall,
