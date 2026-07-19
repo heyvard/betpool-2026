@@ -80,4 +80,10 @@ test('superadmin kan sette vinner og flere toppscorere, og det lagres', async ({
         .filter({ has: page.getByTestId('leaderboard-naam').getByText('Bob') })
     // 25 (alene om riktig vinner) + 25 (alene om riktig toppscorer) = 50.
     await expect(bobRad.getByTestId('leaderboard-poeng')).toHaveText('50')
+
+    // Samme bonus skal også reflekteres på Bobs egen /user/[id]-side.
+    await page.goto(`/user/${bob.id}`)
+    await expect(page.getByText('Norge')).toBeVisible()
+    await expect(page.getByText('Erling Haaland')).toBeVisible()
+    await expect(page.getByText('+25 poeng')).toHaveCount(2)
 })
