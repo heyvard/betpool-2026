@@ -26,9 +26,11 @@ function initialer(navn: string): string {
 }
 
 /**
- * Høyest mulige bonus for et tips, gitt hvor mange som har valgt likt. Reglene
- * er de samme som ligger i `t.regler.bonustrapper` — ikke endre tallene her uten
- * å endre dem der.
+ * Høyest mulige bonus for et tips, gitt hvor mange som har valgt likt av hele
+ * hovedligaen (`stats.totaltAntall` — samme nevner som `regnUtBonuspoeng`
+ * faktisk betaler ut fra, IKKE antall som har svart i denne kategorien ennå).
+ * Reglene er de samme som ligger i `t.regler.bonustrapper` — ikke endre tallene
+ * her uten å endre dem der.
  */
 function muligBonus(antallLike: number, totalt: number): number {
     if (antallLike <= 1) return 25
@@ -144,6 +146,10 @@ function ModusVisning({ modus, stats, megselv }: { modus: Modus; stats: StatsRes
 
     const kilde = modus === 'vinner' ? stats.vinner : stats.toppscorer
     const totaltSvar = kilde.reduce((sum, v) => sum + v.antall, 0)
+    // Nevneren for prosent-visning og «mulig bonus» skal alltid være hele
+    // hovedligaen, ikke bare de som har svart i denne kategorien ennå — samme
+    // populasjon regnUtBonuspoeng faktisk betaler bonusen ut fra.
+    const totaltHovedliga = stats.totaltAntall
 
     const rader: RadData[] = [...kilde]
         .sort((a, b) => b.antall - a.antall)
@@ -178,7 +184,7 @@ function ModusVisning({ modus, stats, megselv }: { modus: Modus; stats: StatsRes
                     label={t.allesTips.statHarValgt}
                 />
                 <StatBoks
-                    verdi={`${mestValgt.flagg || initialer(mestValgt.visningsnavn)} ${prosent(mestValgt.antall, totaltSvar)}%`}
+                    verdi={`${mestValgt.flagg || initialer(mestValgt.visningsnavn)} ${prosent(mestValgt.antall, totaltHovedliga)}%`}
                     label={t.allesTips.statMestValgt}
                 />
                 <StatBoks verdi={String(rader.length)} label={t.allesTips.statUlikeTips} />
@@ -193,7 +199,7 @@ function ModusVisning({ modus, stats, megselv }: { modus: Modus; stats: StatsRes
             <DittTipsKort
                 mittRad={mittRad}
                 rang={mittRadIndex >= 0 ? mittRadIndex + 1 : null}
-                totaltSvar={totaltSvar}
+                totaltHovedliga={totaltHovedliga}
                 byttet={mittTipsByttet}
             />
 
@@ -202,7 +208,7 @@ function ModusVisning({ modus, stats, megselv }: { modus: Modus; stats: StatsRes
                     <FordelingsRad
                         key={rad.nokkel}
                         rad={rad}
-                        totaltSvar={totaltSvar}
+                        totaltHovedliga={totaltHovedliga}
                         apen={apenNokkel === rad.nokkel}
                         onToggle={() => setApenNokkel((n) => (n === rad.nokkel ? null : rad.nokkel))}
                     />
@@ -239,12 +245,12 @@ function StatBoks({ ikon, verdi, label }: { ikon?: React.ReactNode; verdi: strin
 function DittTipsKort({
     mittRad,
     rang,
-    totaltSvar,
+    totaltHovedliga,
     byttet,
 }: {
     mittRad: RadData | null
     rang: number | null
-    totaltSvar: number
+    totaltHovedliga: number
     byttet: boolean
 }) {
     const { t } = useLanguage()
@@ -271,7 +277,7 @@ function DittTipsKort({
             : andre === 1
               ? t.allesTips.delerMedEn
               : tx(t.allesTips.delerMedAndre, { n: andre })
-    const bonus = muligBonus(mittRad.antall, totaltSvar)
+    const bonus = muligBonus(mittRad.antall, totaltHovedliga)
 
     return (
         <div className="rounded-2xl bg-linear-to-br from-amber-50 to-white p-4 ring-1 ring-amber-200">
@@ -300,17 +306,17 @@ function DittTipsKort({
 
 function FordelingsRad({
     rad,
-    totaltSvar,
+    totaltHovedliga,
     apen,
     onToggle,
 }: {
     rad: RadData
-    totaltSvar: number
+    totaltHovedliga: number
     apen: boolean
     onToggle: () => void
 }) {
     const { t } = useLanguage()
-    const pst = prosent(rad.antall, totaltSvar)
+    const pst = prosent(rad.antall, totaltHovedliga)
     const synlige = rad.deltakere.slice(0, 4)
     const resterende = rad.deltakere.length - synlige.length
 
@@ -339,7 +345,7 @@ function FordelingsRad({
                             )}
                         </p>
                         <p className="shrink-0 text-xs font-semibold tabular-nums text-stone-500">
-                            {rad.antall}/{totaltSvar} · {pst}%
+                            {rad.antall}/{totaltHovedliga} · {pst}%
                         </p>
                     </div>
                     <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-stone-200">
