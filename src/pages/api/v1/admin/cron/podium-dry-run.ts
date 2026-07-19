@@ -28,9 +28,24 @@ const handler = async function ({ req, user, res, client }: ApiHandlerOpts): Pro
         modell = modellParam
     }
 
-    console.log(`[admin/cron/podium-dry-run] dry run trigget av ${user.email}`)
+    const isMockQuery = req.query.mockWinner || req.query.mockTopscorerIds
+
+    console.log(`[admin/cron/podium-dry-run] dry run trigget av ${user.email}${isMockQuery ? ' (mock-data)' : ''}`)
     try {
-        const resultat = await kjørPodiumDryRun(client, modell)
+        const mockOpts = isMockQuery
+            ? {
+                  mockWinner: typeof req.query.mockWinner === 'string' ? req.query.mockWinner : undefined,
+                  mockTopscorerIds:
+                      typeof req.query.mockTopscorerIds === 'string'
+                          ? req.query.mockTopscorerIds
+                                .split(',')
+                                .map((id) => parseInt(id, 10))
+                                .filter((id) => !isNaN(id))
+                          : undefined,
+              }
+            : undefined
+
+        const resultat = await kjørPodiumDryRun(client, modell, mockOpts)
         res.status(200).json(resultat)
     } catch (e) {
         const melding = e instanceof Error ? e.message : 'intern feil'
