@@ -23,10 +23,10 @@ export function filtrerAllBets(allBets: AllBets, userIds: Set<string>): AllBets 
 }
 
 /**
- * Bonuspoeng for winner-/topscorer-tips, basert på en trapp over andelen av poolen
- * som traff. Erstatter den gamle `min(ceil(users·3/ok), 15)`-formelen: «alene» heves
- * og premien faller brattere når flere treffer. Tersklene er andel-baserte og
- * skalerer dermed med pool-størrelsen.
+ * Bonuspoeng for winner-/topscorer-tips, basert på en trapp over andelen av
+ * hovedligaen som traff. Erstatter den gamle `min(ceil(users·3/ok), 15)`-formelen:
+ * «alene» heves og premien faller brattere når flere treffer. Tersklene er
+ * andel-baserte og skalerer dermed med hovedligaens størrelse.
  */
 export function regnUtBonuspoeng(antallOk: number, antallUsers: number): number {
     if (antallOk === 0 || antallUsers === 0) {
@@ -96,6 +96,13 @@ export function calculateAllBetsExtended(allBets: AllBets): AllBetsExtended {
             }
         }
     })
+    // Vinner-/toppscorerbonusens raritet regnes alltid mot hovedligaen (Æresligaen),
+    // aldri mot en (evt. bredere) visningspopulasjon. `allBets.users` kan her være
+    // hovedligaen pluss ekstra medlemmer — en privat ligas egne medlemmer, eller
+    // en enkeltbruker lagt til for at ikke-hovedliga-brukere skal få se sin egen
+    // profil/kamp. Uten dette filteret ville slike ekstra brukere vannet ut andelen
+    // som traff, og bonusen ville blitt feil for ALLE — se hovedligaPopulasjon.test.ts.
+    const hovedligaBrukere = allBets.users.filter((u) => u.i_hovedliga !== false)
     // Vinner-treff: brukerens winner må matche turneringens winner. Fasiten er tom
     // («») til VM er avgjort — da skal ingen få poeng. Uten denne vakten ville alle
     // ukoblede brukere (u.winner == «» eller null == «») matchet den tomme fasiten.
@@ -103,8 +110,8 @@ export function calculateAllBetsExtended(allBets: AllBets): AllBetsExtended {
         return winner !== '' && userWinner === winner
     }
     const winnerPointsFun = () => {
-        const antallOk = allBets.users.filter((u) => riktigWinner(u.winner)).length
-        return regnUtBonuspoeng(antallOk, allBets.users.length)
+        const antallOk = hovedligaBrukere.filter((u) => riktigWinner(u.winner)).length
+        return regnUtBonuspoeng(antallOk, hovedligaBrukere.length)
     }
     const poengPerVinner = winnerPointsFun()
     // Strukturert toppscorer-treff: brukerens topscorer_player_id må peke på en av
@@ -114,8 +121,8 @@ export function calculateAllBetsExtended(allBets: AllBets): AllBetsExtended {
         return playerId != null && topscorerPlayerIds.includes(playerId)
     }
     const topscorerPointsFun = () => {
-        const antallOk = allBets.users.filter((u) => riktigTopscorer(u.topscorer_player_id)).length
-        return regnUtBonuspoeng(antallOk, allBets.users.length)
+        const antallOk = hovedligaBrukere.filter((u) => riktigTopscorer(u.topscorer_player_id)).length
+        return regnUtBonuspoeng(antallOk, hovedligaBrukere.length)
     }
     const poengPerTopscorer = topscorerPointsFun()
     return {

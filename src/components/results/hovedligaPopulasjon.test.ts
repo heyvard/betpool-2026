@@ -74,30 +74,38 @@ describe('Opt-ut fra hovedligaen påvirker poengberegningen', () => {
     })
 })
 
-describe('Vinnerbonus-nevneren er hovedliga-populasjonen', () => {
+describe('Vinnerbonus-nevneren er alltid hovedligaen, uansett hva allBets.users ellers inneholder', () => {
     // VM 2026-caset: 49 hovedliga-medlemmer der 10 tippet Spania, pluss 4 brukere
-    // utenfor hovedligaen. 10/49 = 20,4 % → 5 poeng. Uten filteret ville nevneren
-    // vært 53 (18,9 % — under 20 %-terskelen) og bonusen feilaktig blitt 8.
-    const hovedligaBrukere = [...Array(49)].map((_, i) => bruker(`h${i}`, true, i < 10 ? 'ESP' : 'FRA'))
-    const utenfor = [...Array(4)].map((_, i) => bruker(`x${i}`, false))
+    // utenfor hovedligaen (typisk en privat ligas egne medlemmer, eller en enkelt
+    // opt-ut-bruker lagt til på profil-/kampsiden slik at de kan se sine egne tips).
+    // 10/49 = 20,4 % → 5 poeng. Regnes nevneren mot alle 53 blir det 18,9 % → 8.
+    const hovedligaMedlemmer = [...Array(49)].map((_, i) => bruker(`h${i}`, true, i < 10 ? 'ESP' : 'FRA'))
+    const utenfor = [...Array(4)].map((_, i) => bruker(`x${i}`, false, 'ESP'))
     const raw: AllBets = {
-        users: [...hovedligaBrukere, ...utenfor],
+        users: [...hovedligaMedlemmer, ...utenfor],
         bets: [],
         tournamentResult: { winnerTeam: 'ESP', topscorerPlayerIds: [] },
     }
-    const hovedligaIds = new Set(raw.users.filter((u) => u.i_hovedliga !== false).map((u) => u.id))
 
-    it('10 riktige av 49 i hovedligaen gir 5 poeng', () => {
-        const ext = calculateAllBetsExtended(filtrerAllBets(raw, hovedligaIds))
-        expect(ext.users).toHaveLength(49)
+    it('calculateAllBetsExtended filtrerer selv til hovedligaen — også når callerens populasjon er bredere', () => {
+        // Kalles her UFILTRERT, akkurat som en privat liga eller en enkeltbrukers
+        // profilside gjør (populasjon = hovedliga + ekstra medlemmer). Funksjonen
+        // skal selv se bort fra ekstra-medlemmene når bonus-nevneren regnes ut.
+        const ext = calculateAllBetsExtended(raw)
+        expect(ext.users).toHaveLength(53) // alle vises — filtrering gjelder kun nevneren
         expect(ext.users.find((u) => u.id === 'h0')!.winnerPoints).toEqual(5)
         expect(ext.users.find((u) => u.id === 'h10')!.winnerPoints).toEqual(0)
+        // Ekstra-medlemmer som traff får samme (hovedliga-riktige) utbetaling —
+        // bare selve nevneren er hovedliga-scoped, ikke hvem som kan vinne bonusen.
+        expect(ext.users.find((u) => u.id === 'x0')!.winnerPoints).toEqual(5)
     })
 
-    it('uten populasjonsfilteret ville opt-ut-brukerne blåst opp nevneren til 8 poeng', () => {
-        // Dokumenterer hvorfor alle beregningsflater MÅ filtrere før
-        // calculateAllBetsExtended (jf. feilen i admin/feed-export).
+    it('gir identisk resultat om calleren forhåndsfiltrerer med filtrerAllBets eller ikke', () => {
+        const hovedligaIds = new Set(raw.users.filter((u) => u.i_hovedliga !== false).map((u) => u.id))
+        const forhåndsfiltrert = calculateAllBetsExtended(filtrerAllBets(raw, hovedligaIds))
         const ufiltrert = calculateAllBetsExtended(raw)
-        expect(ufiltrert.users.find((u) => u.id === 'h0')!.winnerPoints).toEqual(8)
+        expect(forhåndsfiltrert.users.find((u) => u.id === 'h0')!.winnerPoints).toEqual(
+            ufiltrert.users.find((u) => u.id === 'h0')!.winnerPoints,
+        )
     })
 })
