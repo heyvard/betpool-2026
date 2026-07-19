@@ -34,6 +34,8 @@ const no = {
         spillere: 'Spillere',
         toppscorerFiks: 'Fiks toppscorer',
         vinnerToppscorer: 'Sett vinner/toppscorer',
+        podiumForhandsvisning: 'Forhåndsvis pallen',
+        podiumPost: 'Post pallen',
         manglendeTips: 'Manglende tips',
         standingsDebug: 'Standings-debug',
         kampApiData: 'Kamp-API-data',
