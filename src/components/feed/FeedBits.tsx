@@ -1,5 +1,5 @@
 import React from 'react'
-import { Repeat2, Sunrise } from 'lucide-react'
+import { Repeat2, Sunrise, Trophy } from 'lucide-react'
 import { hentFlag } from '../../utils/lag'
 
 // Avsender-ikon for kamp-poster: squircle delt i to, hjemmeflagg over borteflagg.
@@ -71,6 +71,25 @@ export function BytteAvsenderIkon({ size = 34 }: { size?: number }) {
             aria-hidden
         >
             <Repeat2 size={Math.round(size * 0.5)} strokeWidth={2} />
+        </div>
+    )
+}
+
+// Avsender-ikon for pallen-posten: royal-gradient squircle med trofé-glyf —
+// markerer at dette er turneringens avsluttende, feirende post.
+export function PodiumAvsenderIkon({ size = 34 }: { size?: number }) {
+    return (
+        <div
+            className="flex shrink-0 items-center justify-center text-white"
+            style={{
+                width: size,
+                height: size,
+                borderRadius: '30%',
+                background: 'linear-gradient(150deg,#3b5bdb,#1e40af)',
+            }}
+            aria-hidden
+        >
+            <Trophy size={Math.round(size * 0.5)} strokeWidth={2} />
         </div>
     )
 }

@@ -59,6 +59,10 @@ export async function startTestStack(): Promise<TestStack> {
         POSTGRES_URL_NON_POOLING: dbUrl,
         NEXT_PUBLIC_TEST_AUTH: 'true',
         NEXT_PUBLIC_MOCK: 'false',
+        // Mocker Anthropic-kallet i AI-morgenrapporten/pallen (server/feed/podiumAi.ts,
+        // morgenrapportAi.ts) med deterministisk innhold — ingen API-nøkkel eller
+        // nettverkstilgang nødvendig i testene.
+        ANTHROPIC_MOCK: process.env.ANTHROPIC_MOCK ?? 'true',
         NEXT_PUBLIC_FIREBASE_API_KEY: process.env.NEXT_PUBLIC_FIREBASE_API_KEY ?? 'test-fake-api-key',
         NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN ?? 'test.firebaseapp.com',
         NEXT_PUBLIC_FIREBASE_PROJECT_ID: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID ?? 'test-project',

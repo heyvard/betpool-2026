@@ -19,7 +19,7 @@ export interface FeedKommentar {
 
 export interface FeedPost {
     id: string
-    kind: 'kamp' | 'morgenrapport' | 'bytte'
+    kind: 'kamp' | 'morgenrapport' | 'bytte' | 'podium'
     scenario: string
     accent: 'win' | 'live' | 'gold' | 'stone' | 'royal'
     tittel: string

@@ -11,7 +11,14 @@ import { EMOJI_KATEGORIER, STANDARD_EMOJI } from '../../utils/feedEmoji'
 import { useLanguage } from '../../i18n/LanguageContext'
 import { hentFlag, hentNavn } from '../../utils/lag'
 import { ACCENT, relativKort, tidEtikett, visningsnavn } from './feedUtils'
-import { BytteAvsenderIkon, FeedAvatar, Flagg, KampAvsenderIkon, MorgenrapportIkon } from './FeedBits'
+import {
+    BytteAvsenderIkon,
+    FeedAvatar,
+    Flagg,
+    KampAvsenderIkon,
+    MorgenrapportIkon,
+    PodiumAvsenderIkon,
+} from './FeedBits'
 
 interface Props {
     post: FeedPost
@@ -429,6 +436,112 @@ function AiSeksjoner({ data }: { data: Record<string, unknown> }) {
     )
 }
 
+// Pallen-blokken (kind='podium'): en klassisk podium-oppstilling (sølv—gull—bronse)
+// med avatar/navn/poeng per plassering, etterfulgt av Claudes reise-oppsummering
+// for hver av de tre, i medalje-fargede kort.
+const PODIUM_FARGE: Record<number, string> = { 1: '#f59e0b', 2: '#a8a29e', 3: '#b45309' }
+const PODIUM_HØYDE: Record<number, number> = { 1: 80, 2: 58, 3: 46 }
+const PODIUM_REKKEFØLGE = [2, 1, 3]
+
+function PodiumBlokk({ data }: { data: Record<string, unknown> }) {
+    const topp3 =
+        (data.topp3 as { plass: number; userId: string; navn: string; picture: string | null; poeng: number }[]) ?? []
+    const spillere = (data.spillere as { userId: string; emoji: string; tekst: string }[]) ?? []
+    const vinner = data.vinner as { tla: string; navn: string; flagg: string } | null
+    const toppscorere = (data.toppscorere as string[]) ?? []
+
+    return (
+        <div style={{ marginTop: 12 }}>
+            {(vinner || toppscorere.length > 0) && (
+                <div
+                    className="flex flex-wrap items-center gap-x-3 gap-y-1"
+                    style={{ marginBottom: 12, fontSize: 12.5, color: '#57534e' }}
+                >
+                    {vinner && (
+                        <span>
+                            <span className="font-bold">Vinner:</span> {vinner.flagg} {vinner.navn}
+                        </span>
+                    )}
+                    {toppscorere.length > 0 && (
+                        <span>
+                            <span className="font-bold">Toppscorer:</span> {toppscorere.join(', ')}
+                        </span>
+                    )}
+                </div>
+            )}
+
+            <div className="flex items-end justify-center gap-2">
+                {PODIUM_REKKEFØLGE.map((plass) => {
+                    const s = topp3.find((t) => t.plass === plass)
+                    if (!s) return null
+                    return (
+                        <div key={plass} className="flex flex-col items-center" style={{ width: 88 }}>
+                            <FeedAvatar src={s.picture} navn={s.navn} size={plass === 1 ? 46 : 38} />
+                            <span
+                                className="mt-1 truncate text-center font-bold"
+                                style={{ fontSize: 12.5, color: '#1c1917', maxWidth: 86 }}
+                            >
+                                {visningsnavn(s.navn)}
+                            </span>
+                            <span className="bp-tabular" style={{ fontSize: 11, color: '#78716c' }}>
+                                {s.poeng} p
+                            </span>
+                            <div
+                                className="mt-1.5 flex w-full items-center justify-center font-black text-white"
+                                style={{
+                                    height: PODIUM_HØYDE[plass],
+                                    background: PODIUM_FARGE[plass],
+                                    borderRadius: '8px 8px 0 0',
+                                    fontSize: 18,
+                                }}
+                            >
+                                {plass}
+                            </div>
+                        </div>
+                    )
+                })}
+            </div>
+
+            <div className="flex flex-col gap-2" style={{ marginTop: 14 }}>
+                {[1, 2, 3].map((plass) => {
+                    const s = topp3.find((t) => t.plass === plass)
+                    const tekst = spillere.find((sp) => sp.userId === s?.userId)
+                    if (!s || !tekst) return null
+                    return (
+                        <div
+                            key={plass}
+                            style={{
+                                padding: '10px 12px',
+                                borderRadius: 12,
+                                background: '#fafaf9',
+                                boxShadow: `inset 0 0 0 1px ${PODIUM_FARGE[plass]}55`,
+                            }}
+                        >
+                            <div className="flex items-center gap-2">
+                                <span style={{ fontSize: 15 }}>{tekst.emoji}</span>
+                                <span className="bp-overline" style={{ color: '#57534e' }}>
+                                    {plass}. plass · {visningsnavn(s.navn)}
+                                </span>
+                            </div>
+                            <p
+                                style={{
+                                    fontSize: 13.5,
+                                    color: '#44403c',
+                                    lineHeight: 1.5,
+                                    marginTop: 5,
+                                    whiteSpace: 'pre-line',
+                                }}
+                            >
+                                {tekst.tekst}
+                            </p>
+                        </div>
+                    )
+                })}
+            </div>
+        </div>
+    )
+}
+
 function KommentarRad({
     post,
     kommentar,
@@ -543,6 +656,8 @@ export function FeedKort({ post, meNavn, mePicture, erSuperadmin }: Props) {
                         />
                     ) : post.kind === 'bytte' ? (
                         <BytteAvsenderIkon size={34} />
+                    ) : post.kind === 'podium' ? (
+                        <PodiumAvsenderIkon size={34} />
                     ) : (
                         <MorgenrapportIkon size={34} farger={farger} />
                     )}
@@ -555,7 +670,9 @@ export function FeedKort({ post, meNavn, mePicture, erSuperadmin }: Props) {
                                   )}`
                                 : post.kind === 'bytte'
                                   ? t.feed.avsenderBytte
-                                  : t.feed.avsenderMorgenrapport}
+                                  : post.kind === 'podium'
+                                    ? t.feed.avsenderPodium
+                                    : t.feed.avsenderMorgenrapport}
                         </div>
                         <div style={{ fontSize: 11, fontWeight: 600, color: farger.acctx }}>
                             {post.kind === 'kamp' && post.data.rundeTekst ? `${String(post.data.rundeTekst)} · ` : ''}
@@ -597,6 +714,18 @@ export function FeedKort({ post, meNavn, mePicture, erSuperadmin }: Props) {
                 {/* Strukturert tillegg */}
                 {post.kind === 'kamp' && <ScoreBlokk data={post.data} matchNum={post.match_num} />}
                 {post.kind === 'bytte' && <SwapBlokk data={post.data} />}
+                {post.kind === 'podium' && (
+                    <>
+                        <PodiumBlokk data={post.data} />
+                        <div
+                            className="mt-2 flex items-center gap-1"
+                            style={{ fontSize: 11, color: '#a8a29e', fontWeight: 600 }}
+                        >
+                            <span>🤖</span>
+                            <span>AI-generert</span>
+                        </div>
+                    </>
+                )}
                 {(post.scenario === 'lederbytte' ||
                     post.scenario === 'leder_holder' ||
                     post.scenario === 'delt_ledelse') && <MiniTopp3 data={post.data} />}
