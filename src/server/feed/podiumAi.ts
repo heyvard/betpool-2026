@@ -44,17 +44,22 @@ export interface PodiumAiKontekst {
 // Bygger konteksten Claude trenger: dagens (endelige) hovedliga-tabell, topp-3
 // sin reise gjennom turneringen (treffsikkerhet, joker, beste tips, Norge-
 // poeng), og den faktiske fasiten (vinner-lag + toppscorer-navn). Ren lesing.
-export async function byggPodiumKontekst(client: PoolClient): Promise<PodiumAiKontekst> {
+export async function byggPodiumKontekst(
+    client: PoolClient,
+    opts?: { mockWinner?: string; mockTopscorerIds?: number[] },
+): Promise<PodiumAiKontekst> {
     const { allBets, extended, leaderboard } = await hentHovedligaData(client)
     const tabell = sorterTabell(leaderboard)
     const plassMap = beregnPlasseringer(tabell)
     const topp3Rader = tabell.slice(0, 3)
 
     const fasit = allBets.tournamentResult ?? { winnerTeam: '', topscorerPlayerIds: [] }
-    const toppscorere = fasit.topscorerPlayerIds.length
+    const winnerTeam = opts?.mockWinner ?? fasit.winnerTeam
+    const topscorerIds = opts?.mockTopscorerIds ?? fasit.topscorerPlayerIds
+    const toppscorere = topscorerIds.length
         ? (
               await client.query<{ name: string }>(`SELECT name FROM players WHERE id = ANY($1) ORDER BY name`, [
-                  fasit.topscorerPlayerIds,
+                  topscorerIds,
               ])
           ).rows.map((r) => r.name)
         : []
@@ -99,9 +104,7 @@ export async function byggPodiumKontekst(client: PoolClient): Promise<PodiumAiKo
     })
 
     return {
-        vinner: fasit.winnerTeam
-            ? { tla: fasit.winnerTeam, navn: hentNorsk(fasit.winnerTeam), flagg: hentFlag(fasit.winnerTeam) }
-            : null,
+        vinner: winnerTeam ? { tla: winnerTeam, navn: hentNorsk(winnerTeam), flagg: hentFlag(winnerTeam) } : null,
         toppscorere,
         topp3,
     }
@@ -291,23 +294,27 @@ export interface PodiumDryRun {
     modell: AiModellId
     rapport: AiPodium | null
     grunn?: 'fasit_ikke_satt'
+    brukerMock?: boolean
     usage?: { input_tokens: number; output_tokens: number }
     kostnad?: AiMorgenrapportKostnad
 }
 
 // Ren forhåndsvisning: bygger konteksten og lar Claude skrive teksten, men
 // skriver ingenting til DB. Superadmin bruker denne til å se hvordan posten
-// blir før den faktisk postes.
+// blir før den faktisk postes. Kan bruke mock-data hvis vinner/toppscorer ikke
+// er satt.
 export async function kjørPodiumDryRun(
     client: PoolClient,
     modell: AiModellId = STANDARD_AI_MODELL,
+    opts?: { mockWinner?: string; mockTopscorerIds?: number[] },
 ): Promise<PodiumDryRun> {
-    const kontekst = await byggPodiumKontekst(client)
+    const brukerMock = !!(opts?.mockWinner || opts?.mockTopscorerIds)
+    const kontekst = await byggPodiumKontekst(client, opts)
     if (!kontekst.vinner) {
         return { kontekst, modell, rapport: null, grunn: 'fasit_ikke_satt' }
     }
     const { rapport, usage, kostnad } = await genererAiPodium(kontekst, modell)
-    return { kontekst, modell, rapport, usage, kostnad }
+    return { kontekst, modell, rapport, usage, kostnad, brukerMock }
 }
 
 const PODIUM_ACCENT = 'royal'

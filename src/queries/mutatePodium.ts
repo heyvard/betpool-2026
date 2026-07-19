@@ -48,6 +48,7 @@ export interface PodiumDryRunResultat {
     modell: AiModellId
     rapport: AiPodium | null
     grunn?: 'fasit_ikke_satt'
+    brukerMock?: boolean
     usage?: { input_tokens: number; output_tokens: number }
     kostnad?: AiMorgenrapportKostnad
 }
@@ -55,11 +56,25 @@ export interface PodiumDryRunResultat {
 export function UsePodiumDryRun() {
     const authedFetch = useAuthedFetch()
     return useMutation({
-        mutationFn: async ({ modell }: { modell: AiModellId }) => {
-            const response = await authedFetch(
-                `/api/v1/admin/cron/podium-dry-run?modell=${encodeURIComponent(modell)}`,
-                { method: 'POST' },
-            )
+        mutationFn: async ({
+            modell,
+            mockWinner,
+            mockTopscorerIds,
+        }: {
+            modell: AiModellId
+            mockWinner?: string
+            mockTopscorerIds?: number[]
+        }) => {
+            const params = new URLSearchParams()
+            params.append('modell', modell)
+            if (mockWinner) params.append('mockWinner', mockWinner)
+            if (mockTopscorerIds && mockTopscorerIds.length > 0) {
+                params.append('mockTopscorerIds', mockTopscorerIds.join(','))
+            }
+
+            const response = await authedFetch(`/api/v1/admin/cron/podium-dry-run?${params.toString()}`, {
+                method: 'POST',
+            })
             if (!response.ok) {
                 const feil = (await response.json().catch(() => null)) as { error?: string } | null
                 throw new Error(feil?.error ?? `Serverfeil: ${response.status}`)
