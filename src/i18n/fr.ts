@@ -36,8 +36,6 @@ const fr: Translations = {
         spillere: 'Joueurs',
         toppscorerFiks: 'Corriger buteur',
         vinnerToppscorer: 'Définir vainqueur/buteur',
-        podiumForhandsvisning: 'Prévisualiser le podium',
-        podiumPost: 'Publier le podium',
         manglendeTips: 'Pronostics manquants',
         standingsDebug: 'Débogage classement',
         kampApiData: 'Données API match',
