@@ -17,14 +17,33 @@ import { Button } from '@/components/ui/button'
 // (topp-3 i hovedligaen + en AI-skrevet oppsummering av reisen deres) i
 // feeden. Krever at vinneren er lagret over — det ER verifiseringen.
 // Se src/server/feed/podiumAi.ts for kontrakten.
-function PodiumVerifisering({ vinnerSatt }: { vinnerSatt: boolean }) {
+function PodiumVerifisering({
+    vinnerSatt,
+    spillere,
+}: {
+    vinnerSatt: boolean
+    spillere: Array<{ id: number; name: string }>
+}) {
     const [modell, setModell] = useState<AiModellId>('claude-sonnet-4-6')
+    const [mockWinner, setMockWinner] = useState('')
+    const [mockTopscorerIds, setMockTopscorerIds] = useState<number[]>([])
+    const [showMockOptions, setShowMockOptions] = useState(false)
     const dryRun = UsePodiumDryRun()
     const post = UsePodiumPost()
+
+    const kanKjøreDryRun = vinnerSatt || mockWinner
 
     const håndterPost = () => {
         if (!window.confirm('Poste pallen i feeden nå? Dette kan ikke gjøres om.')) return
         post.mutate({ modell })
+    }
+
+    const håndterDryRun = () => {
+        dryRun.mutate({
+            modell,
+            ...(mockWinner && { mockWinner }),
+            ...(mockTopscorerIds.length > 0 && { mockTopscorerIds }),
+        })
     }
 
     const postGrunnTekst: Record<string, string> = {
@@ -56,10 +75,66 @@ function PodiumVerifisering({ vinnerSatt }: { vinnerSatt: boolean }) {
                 </select>
             </div>
 
-            {!vinnerSatt && (
+            {!vinnerSatt && !mockWinner && (
                 <p className="mt-2 rounded-lg bg-amber-50 px-3 py-1.5 text-xs text-amber-700">
-                    Sett og lagre vinneren over først.
+                    Sett og lagre vinneren over først, eller bruk mock-data for forhåndsvisning.
                 </p>
+            )}
+
+            {!vinnerSatt && (
+                <button
+                    type="button"
+                    onClick={() => setShowMockOptions(!showMockOptions)}
+                    className="mt-2 text-xs text-stone-600 underline hover:text-stone-900"
+                >
+                    {showMockOptions ? '▼ Skjul mock-data' : '▶ Vis mock-data for testing'}
+                </button>
+            )}
+
+            {showMockOptions && !vinnerSatt && (
+                <div className="mt-2 space-y-2 rounded-lg bg-stone-50 p-3 ring-1 ring-stone-200">
+                    <div>
+                        <label className="block text-xs font-medium text-stone-700">Mock-vinner</label>
+                        <select
+                            value={mockWinner}
+                            onChange={(e) => setMockWinner(e.target.value)}
+                            className="mt-1 w-full rounded border border-stone-200 bg-white px-2 py-1.5 text-xs text-stone-900"
+                        >
+                            <option value="">– Ingen –</option>
+                            {alleLagSortert.map((l) => (
+                                <option key={l.tla} value={l.tla}>
+                                    {l.flagg} {l.norsk}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+
+                    <div>
+                        <label className="block text-xs font-medium text-stone-700">Mock-toppscorer(e)</label>
+                        <div className="mt-1 max-h-24 overflow-y-auto rounded border border-stone-200 bg-white">
+                            {spillere.map((spiller) => (
+                                <label
+                                    key={spiller.id}
+                                    className="flex items-center gap-2 border-b border-stone-100 px-2 py-1.5 text-xs hover:bg-stone-50"
+                                >
+                                    <input
+                                        type="checkbox"
+                                        checked={mockTopscorerIds.includes(spiller.id)}
+                                        onChange={(e) => {
+                                            if (e.target.checked) {
+                                                setMockTopscorerIds((prev) => [...prev, spiller.id])
+                                            } else {
+                                                setMockTopscorerIds((prev) => prev.filter((id) => id !== spiller.id))
+                                            }
+                                        }}
+                                        className="h-3 w-3"
+                                    />
+                                    <span className="text-stone-700">{spiller.name}</span>
+                                </label>
+                            ))}
+                        </div>
+                    </div>
+                </div>
             )}
 
             <div className="mt-3 flex gap-2">
@@ -68,8 +143,8 @@ function PodiumVerifisering({ vinnerSatt }: { vinnerSatt: boolean }) {
                     size="small"
                     loading={dryRun.isPending}
                     icon={<Eye className="h-4 w-4" />}
-                    disabled={!vinnerSatt}
-                    onClick={() => dryRun.mutate({ modell })}
+                    disabled={!kanKjøreDryRun}
+                    onClick={håndterDryRun}
                 >
                     Forhåndsvis
                 </Button>
@@ -269,7 +344,7 @@ const VinnerToppscorer: NextPage = () => {
                 {feil && <span className="text-xs text-red-600">{feil}</span>}
             </div>
 
-            <PodiumVerifisering vinnerSatt={!erDirty && lagretWinner !== ''} />
+            <PodiumVerifisering vinnerSatt={!erDirty && lagretWinner !== ''} spillere={spillere} />
         </div>
     )
 }
