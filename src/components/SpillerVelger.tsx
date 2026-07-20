@@ -27,9 +27,9 @@ export function rangerSpillere(spillere: Spiller[], søk: string): Spiller[] {
     return treff.map((x) => x.s)
 }
 
-// Søkbar spillervelger (combobox) mot players-tabellen. Gjenbrukes i
-// /toppscorer-fiks (admin kobler fritekst → spiller) og på hjemmesiden
-// (brukeren tipper toppscorer strukturert).
+// Søkbar spillervelger (combobox) mot players-tabellen. Gjenbrukes på
+// hjemmesiden (brukeren tipper toppscorer strukturert) og i admin-verktøy
+// som /manglende-tips.
 export function SpillerVelger({
     valgtId,
     fritekst,

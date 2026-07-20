@@ -8,8 +8,6 @@ import { ManglendeTipsBruker } from '../../../../types/types'
 // selv (fristen er ute). Setter alltid samtidig winner_endret/topscorer_endret
 // = true, slik at kategorien telles med halvt poeng i scoringen — akkurat som
 // når en bruker selv bytter tips i endrevinduet (calculateAllBetsExtended.ts).
-// Kun for brukere som mangler verdien; bruk /toppscorer-fiks for å korrigere en
-// allerede satt toppscorer-kobling.
 const handler = async function handler(opts: ApiHandlerOpts): Promise<void> {
     const { user, res, req, client } = opts
 

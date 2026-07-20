@@ -11,7 +11,7 @@ export interface OtherUser {
     winner?: string
     topscorer?: string
     // Strukturert toppscorer-tipp (FK → players). Brukes til poeng og visning;
-    // fritekst-feltet `topscorer` beholdes kun som historikk/kilde for /toppscorer-fiks.
+    // fritekst-feltet `topscorer` beholdes kun som historikk.
     topscorer_player_id?: number | null
     topscorer_player_name?: string | null
     topscorer_forrige_player_name?: string | null
