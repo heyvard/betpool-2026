@@ -21,7 +21,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     try {
         client = await getPool().connect()
         const { rows } = await client.query<{ betalte: number }>(
-            `SELECT COUNT(*)::int AS betalte FROM users WHERE paid = true AND i_hovedliga = true AND active = true`,
+            `SELECT COUNT(*)::int AS betalte FROM users WHERE paid = true AND active = true`,
         )
         const betalte = Number(rows[0]?.betalte ?? 0)
         res.status(200).json({ betalte, pott: betalte * HOVEDLIGA_PRIS })

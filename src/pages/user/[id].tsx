@@ -78,12 +78,7 @@ const Home: NextPage = () => {
 
     if (!data || isLoading) return <Spinner />
 
-    // Poeng må regnes ut over hovedliga-populasjonen (samme som ledertavla),
-    // ikke hele brukermassen. Raritets-vektingen i regnUtScoreForKamp avhenger
-    // av hvor stor andel av populasjonen som traff, så en global beregning gir
-    // andre poeng enn ledertavla viser. Den betraktede brukeren legges alltid
-    // til i populasjonen, slik at også ikke-hovedliga-brukere får poeng.
-    const populasjon = new Set(data.raw.users.filter((u) => u.i_hovedliga !== false).map((u) => u.id))
+    const populasjon = new Set(data.raw.users.map((u) => u.id))
     populasjon.add(String(id))
     const { users, bets } = calculateAllBetsExtended(filtrerAllBets(data.raw, populasjon))
 

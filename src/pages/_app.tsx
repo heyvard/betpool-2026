@@ -65,9 +65,7 @@ function Layout({ children }: { children: React.ReactNode }) {
         const token = lesPendingInvite()
         if (!token) return
         fjernPendingInvite()
-        // `nybruker=1` markerer at brukeren kom hit rett etter signup via en
-        // lagret invitasjon — da tilbys valget om å bli med i hovedligaen.
-        router.replace('/bli-med/' + token + '?nybruker=1')
+        router.replace('/bli-med/' + token)
     }, [user, me, router])
 
     return (
@@ -261,12 +259,6 @@ function Layout({ children }: { children: React.ReactNode }) {
                                                             onSelect={() => router.push('/admin-ligaer')}
                                                         >
                                                             {t.nav.adminLigaer}
-                                                        </DropdownMenu.Item>
-                                                        <DropdownMenu.Item
-                                                            className="px-4 py-2 cursor-pointer hover:bg-stone-50 outline-hidden text-stone-700"
-                                                            onSelect={() => router.push('/utenfor-hovedliga')}
-                                                        >
-                                                            {t.nav.utenforHovedliga}
                                                         </DropdownMenu.Item>
                                                         <DropdownMenu.Item
                                                             className="px-4 py-2 cursor-pointer hover:bg-stone-50 outline-hidden text-stone-700"

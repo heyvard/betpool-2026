@@ -41,11 +41,7 @@ const handler = async function handler(opts: ApiHandlerOpts): Promise<void> {
         tournamentResult: alleBets.tournamentResult,
     } as unknown as AllBets
 
-    // Æresligaens populasjon — kun hovedliga-medlemmer. byggAlleBets returnerer
-    // alle aktive brukere, og uten dette filteret teller opt-ut-brukere med i
-    // nevneren for vinner-/toppscorerbonus og i kamp-raritetene. Eksporten skal
-    // speile appens ledertavle (samme filter som leaderboard.tsx/hovedligaData).
-    const hovedligaIds = new Set(allBets.users.filter((u) => u.i_hovedliga !== false).map((u) => u.id))
+    const hovedligaIds = new Set(allBets.users.map((u) => u.id))
     const extended = calculateAllBetsExtended(filtrerAllBets(allBets, hovedligaIds))
     const leaderboard = calculateLeaderboard(extended.bets, extended.users)
 

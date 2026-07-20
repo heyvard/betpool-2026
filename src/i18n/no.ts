@@ -39,7 +39,6 @@ const no = {
         kampApiData: 'Kamp-API-data',
         debugData: 'Debug-data',
         adminLigaer: 'Private ligaer',
-        utenforHovedliga: 'Utenfor hovedligaen',
         innbetaling: 'Innbetalinger',
         innstillinger: 'Innstillinger',
         tilbakemelding: 'Gi tilbakemelding',
@@ -541,13 +540,7 @@ const no = {
     },
     hovedliga: {
         overskrift: 'Hovedligaen',
-        bliMedSporsmal: 'Bli med i hovedligaen også?',
-        bliMedForklaring:
-            'Hovedligaen er den store potten alle spiller om. Velger du den bort, teller tipsene dine kun i private ligaer. Du kan endre dette senere under Mine ligaer.',
-        bryter: 'Med i hovedligaen',
         pottOgPris: 'Pott {{pott}} kr · {{pris}} kr å delta',
-        medInfo: 'Tipsene dine teller i hovedligaen.',
-        ikkeMedInfo: 'Tipsene dine teller kun i de private ligaene dine.',
     },
     premieInputs: {
         label: 'Premiefordeling (%)',

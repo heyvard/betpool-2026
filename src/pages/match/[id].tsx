@@ -769,15 +769,9 @@ const MatchPage: NextPage = () => {
     const router = useRouter()
     const { id } = router.query
 
-    // Matchsiden viser hovedligaen (Æresligaen): tips fra brukere som har valgt
-    // bort hovedligaen (i_hovedliga === false) skal verken telle eller vises. Vi
-    // regner derfor fordeling/raritet/poeng på nytt for hovedliga-populasjonen —
-    // på samme måte som ledertavla — slik at prosenter og poeng kun reflekterer
-    // hovedligaen. Den innloggede brukeren tas alltid med, så man ser sitt eget
-    // tipp selv om man kun er med i en privat liga.
     const hovedliga = useMemo(() => {
         if (!data || !me) return null
-        const populasjon = new Set(data.raw.users.filter((u) => u.i_hovedliga !== false).map((u) => u.id))
+        const populasjon = new Set(data.raw.users.map((u) => u.id))
         populasjon.add(me.id)
         return calculateAllBetsExtended(filtrerAllBets(data.raw, populasjon))
     }, [data, me])

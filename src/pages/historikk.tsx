@@ -51,7 +51,7 @@ const Historikk: NextPage = () => {
     const historikk = useMemo(() => {
         if (!data || !matches) return null
         const raw = data.raw
-        const hovedligaIds = new Set(raw.users.filter((u) => u.i_hovedliga !== false).map((u) => u.id))
+        const hovedligaIds = new Set(raw.users.map((u) => u.id))
 
         let populasjon: Set<string>
         let deltakere: HistorikkDeltaker[]
@@ -64,7 +64,7 @@ const Historikk: NextPage = () => {
                 .map((m) => ({ userid: m.user_id, navn: m.name }))
         } else {
             populasjon = new Set(hovedligaIds)
-            deltakere = raw.users.filter((u) => u.i_hovedliga !== false).map((u) => ({ userid: u.id, navn: u.name }))
+            deltakere = raw.users.map((u) => ({ userid: u.id, navn: u.name }))
         }
 
         const populasjonsBets = filtrerAllBets(raw, populasjon)

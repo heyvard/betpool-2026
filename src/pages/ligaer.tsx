@@ -13,14 +13,12 @@ import { UseInvitableUsers } from '../queries/useInvitableUsers'
 import { InvitableUser, LeagueSummary } from '../types/league'
 import { LinkPanel } from '@/components/ui/link-panel'
 import { Button } from '@/components/ui/button'
-import { Switch } from '@/components/ui/switch'
 import { TextField } from '@/components/ui/text-field'
 import { PremieInputs, ProsentState } from '../components/PremieInputs'
 import { cn } from '@/lib/utils'
 import { useLanguage } from '../i18n/LanguageContext'
 import { tx } from '../i18n/interpolate'
 import { UseHovedliga } from '../queries/useHovedliga'
-import { UseMutateHovedliga } from '../queries/mutateHovedliga'
 import { useAuthedFetch } from '../auth/authedFetch'
 
 const Ligaer: NextPage = () => {
@@ -40,7 +38,7 @@ const Ligaer: NextPage = () => {
             <h1 className="text-2xl font-bold text-stone-900">{t.ligaer.tittel}</h1>
             <p className="-mt-4 text-sm text-stone-500">{t.ligaer.beskrivelse}</p>
 
-            <HovedligaKort iHovedliga={megselv.i_hovedliga} />
+            <HovedligaKort />
 
             {invitasjoner.length > 0 && (
                 <section className="space-y-2">
@@ -83,31 +81,20 @@ const Ligaer: NextPage = () => {
 
 export default Ligaer
 
-function HovedligaKort({ iHovedliga }: { iHovedliga: boolean }) {
+function HovedligaKort() {
     const { t } = useLanguage()
     const hovedliga = UseHovedliga()
-    const settHovedliga = UseMutateHovedliga()
+
+    if (!hovedliga.data) {
+        return null
+    }
 
     return (
-        <div className="bp-card space-y-3">
-            <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
-                    <p className="bp-overline">{t.hovedliga.overskrift}</p>
-                    <p className="mt-1 text-sm font-medium text-stone-900">{t.hovedliga.bryter}</p>
-                </div>
-                <Switch
-                    checked={iHovedliga}
-                    onCheckedChange={(v) => settHovedliga.mutate(v)}
-                    disabled={settHovedliga.isPending}
-                    aria-label={t.hovedliga.bryter}
-                />
-            </div>
-            {hovedliga.data && (
-                <p className="text-sm font-medium text-stone-700">
-                    {tx(t.hovedliga.pottOgPris, { pott: hovedliga.data.pott, pris: hovedliga.data.pris })}
-                </p>
-            )}
-            <p className="text-xs text-stone-500">{iHovedliga ? t.hovedliga.medInfo : t.hovedliga.ikkeMedInfo}</p>
+        <div className="bp-card space-y-1">
+            <p className="bp-overline">{t.hovedliga.overskrift}</p>
+            <p className="text-sm font-medium text-stone-700">
+                {tx(t.hovedliga.pottOgPris, { pott: hovedliga.data.pott, pris: hovedliga.data.pris })}
+            </p>
         </div>
     )
 }

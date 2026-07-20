@@ -68,7 +68,7 @@ test('vinner og toppscorer kan settes og lagres i åpen periode', async ({ conte
 })
 
 test('betalingsvarsel vises for ubetalt hovedliga-bruker', async ({ context, page }) => {
-    await seedUser({ firebase_user_id: 'alice', name: 'alice', paid: false, i_hovedliga: true })
+    await seedUser({ firebase_user_id: 'alice', name: 'alice', paid: false })
     await loggInn(context, 'alice', FØR_TURNERING)
 
     await page.goto('/')
@@ -76,7 +76,7 @@ test('betalingsvarsel vises for ubetalt hovedliga-bruker', async ({ context, pag
 })
 
 test('betalingsvarsel skjules når brukeren har betalt', async ({ context, page }) => {
-    await seedUser({ firebase_user_id: 'alice', name: 'alice', paid: true, i_hovedliga: true })
+    await seedUser({ firebase_user_id: 'alice', name: 'alice', paid: true })
     await loggInn(context, 'alice', FØR_TURNERING)
 
     await page.goto('/')

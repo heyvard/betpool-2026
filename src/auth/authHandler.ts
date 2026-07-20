@@ -56,7 +56,6 @@ export function auth(fn: { (_opts: ApiHandlerOpts): Promise<void> }) {
                     topscorer_endret: false,
                     winner_forrige: null,
                     topscorer_forrige: null,
-                    i_hovedliga: true,
                 } as User,
             })
         }

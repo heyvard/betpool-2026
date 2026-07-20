@@ -47,7 +47,7 @@ const StatistikkVerdifulleKamper: NextPage = () => {
     const rader = useMemo<VerdifullKampRad[]>(() => {
         if (!data) return []
         const raw = data.raw
-        const hovedligaIds = new Set(raw.users.filter((u) => u.i_hovedliga !== false).map((u) => u.id))
+        const hovedligaIds = new Set(raw.users.map((u) => u.id))
         const hovedligaExt = calculateAllBetsExtended(filtrerAllBets(raw, hovedligaIds))
         return beregnVerdifulleKamper(hovedligaExt.bets)
     }, [data])

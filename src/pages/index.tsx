@@ -83,7 +83,7 @@ const Home: NextPage = () => {
                 <NedtellingBanner key={k.match_num} kamp={k} />
             ))}
 
-            {!megselv.paid && megselv.i_hovedliga && <InnbetalingsAlert />}
+            {!megselv.paid && <InnbetalingsAlert />}
 
             <NextLink passHref legacyBehavior href="/my-bets">
                 <LinkPanel>
@@ -99,7 +99,7 @@ const Home: NextPage = () => {
                 </LinkPanel>
             </NextLink>
 
-            {megselv.i_hovedliga && <PlasseringKort />}
+            <PlasseringKort />
 
             <NesteKampSeksjon />
 

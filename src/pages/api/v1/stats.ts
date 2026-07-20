@@ -39,16 +39,12 @@ const handler = async function handler(opts: ApiHandlerOpts): Promise<void> {
         topscorer_endret: boolean
     }
 
-    // Kun hovedliga-medlemmer — samme populasjon som bonusen faktisk betales ut
-    // fra (calculateAllBetsExtended). Uten dette filteret ville opt-ut-brukere
-    // telle med i totaltAntall og i antall-feltene under, og «mulig bonus» i
-    // /alle-tips ville vist et annet tall enn det som faktisk utbetales.
     const { rows } = await client.query<Rad>(`
         SELECT COALESCE(NULLIF(u.kallenavn, ''), u.name) AS name, u.winner, p.name AS topscorer_name,
                u.winner_endret, u.topscorer_endret
         FROM users u
         LEFT JOIN players p ON p.id = u.topscorer_player_id
-        WHERE u.active = true AND u.i_hovedliga = true`)
+        WHERE u.active = true`)
 
     // Grupperer på valg → deltakerlisten bak hvert valg. Bevarer
     // innsettingsrekkefølgen (Map); UI sorterer selv på antall.

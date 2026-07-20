@@ -61,7 +61,7 @@ describe('fyrMorgenrapportVedNattslutt', () => {
     it('poster morgenrapporten rett over nattens siste kamppost', async () => {
         await settStatus(BØTTE_2606, 'FINISHED')
 
-        const u1 = await seedUser({ firebase_user_id: 'u1', i_hovedliga: true })
+        const u1 = await seedUser({ firebase_user_id: 'u1' })
         await seedBet({ user_id: u1.id, match_num: SISTE_NATTKAMP, home_score: 3, away_score: 2 })
 
         await withDb(async (c) => {
@@ -109,7 +109,7 @@ describe('fyrMorgenrapportVedNattslutt', () => {
 
     it('er idempotent — andre kjøring poster ikke på nytt', async () => {
         await settStatus(BØTTE_2606, 'FINISHED')
-        const u1 = await seedUser({ firebase_user_id: 'u1', i_hovedliga: true })
+        const u1 = await seedUser({ firebase_user_id: 'u1' })
         await seedBet({ user_id: u1.id, match_num: SISTE_NATTKAMP, home_score: 3, away_score: 2 })
         await withDb(async (c) => {
             await c.query(

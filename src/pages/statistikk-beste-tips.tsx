@@ -67,7 +67,7 @@ const StatistikkBesteTips: NextPage = () => {
     const rader = useMemo<BesteTippRad[]>(() => {
         if (!data) return []
         const raw = data.raw
-        const hovedligaIds = new Set(raw.users.filter((u) => u.i_hovedliga !== false).map((u) => u.id))
+        const hovedligaIds = new Set(raw.users.map((u) => u.id))
         const hovedligaExt = calculateAllBetsExtended(filtrerAllBets(raw, hovedligaIds))
         return beregnBesteTips(hovedligaExt.bets, hovedligaExt.users)
     }, [data])
