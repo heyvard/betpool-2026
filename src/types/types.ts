@@ -109,23 +109,6 @@ export interface GroupStanding {
     table: StandingRow[]
 }
 
-// Én bruker slik /manglende-tips viser dem: vinner- og toppscorer-tips (eller
-// mangel på det), pluss endret-flaggene som styrer halvt poeng i scoringen.
-export interface ManglendeTipsBruker {
-    id: string
-    name: string
-    /** Tre-bokstavskode (tla). Tom streng betyr «ikke tippet». */
-    winner: string
-    winner_endret: boolean
-    /** Strukturert kobling (users.topscorer_player_id) — null betyr «ikke tippet». */
-    topscorer_player_id: number | null
-    topscorer_endret: boolean
-    /** Oppslått spillernavn for den koblede spilleren, hvis satt. */
-    player_name: string | null
-    /** Tre-bokstavskoden til den koblede spillerens landslag, hvis satt. */
-    player_team_tla: string | null
-}
-
 export interface UserForAdmin {
     id: string
     name: string
