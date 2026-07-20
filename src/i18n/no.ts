@@ -33,7 +33,6 @@ const no = {
         cron: 'Cron-jobber',
         spillere: 'Spillere',
         vinnerToppscorer: 'Sett vinner/toppscorer',
-        standingsDebug: 'Standings-debug',
         kampApiData: 'Kamp-API-data',
         debugData: 'Debug-data',
         adminLigaer: 'Private ligaer',
