@@ -195,7 +195,7 @@ const Leaderboard: NextPage = () => {
     const rader = useMemo<LeaderBoard[]>(() => {
         if (!data) return []
         const raw = data.raw
-        const hovedligaIds = new Set(raw.users.filter((u) => u.i_hovedliga !== false).map((u) => u.id))
+        const hovedligaIds = new Set(raw.users.map((u) => u.id))
         const hovedligaExt = calculateAllBetsExtended(filtrerAllBets(raw, hovedligaIds))
         const hovedligaTavle = calculateLeaderboard(hovedligaExt.bets, hovedligaExt.users)
 
@@ -222,7 +222,7 @@ const Leaderboard: NextPage = () => {
 
     const antallHovedliga = useMemo(() => {
         if (!data) return 0
-        return data.raw.users.filter((u) => u.i_hovedliga !== false).length
+        return data.raw.users.length
     }, [data])
 
     if (!data || isLoading || !ligaer) {

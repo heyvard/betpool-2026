@@ -41,7 +41,6 @@ const fr: Translations = {
         kampApiData: 'Données API match',
         debugData: 'Débogage données',
         adminLigaer: 'Ligues privées',
-        utenforHovedliga: 'Hors ligue principale',
         innbetaling: 'Paiements',
         innstillinger: 'Réglages',
         tilbakemelding: 'Donner un avis',
@@ -553,13 +552,7 @@ const fr: Translations = {
     },
     hovedliga: {
         overskrift: 'La ligue principale',
-        bliMedSporsmal: 'Rejoindre aussi la ligue principale ?',
-        bliMedForklaring:
-            'La ligue principale est la grande cagnotte à laquelle tout le monde joue. Si vous la refusez, vos pronostics ne comptent que dans les ligues privées. Vous pouvez changer cela plus tard dans Mes ligues.',
-        bryter: 'Dans la ligue principale',
         pottOgPris: 'Cagnotte {{pott}} kr · {{pris}} kr pour participer',
-        medInfo: 'Vos pronostics comptent dans la ligue principale.',
-        ikkeMedInfo: 'Vos pronostics ne comptent que dans vos ligues privées.',
     },
     premieInputs: {
         label: 'Répartition des prix (%)',

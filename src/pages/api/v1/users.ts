@@ -28,7 +28,6 @@ const handler = async function handler(opts: ApiHandlerOpts): Promise<void> {
                        u.notif_general,
                        u.notif_reminders,
                        u.notif_summary,
-                       u.i_hovedliga,
                        u.sign_in_provider,
                        COUNT(DISTINCT ps.id)::int AS device_count,
                        COUNT(DISTINCT b.match_num)::int AS bet_count,

@@ -20,7 +20,6 @@ export interface OtherUser {
     winner_forrige?: string
     topscorer_forrige?: string
     paid: boolean
-    i_hovedliga?: boolean
     winnerPoints?: number
     topscorerPoints?: number
 }

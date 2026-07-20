@@ -59,7 +59,7 @@ const Regler: NextPage = () => {
         return <Spinner />
     }
 
-    const deltakere = data.users.filter((u) => u.i_hovedliga !== false && u.paid).length
+    const deltakere = data.users.filter((u) => u.paid).length
     const pot = deltakere * HOVEDLIGA_PRIS
     const premier = [Math.round(pot * 0.5), Math.round(pot * 0.3), Math.round(pot * 0.2)]
     const eksempelLabel = t.nav.regler === 'Regler' ? 'Eksempel:' : 'Exemple :'

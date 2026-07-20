@@ -82,9 +82,7 @@ const Innbetaling: NextPage = () => {
         return <Spinner />
     }
 
-    // Kun hovedliga-deltakere skylder hovedliga-innskuddet. De som har valgt
-    // bort hovedligaen spores ikke her.
-    const aktive = data.filter((u) => u.active && u.i_hovedliga)
+    const aktive = data.filter((u) => u.active)
     const ikkeBetalt = [...aktive].filter((u) => !u.paid).sort((a, b) => a.name.localeCompare(b.name, 'nb'))
     const betalt = [...aktive].filter((u) => u.paid).sort((a, b) => a.name.localeCompare(b.name, 'nb'))
 

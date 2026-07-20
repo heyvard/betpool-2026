@@ -8,9 +8,9 @@ import { erKampPågående, hentKamper } from '../../data/matches'
 import { resolveActiveScore } from '../../data/matchScore'
 import { hentTurneringsFasit } from '../../data/tournamentResult'
 
-// Bygger hovedligaens (Æresligaen) AllBets fra DB — kun brukere som er med i
-// hovedligaen (i_hovedliga != false) og deres tips på kamper som har startet.
-// Speiler lese-laget i /api/v1/bets, men beregner aldri poeng på nytt selv: det
+// Bygger hovedligaens (Æresligaen) AllBets fra DB — alle aktive brukere og
+// deres tips på kamper som har startet. Speiler lese-laget i /api/v1/bets,
+// men beregner aldri poeng på nytt selv: det
 // overlates uendret til calculateAllBetsExtended / calculateLeaderboard.
 //
 // Vi tar med winner/topscorer-tipp her (i motsetning til bets-API-et som skjuler
@@ -63,7 +63,7 @@ export async function hentHovedligaAllBets(client: PoolClient, now: Date = new D
             SELECT b.user_id, b.match_num, b.home_score, b.away_score, b.joker
             FROM bets b
             JOIN users u ON u.id = b.user_id
-            WHERE u.active = true AND u.i_hovedliga = true`),
+            WHERE u.active = true`),
         client.query<ScoreRow>(`
             SELECT match_num, home_score, away_score, home_team_override, away_team_override,
                    synced_home_rt, synced_away_rt, synced_home_ft, synced_away_ft, use_manual
@@ -72,7 +72,7 @@ export async function hentHovedligaAllBets(client: PoolClient, now: Date = new D
             SELECT u.id, COALESCE(NULLIF(u.kallenavn, ''), u.name) AS name, u.paid, u.picture,
                    u.winner, u.topscorer_player_id, u.winner_endret, u.topscorer_endret
             FROM users u
-            WHERE u.active = true AND u.i_hovedliga = true`),
+            WHERE u.active = true`),
         hentTurneringsFasit(client),
     ])
 
@@ -115,7 +115,6 @@ export async function hentHovedligaAllBets(client: PoolClient, now: Date = new D
         topscorer_player_id: u.topscorer_player_id,
         winner_endret: u.winner_endret,
         topscorer_endret: u.topscorer_endret,
-        i_hovedliga: true,
     }))
 
     return { users, bets, tournamentResult }

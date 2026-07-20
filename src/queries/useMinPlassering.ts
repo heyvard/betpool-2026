@@ -38,10 +38,8 @@ export function useMinPlassering(): MinPlassering | null {
         if (!data || !matches || !me) return null
 
         const raw = data.raw
-        const hovedligaIds = new Set(raw.users.filter((u) => u.i_hovedliga !== false).map((u) => u.id))
-        const deltakere: HistorikkDeltaker[] = raw.users
-            .filter((u) => u.i_hovedliga !== false)
-            .map((u) => ({ userid: u.id, navn: u.name }))
+        const hovedligaIds = new Set(raw.users.map((u) => u.id))
+        const deltakere: HistorikkDeltaker[] = raw.users.map((u) => ({ userid: u.id, navn: u.name }))
         const populasjonsBets = filtrerAllBets(raw, hovedligaIds)
 
         const beregnTavle = (bets: AllBets): LeaderBoard[] => {

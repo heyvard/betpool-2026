@@ -48,7 +48,6 @@ export interface BetsUser {
     topscorer_endret: boolean
     winner_forrige?: string
     topscorer_forrige?: string
-    i_hovedliga: boolean
 }
 
 export interface SluttspillResultat {
@@ -134,7 +133,7 @@ export async function byggAlleBets(
         client.query<BetsUser>(`
             SELECT u.id, COALESCE(NULLIF(u.kallenavn, ''), u.name) AS name, u.paid, u.picture, u.winner, u.topscorer,
                    u.topscorer_player_id, p.name AS topscorer_player_name, pf.name AS topscorer_forrige_player_name,
-                   u.winner_endret, u.topscorer_endret, u.winner_forrige, u.topscorer_forrige, u.i_hovedliga
+                   u.winner_endret, u.topscorer_endret, u.winner_forrige, u.topscorer_forrige
             FROM users u
             LEFT JOIN players p ON p.id = u.topscorer_player_id
             LEFT JOIN players pf ON pf.id = u.topscorer_forrige_player_id

@@ -107,10 +107,9 @@ describe('regnUtBonuspoeng — trapp på winner-/topscorer-bonus', () => {
         expect(regnUtBonuspoeng(35, 100)).toEqual(3) // 0,35 -> ikke < 0,35
     })
 
-    it('VM 2026-caset: 10 av 49 i hovedligaen traff (20,4 %) gir 5 poeng — ikke 8', () => {
+    it('VM 2026-caset: 10 av 49 traff (20,4 %) gir 5 poeng — ikke 8', () => {
         expect(regnUtBonuspoeng(10, 49)).toEqual(5)
-        // Med opt-ut-brukere i nevneren (10 av 53 = 18,9 %) ville bonusen blitt 8.
-        // Nevneren skal derfor kun telle hovedligaen — se hovedligaPopulasjon.test.ts.
+        // Med en litt større populasjon (10 av 53 = 18,9 %) ville bonusen blitt 8.
         expect(regnUtBonuspoeng(10, 53)).toEqual(8)
     })
 })

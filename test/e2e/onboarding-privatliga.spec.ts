@@ -2,14 +2,10 @@ import { test, expect, type Page } from '@playwright/test'
 
 import { seedUser, seedLeague, seedLeagueMember, truncateAll, withDb } from '../support/db'
 
-// Onboarding i en privat liga: en nybruker følger en invitasjonslenke rett etter
-// signup (`?nybruker=1`). Da — og bare da — tilbys hovedliga-valget i selve flyten:
-// «Bli med i hovedligaen også?». Brukeren svarer ja eller nei, og blir uansett
-// med i den private ligaen. Testene dekker begge svarene ende-til-ende:
-//   • spørsmålet vises (og bare i signup-flyten),
-//   • valget lagres riktig i DB (`users.i_hovedliga`),
-//   • brukeren blir medlem av den private ligaen,
-//   • synligheten i ledertavla stemmer med valget.
+// Onboarding i en privat liga: en bruker følger en invitasjonslenke og blir med.
+// Å bli med i hovedligaen er ikke et valg — alle aktive brukere er automatisk med.
+// Testen dekker at brukeren blir medlem av den private ligaen og likevel vises i
+// hovedliga-tavla.
 
 const PORT = Number(process.env.TEST_PORT ?? 3100)
 const URL_BASE = `http://localhost:${PORT}`
@@ -41,15 +37,6 @@ async function privatligaNavn(page: Page, ligaNavn: string): Promise<string[]> {
     return synligeNavn(page)
 }
 
-async function iHovedliga(firebaseUserId: string): Promise<boolean> {
-    return withDb(async (c) => {
-        const r = await c.query<{ i_hovedliga: boolean }>(`SELECT i_hovedliga FROM users WHERE firebase_user_id = $1`, [
-            firebaseUserId,
-        ])
-        return r.rows[0].i_hovedliga
-    })
-}
-
 async function erMedlem(ligaId: string, firebaseUserId: string): Promise<boolean> {
     return withDb(async (c) => {
         const r = await c.query<{ status: string }>(
@@ -62,9 +49,8 @@ async function erMedlem(ligaId: string, firebaseUserId: string): Promise<boolean
     })
 }
 
-// Felles oppsett: en eier (alice) med en privat liga «Gutta». Eieren er med i
-// både hovedligaen og den private ligaen. Returnerer ligaen så testene kan melde
-// nybrukeren inn via invitasjonslenka.
+// Felles oppsett: en eier (alice) med en privat liga «Gutta». Returnerer ligaen
+// så testene kan melde nybrukeren inn via invitasjonslenka.
 async function seedLigaMedEier() {
     const alice = await seedUser({ firebase_user_id: 'alice', name: 'alice' })
     const liga = await seedLeague({ name: 'Gutta', owner_user_id: alice.id, innsats: 200 })
@@ -76,76 +62,23 @@ test.beforeEach(async () => {
     await truncateAll()
 })
 
-test('hovedliga-valget tilbys bare i signup-flyten, ikke ved et vanlig invitasjonsbesøk', async ({ page }) => {
+test('nybruker som blir med via invitasjon vises i både hovedliga-tavla og den private ligaen', async ({ page }) => {
     const liga = await seedLigaMedEier()
     await seedUser({ firebase_user_id: 'newbie', name: 'newbie' })
     await loggInn(page, 'newbie')
 
-    const sporsmal = page.getByRole('switch', { name: 'Bli med i hovedligaen også?' })
-
-    await test.step('Uten ?nybruker=1 vises ingen hovedliga-spørsmål', async () => {
+    await test.step('Blir med i den private ligaen via invitasjonslenka', async () => {
         await page.goto(`/bli-med/${liga.invite_token}`)
-        await expect(page.getByRole('button', { name: 'Bli med i ligaen' })).toBeVisible()
-        await expect(sporsmal).toHaveCount(0)
-    })
-
-    await test.step('Med ?nybruker=1 dukker hovedliga-spørsmålet opp, påslått som standard', async () => {
-        await page.goto(`/bli-med/${liga.invite_token}?nybruker=1`)
-        await expect(page.getByText('Hovedligaen', { exact: true })).toBeVisible()
-        await expect(sporsmal).toBeVisible()
-        await expect(sporsmal).toBeChecked()
-        await expect(page.getByText(/Hovedligaen er den store potten/)).toBeVisible()
-    })
-})
-
-test('nybruker svarer JA — blir med i både den private ligaen og hovedligaen', async ({ page }) => {
-    const liga = await seedLigaMedEier()
-    await seedUser({ firebase_user_id: 'newbie', name: 'newbie' })
-    await loggInn(page, 'newbie')
-
-    await test.step('Åpner invitasjonen i signup-flyten og lar valget stå på', async () => {
-        await page.goto(`/bli-med/${liga.invite_token}?nybruker=1`)
-        const sporsmal = page.getByRole('switch', { name: 'Bli med i hovedligaen også?' })
-        await expect(sporsmal).toBeChecked()
-        // Lar bryteren stå på = svarer ja, og melder seg inn.
         await page.getByRole('button', { name: 'Bli med i ligaen' }).click()
         await expect(page).toHaveURL(new RegExp(`/ligaer/${liga.id}$`))
     })
 
-    await test.step('Valget er lagret: medlem av Gutta og med i hovedligaen', async () => {
+    await test.step('Er registrert som medlem av Gutta', async () => {
         expect(await erMedlem(liga.id, 'newbie')).toBe(true)
-        expect(await iHovedliga('newbie')).toBe(true)
     })
 
-    await test.step('Nybrukeren vises både i hovedliga-tavla og i Gutta', async () => {
+    await test.step('Vises i både hovedliga-tavla og i Gutta', async () => {
         expect(await hovedligaNavn(page)).toContain('newbie')
-        expect(await privatligaNavn(page, 'Gutta')).toContain('newbie')
-    })
-})
-
-test('nybruker svarer NEI — blir med i den private ligaen, men ikke hovedligaen', async ({ page }) => {
-    const liga = await seedLigaMedEier()
-    await seedUser({ firebase_user_id: 'newbie', name: 'newbie' })
-    await loggInn(page, 'newbie')
-
-    await test.step('Åpner invitasjonen i signup-flyten og slår av hovedliga-valget', async () => {
-        await page.goto(`/bli-med/${liga.invite_token}?nybruker=1`)
-        const sporsmal = page.getByRole('switch', { name: 'Bli med i hovedligaen også?' })
-        await expect(sporsmal).toBeChecked()
-        // Slår av bryteren = svarer nei, og melder seg inn.
-        await sporsmal.click()
-        await expect(sporsmal).not.toBeChecked()
-        await page.getByRole('button', { name: 'Bli med i ligaen' }).click()
-        await expect(page).toHaveURL(new RegExp(`/ligaer/${liga.id}$`))
-    })
-
-    await test.step('Valget er lagret: medlem av Gutta, men ute av hovedligaen', async () => {
-        expect(await erMedlem(liga.id, 'newbie')).toBe(true)
-        expect(await iHovedliga('newbie')).toBe(false)
-    })
-
-    await test.step('Nybrukeren skjules fra hovedliga-tavla, men vises i Gutta', async () => {
-        expect(await hovedligaNavn(page)).not.toContain('newbie')
         expect(await privatligaNavn(page, 'Gutta')).toContain('newbie')
     })
 })

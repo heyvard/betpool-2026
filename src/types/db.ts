@@ -18,6 +18,5 @@ export interface User {
     topscorer_endret: boolean
     winner_forrige: string | null
     topscorer_forrige: string | null
-    i_hovedliga: boolean
     sign_in_provider?: string | null
 }
