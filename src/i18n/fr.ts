@@ -35,7 +35,6 @@ const fr: Translations = {
         cron: 'Tâches planifiées',
         spillere: 'Joueurs',
         vinnerToppscorer: 'Définir vainqueur/buteur',
-        manglendeTips: 'Pronostics manquants',
         standingsDebug: 'Débogage classement',
         kampApiData: 'Données API match',
         debugData: 'Débogage données',
