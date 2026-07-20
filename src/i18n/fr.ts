@@ -34,7 +34,6 @@ const fr: Translations = {
         sendPush: 'Envoyer push',
         cron: 'Tâches planifiées',
         spillere: 'Joueurs',
-        toppscorerFiks: 'Corriger buteur',
         vinnerToppscorer: 'Définir vainqueur/buteur',
         manglendeTips: 'Pronostics manquants',
         standingsDebug: 'Débogage classement',

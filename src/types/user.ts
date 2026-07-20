@@ -27,8 +27,7 @@ export interface User {
     topscorer: string | undefined
     /**
      * Strukturert toppscorer-tipp (FK → players.id). Ny logikk leser denne, ikke
-     * fritekst-`topscorer`. Null til brukeren har tippet (eller er koblet via
-     * /toppscorer-fiks).
+     * fritekst-`topscorer`. Null til brukeren har tippet.
      */
     topscorer_player_id: number | null
     /** Strukturert «forrige» toppscorer ved endre-vindu-bytte (FK → players.id). */
